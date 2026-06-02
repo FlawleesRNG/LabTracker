@@ -3,10 +3,127 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const LabTrackerApp());
+}
+
+/// Wrapper do login com Google (API v7 do google_sign_in).
+///
+/// Em mobile (Android/iOS) usa o fluxo nativo. Em plataformas sem suporte
+/// (ex.: Windows desktop) `suportado` é false e a tela cai no login manual.
+///
+/// Configuração necessária (feita FORA do código, no Google Cloud):
+///  - Android: criar um OAuth Client ID com o package name + SHA-1, ou
+///    informar o `serverClientId` abaixo.
+///  - iOS: adicionar o REVERSED_CLIENT_ID no Info.plist.
+class GoogleAuthService {
+  // Web client ID do Google Cloud (tipo "Aplicativo da Web"). A API nova do
+  // google_sign_in usa isso no Android (Credential Manager).
+  // OBS: a CHAVE SECRETA do client NÃO entra no app — só o ID abaixo.
+  static const String? serverClientId =
+      '518268419553-r8gl48j54hul587tl4nuh1mvbaaa70qf.apps.googleusercontent.com';
+
+  static bool _inicializado = false;
+
+  static Future<void> _garantirInit() async {
+    if (_inicializado) return;
+    await GoogleSignIn.instance.initialize(serverClientId: serverClientId);
+    _inicializado = true;
+  }
+
+  /// true em plataformas onde o fluxo interativo nativo existe (mobile).
+  /// No Windows/Linux/desktop não há implementação do plugin, então
+  /// `supportsAuthenticate()` lança UnimplementedError — tratamos como false.
+  static bool get suportado {
+    try {
+      return GoogleSignIn.instance.supportsAuthenticate();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Abre o fluxo de login. Retorna a conta ou null se cancelado/indisponível.
+  static Future<GoogleSignInAccount?> entrar() async {
+    try {
+      await _garantirInit();
+      if (!GoogleSignIn.instance.supportsAuthenticate()) return null;
+      return await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> sair() async {
+    try {
+      await _garantirInit();
+      await GoogleSignIn.instance.signOut();
+    } catch (_) {}
+  }
+}
+
+const String _dataFileName = 'labtracker_data.json';
+
+Future<File> _obterArquivoDados() async {
+  final Directory dir = await getApplicationDocumentsDirectory();
+  return File('${dir.path}${Platform.pathSeparator}$_dataFileName');
+}
+
+Future<Map<String, dynamic>?> _lerDadosArquivo() async {
+  try {
+    final File arquivo = await _obterArquivoDados();
+    if (!await arquivo.exists()) {
+      return null;
+    }
+
+    final String conteudo = await arquivo.readAsString();
+    final dynamic dados = jsonDecode(conteudo);
+
+    if (dados is Map<String, dynamic>) {
+      return dados;
+    }
+  } catch (_) {
+    return null;
+  }
+
+  return null;
+}
+
+Future<void> _salvarDadosArquivo(Map<String, dynamic> dados) async {
+  try {
+    final File arquivo = await _obterArquivoDados();
+    const JsonEncoder encoder = JsonEncoder.withIndent('  ');
+    await arquivo.writeAsString(encoder.convert(dados), flush: true);
+  } catch (_) {}
+}
+
+Future<void> _removerDadosArquivo() async {
+  try {
+    final File arquivo = await _obterArquivoDados();
+    if (await arquivo.exists()) {
+      await arquivo.delete();
+    }
+  } catch (_) {}
+}
+
+/// Paleta da marca — Conceito 3 "LT Progress Mark".
+class BrandColors {
+  static const Color ambarEscuro = Color(0xFF5A2E00);
+  static const Color laranjaForte = Color(0xFFCC6200);
+  static const Color laranjaVivo = Color(0xFFFFA000);
+  static const Color ambarDourado = Color(0xFFFFC84D);
+  static const Color ambarClaro = Color(0xFFFFE9A6);
+  static const Color brancoSuave = Color(0xFFE6E6E6);
+  static const Color grafite = Color(0xFF1A1C1E);
+  static const Color pretoCarvao = Color(0xFF0D0F11);
+
+  static const Color sucesso = Color(0xFF3FB950);
+  static const Color alerta = Color(0xFFE5484D);
 }
 
 class LabTrackerApp extends StatelessWidget {
@@ -14,17 +131,205 @@ class LabTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const ColorScheme scheme = ColorScheme(
+      brightness: Brightness.dark,
+      primary: BrandColors.laranjaVivo,
+      onPrimary: BrandColors.pretoCarvao,
+      primaryContainer: BrandColors.ambarEscuro,
+      onPrimaryContainer: BrandColors.ambarClaro,
+      secondary: BrandColors.ambarDourado,
+      onSecondary: BrandColors.pretoCarvao,
+      tertiary: BrandColors.laranjaForte,
+      onTertiary: BrandColors.brancoSuave,
+      error: BrandColors.alerta,
+      onError: BrandColors.brancoSuave,
+      surface: BrandColors.grafite,
+      onSurface: BrandColors.brancoSuave,
+      surfaceContainerHighest: Color(0xFF26292C),
+      outline: Color(0xFF3A3D40),
+    );
+
+    final ThemeData base = ThemeData(
+      colorScheme: scheme,
+      useMaterial3: true,
+      scaffoldBackgroundColor: BrandColors.pretoCarvao,
+      canvasColor: BrandColors.pretoCarvao,
+    );
+
     return MaterialApp(
       title: 'LabTracker',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
+      theme: base.copyWith(
+        appBarTheme: const AppBarTheme(
+          backgroundColor: BrandColors.pretoCarvao,
+          foregroundColor: BrandColors.brancoSuave,
+          centerTitle: true,
+          elevation: 0,
         ),
-        useMaterial3: true,
+        cardTheme: CardThemeData(
+          color: BrandColors.grafite,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFF2C2F33)),
+          ),
+        ),
+        dividerColor: const Color(0xFF2C2F33),
+        progressIndicatorTheme: const ProgressIndicatorThemeData(
+          color: BrandColors.laranjaVivo,
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: BrandColors.laranjaVivo,
+            foregroundColor: BrandColors.pretoCarvao,
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: BrandColors.ambarDourado,
+            side: const BorderSide(color: BrandColors.laranjaForte),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: BrandColors.ambarDourado),
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: BrandColors.laranjaVivo,
+          foregroundColor: BrandColors.pretoCarvao,
+        ),
       ),
       home: const RootPage(),
+    );
+  }
+}
+
+/// Bloquinhos de progresso da marca (estilo "segmented").
+class ProgressBlocks extends StatelessWidget {
+  final int total;
+  final int filled;
+  final double blockWidth;
+  final double blockHeight;
+  final double spacing;
+
+  const ProgressBlocks({
+    super.key,
+    this.total = 10,
+    this.filled = 7,
+    this.blockWidth = 12,
+    this.blockHeight = 7,
+    this.spacing = 3,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(total, (i) {
+        final bool on = i < filled;
+        return Container(
+          width: blockWidth,
+          height: blockHeight,
+          margin: EdgeInsets.only(right: i == total - 1 ? 0 : spacing),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(1.5),
+            gradient: on
+                ? const LinearGradient(
+                    colors: [BrandColors.laranjaForte, BrandColors.ambarDourado],
+                  )
+                : null,
+            color: on ? null : const Color(0xFF34373B),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+/// Marca quadrada "LT" (ícone / leading).
+class LtMark extends StatelessWidget {
+  final double size;
+  final bool bordered;
+
+  const LtMark({super.key, this.size = 40, this.bordered = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final double fontSize = size * 0.62;
+    final Widget lt = RichText(
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -1,
+          height: 1,
+        ),
+        children: const [
+          TextSpan(text: 'L', style: TextStyle(color: BrandColors.laranjaVivo)),
+          TextSpan(text: 'T', style: TextStyle(color: BrandColors.brancoSuave)),
+        ],
+      ),
+    );
+
+    if (!bordered) return SizedBox(height: size, child: Center(child: lt));
+
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(size * 0.14),
+      decoration: BoxDecoration(
+        border: Border.all(color: BrandColors.laranjaVivo, width: 2),
+        borderRadius: BorderRadius.circular(size * 0.18),
+      ),
+      child: Center(child: lt),
+    );
+  }
+}
+
+/// Logo horizontal completo: LT + "LabTracker" + barra de progresso.
+class LtLogo extends StatelessWidget {
+  final double scale;
+  final bool showProgress;
+
+  const LtLogo({super.key, this.scale = 1, this.showProgress = true});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        LtMark(size: 38 * scale),
+        SizedBox(width: 12 * scale),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 22 * scale,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                  height: 1,
+                ),
+                children: const [
+                  TextSpan(text: 'Lab', style: TextStyle(color: BrandColors.laranjaVivo)),
+                  TextSpan(text: 'Tracker', style: TextStyle(color: BrandColors.brancoSuave)),
+                ],
+              ),
+            ),
+            if (showProgress) ...[
+              SizedBox(height: 5 * scale),
+              ProgressBlocks(
+                total: 10,
+                filled: 7,
+                blockWidth: 11 * scale,
+                blockHeight: 6 * scale,
+                spacing: 3 * scale,
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }
@@ -83,6 +388,8 @@ class PlayerProfile {
   final String jogoPrincipal;
   final String mainPrincipal;
   final String bio;
+  final String email;
+  final String fotoUrl;
 
   const PlayerProfile({
     required this.nick,
@@ -91,6 +398,8 @@ class PlayerProfile {
     required this.jogoPrincipal,
     required this.mainPrincipal,
     required this.bio,
+    this.email = '',
+    this.fotoUrl = '',
   });
 
   PlayerProfile copyWith({
@@ -100,6 +409,8 @@ class PlayerProfile {
     String? jogoPrincipal,
     String? mainPrincipal,
     String? bio,
+    String? email,
+    String? fotoUrl,
   }) {
     return PlayerProfile(
       nick: nick ?? this.nick,
@@ -108,6 +419,8 @@ class PlayerProfile {
       jogoPrincipal: jogoPrincipal ?? this.jogoPrincipal,
       mainPrincipal: mainPrincipal ?? this.mainPrincipal,
       bio: bio ?? this.bio,
+      email: email ?? this.email,
+      fotoUrl: fotoUrl ?? this.fotoUrl,
     );
   }
 
@@ -119,6 +432,8 @@ class PlayerProfile {
       'jogoPrincipal': jogoPrincipal,
       'mainPrincipal': mainPrincipal,
       'bio': bio,
+      'email': email,
+      'fotoUrl': fotoUrl,
     };
   }
 
@@ -130,6 +445,8 @@ class PlayerProfile {
       jogoPrincipal: json['jogoPrincipal'] ?? '',
       mainPrincipal: json['mainPrincipal'] ?? '',
       bio: json['bio'] ?? '',
+      email: json['email'] ?? '',
+      fotoUrl: json['fotoUrl'] ?? '',
     );
   }
 }
@@ -366,6 +683,309 @@ const List<Character> personagensSmash = [
   Character(name: 'Sora', initial: 'So', rank: 'Starter V', pdl: 0),
 ];
 
+const List<Character> personagensDBFZ = [
+  Character(name: 'Android 16', initial: 'A16', rank: 'Starter V', pdl: 0),
+  Character(name: 'Android 17', initial: 'A17', rank: 'Starter V', pdl: 0),
+  Character(name: 'Android 18', initial: 'A18', rank: 'Starter V', pdl: 0),
+  Character(name: 'Android 21', initial: 'A21', rank: 'Starter V', pdl: 0),
+  Character(name: 'Android 21 (Lab Coat)', initial: 'A21', rank: 'Starter V', pdl: 0),
+  Character(name: 'Bardock', initial: 'BA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Beerus', initial: 'BE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Broly', initial: 'BR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Broly (DBS)', initial: 'BR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Captain Ginyu', initial: 'CG', rank: 'Starter V', pdl: 0),
+  Character(name: 'Cell', initial: 'CE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Cooler', initial: 'CO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Frieza', initial: 'FR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Gogeta (SS4)', initial: 'GO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Gogeta (SSGSS)', initial: 'GO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Gohan (Adult)', initial: 'GH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Gohan (Teen)', initial: 'GH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goku', initial: 'GK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goku (GT)', initial: 'GK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goku (SSGSS)', initial: 'GK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goku (Super Saiyan)', initial: 'GK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goku (Ultra Instinct)', initial: 'GK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goku Black', initial: 'GB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Gotenks', initial: 'GT', rank: 'Starter V', pdl: 0),
+  Character(name: 'Hit', initial: 'HI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Janemba', initial: 'JA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Jiren', initial: 'JI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kefla', initial: 'KE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kid Buu', initial: 'KB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Krillin', initial: 'KR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Majin Buu', initial: 'MB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Master Roshi', initial: 'MR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Nappa', initial: 'NA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Piccolo', initial: 'PI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Super Baby 2', initial: 'SB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Tien', initial: 'TI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Trunks', initial: 'TR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Vegeta', initial: 'VE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Vegeta (SSGSS)', initial: 'VE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Vegeta (Super Saiyan)', initial: 'VE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Vegito (SSGSS)', initial: 'VG', rank: 'Starter V', pdl: 0),
+  Character(name: 'Videl', initial: 'VI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Yamcha', initial: 'YA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Zamasu (Fused)', initial: 'ZA', rank: 'Starter V', pdl: 0),
+];
+
+const List<Character> personagensFatalFury = [
+  Character(name: 'Terry Bogard', initial: 'TB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Rock Howard', initial: 'RH', rank: 'Starter V', pdl: 0),
+  Character(name: 'B. Jenet', initial: 'BJ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Mai Shiranui', initial: 'MS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Hotaru Futaba', initial: 'HF', rank: 'Starter V', pdl: 0),
+  Character(name: 'Hokutomaru', initial: 'HO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kim Dong Hwan', initial: 'KD', rank: 'Starter V', pdl: 0),
+  Character(name: 'Gato', initial: 'GA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Tizoc', initial: 'TI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Preecha', initial: 'PR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kevin Rian', initial: 'KV', rank: 'Starter V', pdl: 0),
+  Character(name: 'Marco Rodriguez', initial: 'MA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Vox Reaper', initial: 'VR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kain R. Heinlein', initial: 'KA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Salvatore Ganacci', initial: 'SG', rank: 'Starter V', pdl: 0),
+  Character(name: 'Cristiano Ronaldo', initial: 'CR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Andy Bogard', initial: 'AB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ken Masters', initial: 'KM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Joe Higashi', initial: 'JH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Chun-Li', initial: 'CL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Mr. Big', initial: 'MB', rank: 'Starter V', pdl: 0),
+];
+
+const List<Character> personagensInvincible = [
+  Character(name: 'Invincible', initial: 'IN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Atom Eve', initial: 'AE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Bulletproof', initial: 'BU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Thula', initial: 'TH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Rex Splode', initial: 'RS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Battle Beast', initial: 'BB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Omni-Man', initial: 'OM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Cecil Stedman', initial: 'CS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Monster Girl', initial: 'MG', rank: 'Starter V', pdl: 0),
+  Character(name: 'Robot', initial: 'RO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ella Mental', initial: 'EM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Anissa', initial: 'AN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Lucan', initial: 'LU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Powerplex', initial: 'PW', rank: 'Starter V', pdl: 0),
+  Character(name: 'Dupli-Kate', initial: 'DK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Allen the Alien', initial: 'AA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Titan', initial: 'TT', rank: 'Starter V', pdl: 0),
+  Character(name: 'Conquest', initial: 'CQ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Universa', initial: 'UN', rank: 'Starter V', pdl: 0),
+  Character(name: 'The Immortal', initial: 'IM', rank: 'Starter V', pdl: 0),
+];
+
+// Mapas nome -> URL da imagem (puxadas da internet, CDN do Fandom).
+const Map<String, String> imagensSmash = {
+  'Mario': 'https://static.wikia.nocookie.net/ssb/images/4/44/Mario_SSBU.png/revision/latest?cb=20180612204958',
+  'Donkey Kong': 'https://static.wikia.nocookie.net/ssb/images/5/5f/Donkey_Kong_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204654',
+  'Link': 'https://static.wikia.nocookie.net/ssb/images/1/19/Link_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20190612145102',
+  'Samus': 'https://static.wikia.nocookie.net/ssb/images/4/4d/Samus_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205333',
+  'Dark Samus': 'https://static.wikia.nocookie.net/ssb/images/7/7e/Dark_Samus_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180808153139',
+  'Yoshi': 'https://static.wikia.nocookie.net/ssb/images/0/06/Yoshi_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205516',
+  'Kirby': 'https://static.wikia.nocookie.net/ssb/images/9/92/Kirby_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20190715072044',
+  'Fox': 'https://static.wikia.nocookie.net/ssb/images/0/04/Fox_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204657',
+  'Pikachu': 'https://static.wikia.nocookie.net/ssb/images/2/26/Pikachu_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180906080903',
+  'Luigi': 'https://static.wikia.nocookie.net/ssb/images/c/cb/Luigi_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204957',
+  'Ness': 'https://static.wikia.nocookie.net/ssb/images/e/e3/Ness_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20260403192056',
+  'Captain Falcon': 'https://static.wikia.nocookie.net/ssb/images/4/4a/Captain_Falcon_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204650',
+  'Jigglypuff': 'https://static.wikia.nocookie.net/ssb/images/e/ee/Jigglypuff_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204700',
+  'Peach': 'https://static.wikia.nocookie.net/ssb/images/0/07/Peach_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205005',
+  'Daisy': 'https://static.wikia.nocookie.net/ssb/images/2/21/Daisy_SSBU.png/revision/latest?cb=20190619061339',
+  'Bowser': 'https://static.wikia.nocookie.net/ssb/images/1/19/Bowser_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20190715072153',
+  'Ice Climbers': 'https://static.wikia.nocookie.net/ssb/images/1/12/Ice_Climbers_SSBU.png/revision/latest?cb=20180612204658',
+  'Sheik': 'https://static.wikia.nocookie.net/ssb/images/c/c8/Sheik_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205334',
+  'Zelda': 'https://static.wikia.nocookie.net/ssb/images/9/92/Zelda_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205517',
+  'Dr. Mario': 'https://static.wikia.nocookie.net/ssb/images/1/16/Dr._Mario_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204654',
+  'Pichu': 'https://static.wikia.nocookie.net/ssb/images/1/15/Pichu_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205327',
+  'Falco': 'https://static.wikia.nocookie.net/ssb/images/8/80/Falco_SSBU.png/revision/latest?cb=20200718105804',
+  'Marth': 'https://static.wikia.nocookie.net/ssb/images/f/ff/Marth_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204959',
+  'Lucina': 'https://static.wikia.nocookie.net/ssb/images/e/eb/Lucina_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204957',
+  'Young Link': 'https://static.wikia.nocookie.net/ssb/images/4/41/Young_Link_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205516',
+  'Ganondorf': 'https://static.wikia.nocookie.net/ssb/images/8/88/Ganondorf_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204657',
+  'Mewtwo': 'https://static.wikia.nocookie.net/ssb/images/8/89/Mewtwo_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205001',
+  'Roy': 'https://static.wikia.nocookie.net/ssb/images/2/2c/Roy_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180914115555',
+  'Chrom': 'https://static.wikia.nocookie.net/ssb/images/a/a9/Chrom_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180808153028',
+  'Mr. Game & Watch': 'https://static.wikia.nocookie.net/ssb/images/8/8c/Mr._Game_%26_Watch_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205002',
+  'Meta Knight': 'https://static.wikia.nocookie.net/ssb/images/8/8f/Meta_Knight_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205000',
+  'Pit': 'https://static.wikia.nocookie.net/ssb/images/d/db/Pit_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20190715072257',
+  'Dark Pit': 'https://static.wikia.nocookie.net/ssb/images/b/b7/Dark_Pit_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204653',
+  'Zero Suit Samus': 'https://static.wikia.nocookie.net/ssb/images/1/17/Zero_Suit_Samus_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205518',
+  'Wario': 'https://static.wikia.nocookie.net/ssb/images/3/32/Wario_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205337',
+  'Snake': 'https://static.wikia.nocookie.net/ssb/images/c/c3/Snake_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205335',
+  'Ike': 'https://static.wikia.nocookie.net/ssb/images/9/9c/Ike_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204659',
+  'Pokémon Trainer': 'https://static.wikia.nocookie.net/ssb/images/0/0f/Pok%C3%A9mon_Trainer_SSBU.png/revision/latest?cb=20180614220143',
+  'Diddy Kong': 'https://static.wikia.nocookie.net/ssb/images/d/d8/Diddy_Kong_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204653',
+  'Lucas': 'https://static.wikia.nocookie.net/ssb/images/c/ce/Lucas_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20250331230833',
+  'Sonic': 'https://static.wikia.nocookie.net/ssb/images/e/eb/Sonic_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20230304175700',
+  'King Dedede': 'https://static.wikia.nocookie.net/ssb/images/b/b4/King_Dedede_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180909152046',
+  'Olimar': 'https://static.wikia.nocookie.net/ssb/images/0/05/Olimar_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205003',
+  'Lucario': 'https://static.wikia.nocookie.net/ssb/images/a/a9/Lucario_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204956',
+  'R.O.B.': 'https://static.wikia.nocookie.net/ssb/images/0/02/R.O.B._-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20210726195004',
+  'Toon Link': 'https://static.wikia.nocookie.net/ssb/images/3/3d/Toon_Link_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205336',
+  'Wolf': 'https://static.wikia.nocookie.net/ssb/images/e/e3/Wolf_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20181028020708',
+  'Villager': 'https://static.wikia.nocookie.net/ssb/images/2/2d/Villager_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205337',
+  'Mega Man': 'https://static.wikia.nocookie.net/ssb/images/3/3f/Mega_Man_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20190715072405',
+  'Wii Fit Trainer': 'https://static.wikia.nocookie.net/ssb/images/0/0c/Wii_Fit_Trainer_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20260504040051',
+  'Rosalina & Luma': 'https://static.wikia.nocookie.net/ssb/images/a/ac/Rosalina_%26_Luma_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205331',
+  'Little Mac': 'https://static.wikia.nocookie.net/ssb/images/e/e8/Little_Mac_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204955',
+  'Greninja': 'https://static.wikia.nocookie.net/ssb/images/f/f4/Greninja_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204658',
+  'Mii Brawler': 'https://static.wikia.nocookie.net/ssb/images/b/b4/Mii_Brawler_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180705150043',
+  'Mii Swordfighter': 'https://static.wikia.nocookie.net/ssb/images/2/25/Mii_Swordfighter_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180705145938',
+  'Mii Gunner': 'https://static.wikia.nocookie.net/ssb/images/e/ea/Mii_Gunner_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20240401031836',
+  'Palutena': 'https://static.wikia.nocookie.net/ssb/images/c/c5/Palutena_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20220219175924',
+  'Pac-Man': 'https://static.wikia.nocookie.net/ssb/images/5/5a/Pac-Man_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205003',
+  'Robin': 'https://static.wikia.nocookie.net/ssb/images/a/a9/Robin_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612205330',
+  'Shulk': 'https://static.wikia.nocookie.net/ssb/images/2/20/Shulk_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20181202120522',
+  'Bowser Jr.': 'https://static.wikia.nocookie.net/ssb/images/1/1b/Bowser_Jr._-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204649',
+  'Duck Hunt': 'https://static.wikia.nocookie.net/ssb/images/0/0b/Duck_Hunt_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204655',
+  'Ryu': 'https://static.wikia.nocookie.net/ssb/images/2/2b/Ryu_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20190715072923',
+  'Ken': 'https://static.wikia.nocookie.net/ssb/images/2/2a/Ken_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20220219174348',
+  'Cloud': 'https://static.wikia.nocookie.net/ssb/images/d/d6/Cloud_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180930104214',
+  'Corrin': 'https://static.wikia.nocookie.net/ssb/images/8/8c/Corrin_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204651',
+  'Bayonetta': 'https://static.wikia.nocookie.net/ssb/images/d/da/Bayonetta_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204648',
+  'Inkling': 'https://static.wikia.nocookie.net/ssb/images/8/81/Inkling_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180612204700',
+  'Ridley': 'https://static.wikia.nocookie.net/ssb/images/5/5c/Ridley_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180914125125',
+  'Simon': 'https://static.wikia.nocookie.net/ssb/images/8/89/Simon_Belmont_SSBU.png/revision/latest?cb=20180808153242',
+  'Richter': 'https://static.wikia.nocookie.net/ssb/images/b/b4/Richter_Belmont_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20220219174812',
+  'King K. Rool': 'https://static.wikia.nocookie.net/ssb/images/f/fd/King_K._Rool_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180808152915',
+  'Isabelle': 'https://static.wikia.nocookie.net/ssb/images/f/fb/Isabelle_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180914091810',
+  'Incineroar': 'https://static.wikia.nocookie.net/ssb/images/9/9a/Incineroar_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20220219173808',
+  'Piranha Plant': 'https://static.wikia.nocookie.net/ssb/images/d/d7/Piranha_Plant_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20181101165757',
+  'Joker': 'https://static.wikia.nocookie.net/ssb/images/5/56/Joker_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20201107233616',
+  'Hero': 'https://static.wikia.nocookie.net/ssb/images/0/07/Hero_SSBU.png/revision/latest?cb=20260403185733',
+  'Banjo & Kazooie': 'https://static.wikia.nocookie.net/ssb/images/c/cc/Banjo_and_Kazooie.png/revision/latest/scale-to-width-down/303?cb=20250414172712',
+  'Terry': 'https://static.wikia.nocookie.net/ssb/images/f/f5/Terry_SSBU.png/revision/latest?cb=20200626010159',
+  'Byleth': 'https://static.wikia.nocookie.net/ssb/images/3/3d/Byleth_SSBU.png/revision/latest?cb=20200116163825',
+  'Min Min': 'https://static.wikia.nocookie.net/ssb/images/3/35/Min_Min_SSBU.png/revision/latest?cb=20200622171658',
+  'Steve': 'https://static.wikia.nocookie.net/ssb/images/3/3a/Steve_SSBU.png/revision/latest?cb=20201001151548',
+  'Sephiroth': 'https://static.wikia.nocookie.net/ssb/images/1/19/Sephiroth_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20260403175500',
+  'Pyra/Mythra': 'https://static.wikia.nocookie.net/ssb/images/7/76/Pyra_%26_Mythra_SSBU.png/revision/latest?cb=20210217231332',
+  'Kazuya': 'https://static.wikia.nocookie.net/ssb/images/7/79/Kazuya_Mishima.png/revision/latest/scale-to-width-down/189?cb=20250414213628',
+  'Sora': 'https://static.wikia.nocookie.net/ssb/images/4/42/Sora_KH3.png/revision/latest/scale-to-width-down/274?cb=20211005174002',
+};
+
+const Map<String, String> imagensDBFZ = {
+  'Android 16': 'https://static.wikia.nocookie.net/dragonballfighterz/images/1/1b/Android_16_Artwork.png/revision/latest/scale-to-width-down/208?cb=20180902173209',
+  'Android 17': 'https://static.wikia.nocookie.net/dragonballfighterz/images/a/a8/Android_17_Artwork.png/revision/latest/scale-to-width-down/156?cb=20180921112244',
+  'Android 18': 'https://static.wikia.nocookie.net/dragonballfighterz/images/c/c1/Android_18_Artwork.png/revision/latest/scale-to-width-down/142?cb=20180902173221',
+  'Android 21': 'https://static.wikia.nocookie.net/dragonballfighterz/images/8/8d/Majin_Android_21_.webp/revision/latest/scale-to-width-down/266?cb=20240209145744',
+  'Android 21 (Lab Coat)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/2/23/Android_21_.webp/revision/latest/scale-to-width-down/217?cb=20240209145915',
+  'Bardock': 'https://static.wikia.nocookie.net/dragonballfighterz/images/9/97/Bardock_Artwork.png/revision/latest/scale-to-width-down/267?cb=20180902173253',
+  'Beerus': 'https://static.wikia.nocookie.net/dragonballfighterz/images/1/17/Beerus_Artwork.png/revision/latest/scale-to-width-down/177?cb=20180902173306',
+  'Broly': 'https://static.wikia.nocookie.net/dragonballfighterz/images/b/b2/Broly_Artwork.png/revision/latest/scale-to-width-down/252?cb=20180902173319',
+  'Broly (DBS)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/f/f1/Broly_%28DBS%29_Artwork.png/revision/latest/scale-to-width-down/235?cb=20191205173206',
+  'Captain Ginyu': 'https://static.wikia.nocookie.net/dragonballfighterz/images/1/12/Captain_Ginyu_Artwork.png/revision/latest/scale-to-width-down/366?cb=20180914190847',
+  'Cell': 'https://static.wikia.nocookie.net/dragonballfighterz/images/b/b4/Cell_Artwork.png/revision/latest/scale-to-width-down/202?cb=20180914190920',
+  'Cooler': 'https://static.wikia.nocookie.net/dragonballfighterz/images/f/f2/Cooler_Artwork.png/revision/latest/scale-to-width-down/290?cb=20180914191343',
+  'Frieza': 'https://static.wikia.nocookie.net/dragonballfighterz/images/5/59/Frieza_Artwork.png/revision/latest/scale-to-width-down/299?cb=20180902173332',
+  'Gogeta (SS4)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/f/fa/Gogeta_%28SS4%29_Artwork.png/revision/latest/scale-to-width-down/225?cb=20210312072617',
+  'Gogeta (SSGSS)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/1/1a/Gogeta_%28SSGSS%29_Artwork.png/revision/latest/scale-to-width-down/197?cb=20190924154249',
+  'Gohan (Adult)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/b/ba/Gohan_%28Adult%29_Artwork.png/revision/latest/scale-to-width-down/188?cb=20180902173350',
+  'Gohan (Teen)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/c/c6/Gohan_%28Teen%29_Artwork.png/revision/latest/scale-to-width-down/168?cb=20180914190755',
+  'Goku': 'https://static.wikia.nocookie.net/dragonballfighterz/images/e/ea/Goku_Artwork.png/revision/latest/scale-to-width-down/171?cb=20180902173423',
+  'Goku (GT)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/3/37/Goku_%28GT%29_Artwork.png/revision/latest/scale-to-width-down/261?cb=20190322172910',
+  'Goku (SSGSS)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/2/2b/Goku_%28SSGSS%29_Artwork.png/revision/latest/scale-to-width-down/130?cb=20180902173408',
+  'Goku (Super Saiyan)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/b/b1/Goku_%28Super_Saiyan%29_Artwork.png/revision/latest/scale-to-width-down/198?cb=20180914190656',
+  'Goku (Ultra Instinct)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/5/58/Goku_%28Ultra_Instinct%29_Artwork.png/revision/latest/scale-to-width-down/147?cb=20200508233232',
+  'Goku Black': 'https://static.wikia.nocookie.net/dragonballfighterz/images/d/d7/Goku_Black_Artwork.png/revision/latest/scale-to-width-down/151?cb=20211006002424',
+  'Gotenks': 'https://static.wikia.nocookie.net/dragonballfighterz/images/b/b4/Gotenks_Artwork.png/revision/latest/scale-to-width-down/212?cb=20180902173502',
+  'Hit': 'https://static.wikia.nocookie.net/dragonballfighterz/images/b/b2/Hit_Artwork.png/revision/latest/scale-to-width-down/215?cb=20180902173526',
+  'Janemba': 'https://static.wikia.nocookie.net/dragonballfighterz/images/3/33/Janemba_Artwork.png/revision/latest/scale-to-width-down/311?cb=20190805175120',
+  'Jiren': 'https://static.wikia.nocookie.net/dragonballfighterz/images/1/1e/Jiren_Artwork.png/revision/latest/scale-to-width-down/179?cb=20190131101001',
+  'Kefla': 'https://static.wikia.nocookie.net/dragonballfighterz/images/5/52/Kefla.webp/revision/latest/scale-to-width-down/152?cb=20240209150058',
+  'Kid Buu': 'https://static.wikia.nocookie.net/dragonballfighterz/images/f/f7/Kid_Buu_Artwork.png/revision/latest/scale-to-width-down/218?cb=20180902173540',
+  'Krillin': 'https://static.wikia.nocookie.net/dragonballfighterz/images/5/51/Krillin_Artwork.png/revision/latest/scale-to-width-down/250?cb=20180902173557',
+  'Majin Buu': 'https://static.wikia.nocookie.net/dragonballfighterz/images/6/62/Majin_Buu_Artwork.png/revision/latest/scale-to-width-down/400?cb=20180902173633',
+  'Master Roshi': 'https://static.wikia.nocookie.net/dragonballfighterz/images/0/09/Master_Roshi_Artwork.png/revision/latest/scale-to-width-down/153?cb=20200919034409',
+  'Nappa': 'https://static.wikia.nocookie.net/dragonballfighterz/images/7/77/Nappa_Artwork.png/revision/latest/scale-to-width-down/297?cb=20180914191045',
+  'Piccolo': 'https://static.wikia.nocookie.net/dragonballfighterz/images/e/ec/Piccolo_Artwork.png/revision/latest/scale-to-width-down/154?cb=20180914190738',
+  'Super Baby 2': 'https://static.wikia.nocookie.net/dragonballfighterz/images/c/c3/Super_Baby_2_Artwork.png/revision/latest/scale-to-width-down/187?cb=20211006002359',
+  'Tien': 'https://static.wikia.nocookie.net/dragonballfighterz/images/c/c8/Tien_Artwork.png/revision/latest/scale-to-width-down/291?cb=20180902173650',
+  'Trunks': 'https://static.wikia.nocookie.net/dragonballfighterz/images/7/76/Trunks_Artwork.png/revision/latest/scale-to-width-down/181?cb=20180902173709',
+  'Vegeta': 'https://static.wikia.nocookie.net/dragonballfighterz/images/4/4f/Vegeta_Artwork.png/revision/latest/scale-to-width-down/219?cb=20180902173806',
+  'Vegeta (SSGSS)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/9/90/Vegeta_%28SSGSS%29_Artwork.png/revision/latest/scale-to-width-down/144?cb=20180902173750',
+  'Vegeta (Super Saiyan)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/1/14/Vegeta_%28Super_Saiyan%29_Artwork.png/revision/latest/scale-to-width-down/223?cb=20180902173731',
+  'Vegito (SSGSS)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/7/72/Vegito_%28SSGSS%29_Artwork.png/revision/latest/scale-to-width-down/158?cb=20180902173822',
+  'Videl': 'https://static.wikia.nocookie.net/dragonballfighterz/images/1/19/Videl_.webp/revision/latest/scale-to-width-down/175?cb=20240209150001',
+  'Yamcha': 'https://static.wikia.nocookie.net/dragonballfighterz/images/b/b6/Yamcha_Artwork.png/revision/latest/scale-to-width-down/244?cb=20180914191111',
+  'Zamasu (Fused)': 'https://static.wikia.nocookie.net/dragonballfighterz/images/0/03/Zamasu_%28Fused%29_Artwork.png/revision/latest/scale-to-width-down/255?cb=20180902173842',
+};
+
+const Map<String, String> imagensFatalFury = {
+  'Terry Bogard': 'https://static.wikia.nocookie.net/snk/images/7/79/Ffcotwterryrender.png/revision/latest/scale-to-width-down/262?cb=20240607225413',
+  'Rock Howard': 'https://static.wikia.nocookie.net/snk/images/6/60/Ffcotwrockrender.png/revision/latest/scale-to-width-down/370?cb=20240607225013',
+  'B. Jenet': 'https://static.wikia.nocookie.net/snk/images/f/fe/Ffcotwjenetrender.png/revision/latest/scale-to-width-down/345?cb=20240607225646',
+  'Mai Shiranui': 'https://static.wikia.nocookie.net/snk/images/a/a1/Ffcotwmairender.png/revision/latest/scale-to-width-down/345?cb=20240820192527',
+  'Hotaru Futaba': 'https://static.wikia.nocookie.net/snk/images/9/9a/Ffcotwhotarurender.png/revision/latest/scale-to-width-down/202?cb=20240607230433',
+  'Hokutomaru': 'https://static.wikia.nocookie.net/snk/images/2/29/FF-COTW-Hokutomaru.png/revision/latest/scale-to-width-down/345?cb=20250409212133',
+  'Kim Dong Hwan': 'https://static.wikia.nocookie.net/snk/images/3/3a/Ffcotwdonghwanrender.png/revision/latest/scale-to-width-down/400?cb=20241027112209',
+  'Gato': 'https://static.wikia.nocookie.net/snk/images/e/e7/Ffcotwgatorender.png/revision/latest/scale-to-width-down/345?cb=20241221143549',
+  'Tizoc': 'https://static.wikia.nocookie.net/snk/images/b/b1/Ffcotwtizocgriffonrender.png/revision/latest/scale-to-width-down/345?cb=20240607230944',
+  'Preecha': 'https://static.wikia.nocookie.net/snk/images/d/db/Ffcotwpreecharender.png/revision/latest/scale-to-width-down/370?cb=20240607230204',
+  'Kevin Rian': 'https://static.wikia.nocookie.net/snk/images/f/fa/Ffcotwkevinrender.png/revision/latest/scale-to-width-down/345?cb=20240720200259',
+  'Marco Rodriguez': 'https://static.wikia.nocookie.net/snk/images/6/67/Ffcotwmarcorodriguesrender.png/revision/latest/scale-to-width-down/345?cb=20240607225915',
+  'Vox Reaper': 'https://static.wikia.nocookie.net/snk/images/5/57/FFCOTW_Vox_Reaper_Render.png/revision/latest/scale-to-width-down/297?cb=20240607225752',
+  'Kain R. Heinlein': 'https://static.wikia.nocookie.net/snk/images/b/bb/Ffcotwkainrender.png/revision/latest/scale-to-width-down/262?cb=20250216080824',
+  'Salvatore Ganacci': 'https://static.wikia.nocookie.net/snk/images/1/18/FF-COTW-SalvatoreGanacci.png/revision/latest/scale-to-width-down/278?cb=20250403175038',
+  'Cristiano Ronaldo': 'https://static.wikia.nocookie.net/snk/images/3/3e/FFCOTW_Cristiano_Ronaldo_Render.png/revision/latest/scale-to-width-down/278?cb=20250326174416',
+  'Andy Bogard': 'https://static.wikia.nocookie.net/snk/images/3/34/Ffcotwandyrender.png/revision/latest/scale-to-width-down/278?cb=20250616010616',
+  'Ken Masters': 'https://static.wikia.nocookie.net/snk/images/4/4a/FF-COTW-KenMasters.png/revision/latest/scale-to-width-down/345?cb=20250712214507',
+  'Joe Higashi': 'https://static.wikia.nocookie.net/snk/images/d/d1/Ffcotwjoerender.png/revision/latest/scale-to-width-down/345?cb=20250922131209',
+  'Chun-Li': 'https://static.wikia.nocookie.net/snk/images/4/41/Ffcotwchunlirender.png/revision/latest/scale-to-width-down/345?cb=20251031221246',
+  'Mr. Big': 'https://static.wikia.nocookie.net/snk/images/0/09/Ffcotwmrbigrender.webp/revision/latest/scale-to-width-down/345?cb=20251125143729',
+};
+
+const Map<String, String> imagensInvincible = {
+  'Invincible': 'https://static.wikia.nocookie.net/amazon-invincible/images/a/a3/Invincible_%28Mark_Grayson%29.png/revision/latest/scale-to-width-down/127?cb=20250717141424',
+  'Atom Eve': 'https://static.wikia.nocookie.net/amazon-invincible/images/7/74/Atom-EveProfile.png/revision/latest/scale-to-width-down/212?cb=20250520153227',
+  'Bulletproof': 'https://static.wikia.nocookie.net/amazon-invincible/images/c/c8/Bulletproof.png/revision/latest/scale-to-width-down/132?cb=20250506145700',
+  'Thula': 'https://static.wikia.nocookie.net/amazon-invincible/images/6/61/Viltrumite_Thula.png/revision/latest/scale-to-width-down/161?cb=20251225115314',
+  'Rex Splode': 'https://static.wikia.nocookie.net/amazon-invincible/images/8/87/Rex-SplodeProfile.png/revision/latest/scale-to-width-down/133?cb=20260319022803',
+  'Battle Beast': 'https://static.wikia.nocookie.net/amazon-invincible/images/0/02/Battle_Beast.png/revision/latest/scale-to-width-down/197?cb=20260505004520',
+  'Omni-Man': 'https://static.wikia.nocookie.net/amazon-invincible/images/8/8d/Nolan_coalition_fullbod.png/revision/latest/scale-to-width-down/137?cb=20260510211004',
+  'Cecil Stedman': 'https://static.wikia.nocookie.net/amazon-invincible/images/f/f1/CecilProfile.png/revision/latest/scale-to-width-down/154?cb=20250812171717',
+  'Monster Girl': 'https://static.wikia.nocookie.net/amazon-invincible/images/2/29/Amanda.png/revision/latest/scale-to-width-down/170?cb=20240605084122',
+  'Robot': 'https://static.wikia.nocookie.net/amazon-invincible/images/e/ed/RobotProfile.png/revision/latest/scale-to-width-down/134?cb=20260319125812',
+  'Ella Mental': 'https://static.wikia.nocookie.net/amazon-invincible/images/d/db/Ella_Mental_Invincible_VS.png/revision/latest/scale-to-width-down/274?cb=20251214204827',
+  'Anissa': 'https://static.wikia.nocookie.net/amazon-invincible/images/0/01/Viltrumite_Anissa.png/revision/latest/scale-to-width-down/155?cb=20260316093546',
+  'Lucan': 'https://static.wikia.nocookie.net/amazon-invincible/images/3/34/Viltrumite_Lucan.png/revision/latest/scale-to-width-down/159?cb=20240617102516',
+  'Powerplex': 'https://static.wikia.nocookie.net/amazon-invincible/images/5/59/Powerplex-render.png/revision/latest/scale-to-width-down/139?cb=20250715150949',
+  'Dupli-Kate': 'https://static.wikia.nocookie.net/amazon-invincible/images/8/80/Dupli-KateProfile.png/revision/latest/scale-to-width-down/98?cb=20250927153747',
+  'Allen the Alien': 'https://static.wikia.nocookie.net/amazon-invincible/images/f/fe/Screenshot_2026-04-16_162632.png/revision/latest/scale-to-width-down/326?cb=20260416232734',
+  'Titan': 'https://static.wikia.nocookie.net/amazon-invincible/images/3/3b/TitanS3-render.png/revision/latest/scale-to-width-down/153?cb=20250506150803',
+  'Conquest': 'https://static.wikia.nocookie.net/amazon-invincible/images/a/af/Viltrumite_Conquest.png/revision/latest/scale-to-width-down/186?cb=20260318003442',
+  'Universa': 'https://static.wikia.nocookie.net/amazon-invincible/images/c/c4/Universa.png/revision/latest/scale-to-width-down/400?cb=20260122201315',
+  'The Immortal': 'https://static.wikia.nocookie.net/amazon-invincible/images/e/e8/Immortal-render.png/revision/latest/scale-to-width-down/134?cb=20250401155811',
+};
+
+const Map<String, String> logosJogos = {
+  'Super Smash Bros. Ultimate': 'https://static.wikia.nocookie.net/ssb/images/2/23/Super_Smash_Bros._Ultimate.png/revision/latest/scale-to-width-down/308?cb=20180823005835',
+  'Dragon Ball FighterZ': 'https://static.wikia.nocookie.net/dragonballfighterz/images/9/92/Dragon_Ball_FighterZ_Cover.jpg/revision/latest/scale-to-width-down/455?cb=20180902175307',
+  'Fatal Fury': 'https://static.wikia.nocookie.net/snk/images/c/c9/Garou-city-of-the-wolves-18ymi.jpg/revision/latest/scale-to-width-down/375?cb=20260122142200',
+  'Invincible VS': 'https://static.wikia.nocookie.net/amazon-invincible/images/9/9e/Invincible_VS_Logo.png/revision/latest/scale-to-width-down/500?cb=20260107143744',
+};
+
+/// Roster de personagens conforme o jogo selecionado.
+List<Character> rosterDoJogo(String jogo) {
+  switch (jogo) {
+    case 'Dragon Ball FighterZ':
+      return personagensDBFZ;
+    case 'Fatal Fury':
+      return personagensFatalFury;
+    case 'Invincible VS':
+      return personagensInvincible;
+    case 'Super Smash Bros. Ultimate':
+    default:
+      return personagensSmash;
+  }
+}
+
+/// Logo/capa do jogo (URL da internet). Vazio se não houver.
+String logoDoJogo(String jogo) => logosJogos[jogo] ?? '';
+
 const List<String> stagesSmash = [
   'Battlefield',
   'Small Battlefield',
@@ -537,10 +1157,32 @@ String normalizarNomePersonagem(String nome) {
   }
 }
 
+String urlImagemPersonagem(String nome, [String jogo = 'Super Smash Bros. Ultimate']) {
+  // Jogos cujas imagens vêm de mapas diretos (nome -> URL).
+  switch (jogo) {
+    case 'Dragon Ball FighterZ':
+      return imagensDBFZ[nome.trim()] ?? '';
+    case 'Fatal Fury':
+      return imagensFatalFury[nome.trim()] ?? '';
+    case 'Invincible VS':
+      return imagensInvincible[nome.trim()] ?? '';
+  }
+
+  // Super Smash Bros. Ultimate (padrão): imagem do CDN do Fandom.
+  // (O site oficial smashbros.com bloqueia hotlink, então as imagens não
+  // carregavam; usamos o mesmo CDN confiável dos demais jogos.)
+  return imagensSmash[normalizarNomePersonagem(nome)] ?? '';
+}
+
 Character personagemPorNome(String nome) {
   final String nomeNormalizado = normalizarNomePersonagem(nome);
 
-  for (final personagem in personagensSmash) {
+  for (final personagem in [
+    ...personagensSmash,
+    ...personagensDBFZ,
+    ...personagensFatalFury,
+    ...personagensInvincible,
+  ]) {
     if (personagem.name == nomeNormalizado) {
       return personagem;
     }
@@ -867,17 +1509,35 @@ class _RootPageState extends State<RootPage> {
   }
 
   Future<void> verificarPerfil() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? perfilSalvo = prefs.getString('perfilJogador');
-
     bool existe = false;
 
-    if (perfilSalvo != null) {
-      try {
-        final perfil = PlayerProfile.fromJson(jsonDecode(perfilSalvo));
-        existe = perfil.nick.trim().isNotEmpty;
-      } catch (_) {
-        existe = false;
+    final Map<String, dynamic>? dadosArquivo = await _lerDadosArquivo();
+    if (dadosArquivo != null) {
+      final dynamic perfilRaw = dadosArquivo['perfilJogador'];
+      if (perfilRaw is Map<String, dynamic>) {
+        try {
+          final perfil = PlayerProfile.fromJson(perfilRaw);
+          existe = perfil.nick.trim().isNotEmpty;
+        } catch (_) {
+          existe = false;
+        }
+      }
+    }
+
+    if (!existe) {
+      final prefs = await SharedPreferences.getInstance();
+      final String? perfilSalvo = prefs.getString('perfilJogador');
+
+      if (perfilSalvo != null) {
+        try {
+          final dynamic decoded = jsonDecode(perfilSalvo);
+          if (decoded is Map<String, dynamic>) {
+            final perfil = PlayerProfile.fromJson(decoded);
+            existe = perfil.nick.trim().isNotEmpty;
+          }
+        } catch (_) {
+          existe = false;
+        }
       }
     }
 
@@ -890,6 +1550,12 @@ class _RootPageState extends State<RootPage> {
   Future<void> concluirPerfil(PlayerProfile perfil) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('perfilJogador', jsonEncode(perfil.toJson()));
+    await _salvarDadosArquivo({
+      'perfilJogador': perfil.toJson(),
+      'personagemAtualNome': 'Hero',
+      'personagens': [],
+      'historico': [],
+    });
 
     setState(() {
       perfilExiste = true;
@@ -907,12 +1573,170 @@ class _RootPageState extends State<RootPage> {
     }
 
     if (!perfilExiste) {
-      return CriarPerfilInicialPage(
-        onPerfilCriado: concluirPerfil,
-      );
+      return LoginPage(onPerfilCriado: concluirPerfil);
     }
 
     return const SelecionarJogoInicialPage();
+  }
+}
+
+/// Tela de entrada: boas-vindas + login com Google (com fallback manual).
+class LoginPage extends StatefulWidget {
+  final Future<void> Function(PlayerProfile perfil) onPerfilCriado;
+
+  const LoginPage({super.key, required this.onPerfilCriado});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  bool entrando = false;
+  String? erro;
+
+  Future<void> entrarComGoogle() async {
+    setState(() {
+      entrando = true;
+      erro = null;
+    });
+
+    final GoogleSignInAccount? conta = await GoogleAuthService.entrar();
+
+    if (!mounted) return;
+
+    if (conta == null) {
+      setState(() {
+        entrando = false;
+        erro = 'Não foi possível entrar com o Google. Tente novamente.';
+      });
+      return;
+    }
+
+    final String nick = (conta.displayName ?? '').trim().isNotEmpty
+        ? conta.displayName!.trim()
+        : conta.email.split('@').first;
+
+    final PlayerProfile perfil = PlayerProfile(
+      nick: nick,
+      tagSecundaria: '',
+      regiao: '',
+      jogoPrincipal: '',
+      mainPrincipal: '',
+      bio: '',
+      email: conta.email,
+      fotoUrl: conta.photoUrl ?? '',
+    );
+
+    await widget.onPerfilCriado(perfil);
+  }
+
+  void entrarSemConta() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CriarPerfilInicialPage(
+          onPerfilCriado: widget.onPerfilCriado,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool googleSuportado = GoogleAuthService.suportado;
+
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 12),
+                const Center(child: LtMark(size: 96, bordered: true)),
+                const SizedBox(height: 28),
+                const Center(child: LtLogo(scale: 1.4)),
+                const SizedBox(height: 18),
+                Text(
+                  'Seu laboratório de treino competitivo.\nAcompanhe evolução, performance e ranking.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: BrandColors.brancoSuave.withValues(alpha: 0.7),
+                      ),
+                ),
+                const SizedBox(height: 36),
+                if (erro != null) ...[
+                  Text(
+                    erro!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: BrandColors.alerta),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (googleSuportado)
+                  FilledButton.icon(
+                    onPressed: entrando ? null : entrarComGoogle,
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: BrandColors.brancoSuave,
+                      foregroundColor: BrandColors.pretoCarvao,
+                    ),
+                    icon: entrando
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.account_circle),
+                    label: Text(entrando ? 'Entrando...' : 'Entrar com Google'),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: BrandColors.grafite,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF2C2F33)),
+                    ),
+                    child: const Text(
+                      'O login com Google está disponível no app mobile '
+                      '(Android/iOS). Nesta plataforma, entre com um nick.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: BrandColors.ambarDourado),
+                    ),
+                  ),
+                const SizedBox(height: 14),
+                OutlinedButton(
+                  onPressed: entrando ? null : entrarSemConta,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: Text(
+                    googleSuportado ? 'Entrar sem conta Google' : 'Entrar com um nick',
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Center(child: ProgressBlocks(filled: 7)),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    'LT PROGRESS MARK',
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 3,
+                      color: BrandColors.brancoSuave.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -983,13 +1807,19 @@ class _CriarPerfilInicialPageState extends State<CriarPerfilInicialPage> {
     setState(() {
       salvando = false;
     });
+
+    // Quando esta tela foi aberta a partir do login, fecha para revelar
+    // a seleção de jogo já montada pela RootPage.
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Criar perfil'),
+        title: const LtLogo(scale: 0.85),
         centerTitle: true,
       ),
       body: Center(
@@ -1000,6 +1830,8 @@ class _CriarPerfilInicialPageState extends State<CriarPerfilInicialPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Center(child: LtLogo(scale: 1.6)),
+                const SizedBox(height: 28),
                 Text(
                   'Bem-vindo ao LabTracker',
                   style: Theme.of(context).textTheme.headlineMedium,
@@ -1072,7 +1904,7 @@ class SelecionarJogoInicialPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Escolher jogo'),
+        title: const LtLogo(scale: 0.85),
         centerTitle: true,
       ),
       body: Padding(
@@ -1086,7 +1918,7 @@ class SelecionarJogoInicialPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Por enquanto o tracker completo está pronto para Smash. Os outros jogos já ficam preparados para expansão.',
+              'Cada jogo tem seu próprio elenco e imagens. Escolha por onde começar.',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
@@ -1095,19 +1927,28 @@ class SelecionarJogoInicialPage extends StatelessWidget {
                 itemCount: jogosDisponiveis.length,
                 itemBuilder: (context, index) {
                   final jogo = jogosDisponiveis[index];
-                  final bool completo = jogo == 'Super Smash Bros. Ultimate';
+                  final String logo = logoDoJogo(jogo);
+                  final int totalPersonagens = rosterDoJogo(jogo).length;
 
                   return Card(
                     child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text(jogo[0]),
+                      leading: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: logo.isEmpty
+                              ? CircleAvatar(child: Text(jogo[0]))
+                              : Image.network(
+                                  logo,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) =>
+                                      CircleAvatar(child: Text(jogo[0])),
+                                ),
+                        ),
                       ),
                       title: Text(jogo),
-                      subtitle: Text(
-                        completo
-                            ? 'Tracker completo disponível'
-                            : 'Base preparada para update futuro',
-                      ),
+                      subtitle: Text('$totalPersonagens personagens'),
                       trailing: const Icon(Icons.arrow_forward_ios),
                       onTap: () {
                         abrirSelecaoPersonagem(context, jogo);
@@ -1168,7 +2009,7 @@ class SelecionarPersonagemInicialPage extends StatelessWidget {
             const SizedBox(height: 24),
             Expanded(
               child: GridView.builder(
-                itemCount: personagensSmash.length,
+                itemCount: rosterDoJogo(jogoSelecionado).length,
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: 230,
                   mainAxisSpacing: 16,
@@ -1176,7 +2017,7 @@ class SelecionarPersonagemInicialPage extends StatelessWidget {
                   childAspectRatio: 1.55,
                 ),
                 itemBuilder: (context, index) {
-                  final personagem = personagensSmash[index];
+                  final personagem = rosterDoJogo(jogoSelecionado)[index];
 
                   return InkWell(
                     borderRadius: BorderRadius.circular(16),
@@ -1188,15 +2029,11 @@ class SelecionarPersonagemInicialPage extends StatelessWidget {
                         padding: const EdgeInsets.all(12),
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              radius: 26,
-                              child: Text(
-                                personagem.initial,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            CharacterAvatar(
+                              personagem: personagem.name,
+                              jogo: jogoSelecionado,
+                              size: 52,
+                              initialOverride: personagem.initial,
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -1212,7 +2049,7 @@ class SelecionarPersonagemInicialPage extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(personagem.rank),
+                                  RankBadge(rank: personagem.rank),
                                   Text('${personagem.pdl} PDL'),
                                 ],
                               ),
@@ -1249,19 +2086,27 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   PlayerProfile perfil = perfilPadrao;
 
-  Map<String, Character> personagens = {
-    for (final personagem in personagensSmash) personagem.name: personagem,
-  };
+  late Map<String, Character> personagens;
 
-  String personagemAtualNome = 'Hero';
+  late String personagemAtualNome;
 
   List<PartidaRegistrada> historico = [];
 
   bool carregando = true;
 
+  /// Nome do personagem padrão (primeiro do roster do jogo atual).
+  String get personagemPadraoDoJogo {
+    final roster = rosterDoJogo(widget.jogoAtual);
+    return roster.isNotEmpty ? roster.first.name : '';
+  }
+
   @override
   void initState() {
     super.initState();
+    personagens = {
+      for (final personagem in rosterDoJogo(widget.jogoAtual)) personagem.name: personagem,
+    };
+    personagemAtualNome = widget.personagemInicialNome ?? personagemPadraoDoJogo;
     carregarDados();
   }
 
@@ -1269,47 +2114,139 @@ class _HomePageState extends State<HomePage> {
     return personagens[personagemAtualNome]!;
   }
 
-  Future<void> carregarDados() async {
-    final prefs = await SharedPreferences.getInstance();
+  Map<String, dynamic> gerarDadosPersistidos() {
+    return {
+      'perfilJogador': perfil.toJson(),
+      'jogoAtual': widget.jogoAtual,
+      'personagemAtualNome': personagemAtualNome,
+      'personagens': personagens.values.map((personagem) => personagem.toJson()).toList(),
+      'historico': historico.map((partida) => partida.toJson()).toList(),
+    };
+  }
 
-    final String? personagensSalvos = prefs.getString('personagens');
-    final String? historicoSalvo = prefs.getString('historico');
-    final String? personagemAtualSalvo = prefs.getString('personagemAtualNome');
-    final String? perfilSalvo = prefs.getString('perfilJogador');
+  void _aplicarDadosMap(Map<String, dynamic> dados) {
+    final dynamic personagensRaw = dados['personagens'];
+    final dynamic historicoRaw = dados['historico'];
+    final dynamic personagemAtualRaw = dados['personagemAtualNome'];
+    final dynamic perfilRaw = dados['perfilJogador'];
 
-    if (personagensSalvos != null) {
-      final List<dynamic> listaPersonagens = jsonDecode(personagensSalvos);
+    personagens = {
+      for (final personagem in rosterDoJogo(widget.jogoAtual)) personagem.name: personagem,
+    };
 
-      personagens = {
-        for (final item in listaPersonagens)
-          Character.fromJson(item).name: Character.fromJson(item),
-      };
-
-      for (final personagemBase in personagensSmash) {
-        personagens.putIfAbsent(personagemBase.name, () => personagemBase);
+    if (personagensRaw is List) {
+      final Map<String, Character> importados = {};
+      for (final item in personagensRaw) {
+        if (item is Map<String, dynamic>) {
+          try {
+            final Character personagem = Character.fromJson(item);
+            importados[personagem.name] = personagem;
+          } catch (_) {}
+        }
       }
+
+      personagens.addAll(importados);
     }
 
-    if (historicoSalvo != null) {
-      final List<dynamic> listaHistorico = jsonDecode(historicoSalvo);
-
-      historico = listaHistorico
-          .map((item) => PartidaRegistrada.fromJson(item))
-          .toList();
+    for (final personagemBase in rosterDoJogo(widget.jogoAtual)) {
+      personagens.putIfAbsent(personagemBase.name, () => personagemBase);
     }
 
-    if (personagemAtualSalvo != null &&
-        personagens.containsKey(personagemAtualSalvo)) {
-      personagemAtualNome = personagemAtualSalvo;
+    historico = [];
+    if (historicoRaw is List) {
+      final List<PartidaRegistrada> importadas = [];
+      for (final item in historicoRaw) {
+        if (item is Map<String, dynamic>) {
+          try {
+            importadas.add(PartidaRegistrada.fromJson(item));
+          } catch (_) {}
+        }
+      }
+      historico = importadas;
+    }
+
+    if (personagemAtualRaw is String && personagens.containsKey(personagemAtualRaw)) {
+      personagemAtualNome = personagemAtualRaw;
+    }
+
+    if (perfilRaw is Map<String, dynamic>) {
+      try {
+        perfil = PlayerProfile.fromJson(perfilRaw);
+      } catch (_) {}
+    }
+  }
+
+  Future<void> carregarDados() async {
+    bool carregouArquivo = false;
+    final Map<String, dynamic>? dadosArquivo = await _lerDadosArquivo();
+    if (dadosArquivo != null) {
+      _aplicarDadosMap(dadosArquivo);
+      carregouArquivo = true;
+    }
+
+    if (!carregouArquivo) {
+      final prefs = await SharedPreferences.getInstance();
+
+      final String? personagensSalvos = prefs.getString('personagens');
+      final String? historicoSalvo = prefs.getString('historico');
+      final String? personagemAtualSalvo = prefs.getString('personagemAtualNome');
+      final String? perfilSalvo = prefs.getString('perfilJogador');
+
+      if (personagensSalvos != null) {
+        try {
+          final dynamic decoded = jsonDecode(personagensSalvos);
+          if (decoded is List) {
+            final Map<String, Character> importados = {};
+            for (final item in decoded) {
+              if (item is Map<String, dynamic>) {
+                try {
+                  final Character personagem = Character.fromJson(item);
+                  importados[personagem.name] = personagem;
+                } catch (_) {}
+              }
+            }
+
+            personagens.addAll(importados);
+          }
+        } catch (_) {}
+
+        for (final personagemBase in rosterDoJogo(widget.jogoAtual)) {
+          personagens.putIfAbsent(personagemBase.name, () => personagemBase);
+        }
+      }
+
+      if (historicoSalvo != null) {
+        try {
+          final dynamic decoded = jsonDecode(historicoSalvo);
+          if (decoded is List) {
+            historico = decoded
+                .whereType<Map<String, dynamic>>()
+                .map((item) => PartidaRegistrada.fromJson(item))
+                .toList();
+          }
+        } catch (_) {
+          historico = [];
+        }
+      }
+
+      if (personagemAtualSalvo != null &&
+          personagens.containsKey(personagemAtualSalvo)) {
+        personagemAtualNome = personagemAtualSalvo;
+      }
+
+      if (perfilSalvo != null) {
+        try {
+          final dynamic decoded = jsonDecode(perfilSalvo);
+          if (decoded is Map<String, dynamic>) {
+            perfil = PlayerProfile.fromJson(decoded);
+          }
+        } catch (_) {}
+      }
     }
 
     if (widget.personagemInicialNome != null &&
         personagens.containsKey(widget.personagemInicialNome)) {
       personagemAtualNome = widget.personagemInicialNome!;
-    }
-
-    if (perfilSalvo != null) {
-      perfil = PlayerProfile.fromJson(jsonDecode(perfilSalvo));
     }
 
     recalcularPersonagensPeloHistorico();
@@ -1322,18 +2259,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> salvarDados() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final String personagensJson = jsonEncode(
-      personagens.values.map((personagem) => personagem.toJson()).toList(),
-    );
+    await _salvarDadosArquivo(gerarDadosPersistidos());
 
-    final String historicoJson = jsonEncode(
-      historico.map((partida) => partida.toJson()).toList(),
-    );
-
-    await prefs.setString('personagens', personagensJson);
-    await prefs.setString('historico', historicoJson);
     await prefs.setString('personagemAtualNome', personagemAtualNome);
     await prefs.setString('perfilJogador', jsonEncode(perfil.toJson()));
+    await prefs.remove('personagens');
+    await prefs.remove('historico');
   }
 
   String get pastaBackupPath {
@@ -1415,31 +2346,11 @@ class _HomePageState extends State<HomePage> {
       throw Exception('Esse arquivo não parece ser um backup válido do LabTracker.');
     }
 
-    final List<dynamic> personagensBackup = dados['personagens'] ?? [];
-    final List<dynamic> historicoBackup = dados['historico'] ?? [];
-    final String personagemAtualBackup = dados['personagemAtualNome'] ?? 'Hero';
-    final Map<String, dynamic>? perfilBackup = dados['perfilJogador'];
-
     setState(() {
-      personagens = {
-        for (final item in personagensBackup)
-          Character.fromJson(item).name: Character.fromJson(item),
-      };
+      _aplicarDadosMap(dados);
 
-      for (final personagemBase in personagensSmash) {
-        personagens.putIfAbsent(personagemBase.name, () => personagemBase);
-      }
-
-      historico = historicoBackup
-          .map((item) => PartidaRegistrada.fromJson(item))
-          .toList();
-
-      personagemAtualNome = personagens.containsKey(personagemAtualBackup)
-          ? personagemAtualBackup
-          : 'Hero';
-
-      if (perfilBackup != null) {
-        perfil = PlayerProfile.fromJson(perfilBackup);
+      if (!personagens.containsKey(personagemAtualNome)) {
+        personagemAtualNome = personagemPadraoDoJogo;
       }
 
       recalcularPersonagensPeloHistorico();
@@ -1452,7 +2363,7 @@ class _HomePageState extends State<HomePage> {
 
   void recalcularPersonagensPeloHistorico() {
     final Map<String, Character> novosPersonagens = {
-      for (final personagem in personagensSmash) personagem.name: personagem,
+      for (final personagem in rosterDoJogo(widget.jogoAtual)) personagem.name: personagem,
     };
 
     final List<PartidaRegistrada> partidasEmOrdemCronologica =
@@ -1515,6 +2426,8 @@ class _HomePageState extends State<HomePage> {
 
     if (confirmar != true) return;
 
+    await _removerDadosArquivo();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('personagens');
     await prefs.remove('historico');
@@ -1523,10 +2436,10 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       personagens = {
-        for (final personagem in personagensSmash) personagem.name: personagem,
+        for (final personagem in rosterDoJogo(widget.jogoAtual)) personagem.name: personagem,
       };
       historico = [];
-      personagemAtualNome = 'Hero';
+      personagemAtualNome = personagemPadraoDoJogo;
       perfil = perfilPadrao;
     });
   }
@@ -1538,6 +2451,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => SelecionarPersonagemPage(
           titulo: 'Escolher seu personagem',
           personagens: personagens.values.toList(),
+          jogoAtual: widget.jogoAtual,
         ),
       ),
     );
@@ -1557,6 +2471,7 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(
         builder: (context) => RegistrarPartidaPage(
           personagemAtual: personagemAtual,
+          jogo: widget.jogoAtual,
         ),
       ),
     );
@@ -1578,6 +2493,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => HistoricoPage(
           historico: historico,
           personagemAtual: personagemAtual,
+          jogo: widget.jogoAtual,
         ),
       ),
     );
@@ -1598,6 +2514,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => EstatisticasPage(
           personagemAtual: personagemAtual,
           historico: historico,
+          jogoAtual: widget.jogoAtual,
         ),
       ),
     );
@@ -1610,6 +2527,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => ResumoTreinoPage(
           personagemAtual: personagemAtual,
           historico: historico,
+          jogoAtual: widget.jogoAtual,
         ),
       ),
     );
@@ -1671,7 +2589,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LabTracker'),
+        title: const LtLogo(scale: 0.8, showProgress: false),
         centerTitle: true,
         actions: [
           IconButton(
@@ -1713,15 +2631,11 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 34,
-                      child: Text(
-                        personagem.initial,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    CharacterAvatar(
+                      personagem: personagem.name,
+                      jogo: widget.jogoAtual,
+                      size: 68,
+                      initialOverride: personagem.initial,
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -1738,7 +2652,12 @@ class _HomePageState extends State<HomePage> {
                           const SizedBox(height: 12),
                           Text('Jogo: ${widget.jogoAtual}'),
                           Text('Personagem: ${personagem.name}'),
-                          Text('Rank: ${personagem.rank}'),
+                          Row(
+                            children: [
+                              const Text('Rank: '),
+                              RankBadge(rank: personagem.rank),
+                            ],
+                          ),
                           Text('PDL: ${personagem.pdl}'),
                         ],
                       ),
@@ -1868,14 +2787,182 @@ class InfoBox extends StatelessWidget {
   }
 }
 
+class CharacterAvatar extends StatelessWidget {
+  final String personagem;
+  final String jogo;
+  final double size;
+  final String? initialOverride;
+
+  const CharacterAvatar({
+    super.key,
+    required this.personagem,
+    required this.jogo,
+    this.size = 52,
+    this.initialOverride,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final String imageUrl = urlImagemPersonagem(personagem, jogo);
+    final String initial = initialOverride ??
+        (personagem.isNotEmpty ? personagem[0].toUpperCase() : '?');
+
+    Widget fallback() => Center(
+          child: Text(
+            initial,
+            style: TextStyle(
+              fontSize: size * 0.45,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size / 2),
+        child: Container(
+          color: scheme.surfaceContainerHighest,
+          child: imageUrl.isEmpty
+              ? fallback()
+              : Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, __, ___) => fallback(),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class RankBadge extends StatelessWidget {
+  final String rank;
+
+  const RankBadge({
+    super.key,
+    required this.rank,
+  });
+
+  List<Color> get rankColors {
+    if (rank.contains('Starter')) return [Colors.brown.shade400, Colors.brown.shade700];
+    if (rank.contains('For Fun')) return [Colors.grey.shade400, Colors.grey.shade600];
+    if (rank.contains('Quick Play')) return [Colors.amber.shade400, Colors.orange.shade700];
+    if (rank.contains('Brawl')) return [Colors.teal.shade300, Colors.blueGrey.shade600];
+    if (rank.contains('For Glory')) return [Colors.purple.shade400, Colors.deepPurple.shade800];
+    if (rank.contains('Melee')) return [Colors.redAccent.shade400, Colors.red.shade900];
+    if (rank.contains('Elite')) return [Colors.yellowAccent.shade400, Colors.deepOrange.shade600];
+    return [Colors.blue, Colors.blue.shade800];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = rankColors;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: colors.last.withOpacity(0.6),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.network(
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Super_Smash_Bros._Cross.svg/120px-Super_Smash_Bros._Cross.svg.png',
+            width: 14,
+            height: 14,
+            color: Colors.white,
+            errorBuilder: (_, __, ___) => const Icon(Icons.star, size: 14, color: Colors.white),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            rank.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+              fontSize: 11,
+              shadows: [
+                Shadow(color: Colors.black54, blurRadius: 2, offset: Offset(1, 1)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MatchupHeader extends StatelessWidget {
+  final String jogo;
+  final String personagem;
+  final String adversario;
+  final double avatarSize;
+  final TextStyle? style;
+
+  const MatchupHeader({
+    super.key,
+    required this.jogo,
+    required this.personagem,
+    required this.adversario,
+    this.avatarSize = 30,
+    this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        CharacterAvatar(
+          personagem: personagem,
+          jogo: jogo,
+          size: avatarSize,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '$personagem vs $adversario',
+            style: style,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 8),
+        CharacterAvatar(
+          personagem: adversario,
+          jogo: jogo,
+          size: avatarSize,
+        ),
+      ],
+    );
+  }
+}
+
 class SelecionarPersonagemPage extends StatelessWidget {
   final String titulo;
   final List<Character> personagens;
+  final String jogoAtual;
 
   const SelecionarPersonagemPage({
     super.key,
     required this.titulo,
     this.personagens = personagensSmash,
+    this.jogoAtual = 'Super Smash Bros. Ultimate',
   });
 
   @override
@@ -1908,15 +2995,11 @@ class SelecionarPersonagemPage extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 26,
-                        child: Text(
-                          personagem.initial,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      CharacterAvatar(
+                        personagem: personagem.name,
+                        jogo: jogoAtual,
+                        size: 52,
+                        initialOverride: personagem.initial,
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -1932,7 +3015,7 @@ class SelecionarPersonagemPage extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(personagem.rank),
+                            RankBadge(rank: personagem.rank),
                             Text('${personagem.pdl} PDL'),
                           ],
                         ),
@@ -1951,10 +3034,12 @@ class SelecionarPersonagemPage extends StatelessWidget {
 
 class RegistrarPartidaPage extends StatefulWidget {
   final Character personagemAtual;
+  final String jogo;
 
   const RegistrarPartidaPage({
     super.key,
     required this.personagemAtual,
+    this.jogo = 'Super Smash Bros. Ultimate',
   });
 
   @override
@@ -2005,8 +3090,10 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
     final Character? adversarioEscolhido = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SelecionarPersonagemPage(
+        builder: (context) => SelecionarPersonagemPage(
           titulo: 'Escolher personagem adversário',
+          personagens: rosterDoJogo(widget.jogo),
+          jogoAtual: widget.jogo,
         ),
       ),
     );
@@ -2237,16 +3324,23 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 28,
-                      child: Text(
-                        inicialAdversario,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    personagemAdversario == null
+                        ? CircleAvatar(
+                            radius: 28,
+                            child: Text(
+                              inicialAdversario,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : CharacterAvatar(
+                            personagem: personagemAdversario!.name,
+                            jogo: widget.jogo,
+                            size: 56,
+                            initialOverride: personagemAdversario!.initial,
+                          ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
@@ -2476,11 +3570,13 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
 class HistoricoPage extends StatefulWidget {
   final List<PartidaRegistrada> historico;
   final Character personagemAtual;
+  final String jogo;
 
   const HistoricoPage({
     super.key,
     required this.historico,
     required this.personagemAtual,
+    this.jogo = 'Super Smash Bros. Ultimate',
   });
 
   @override
@@ -2624,6 +3720,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
       MaterialPageRoute(
         builder: (context) => DetalhesPartidaPage(
           partida: partida,
+          jogo: widget.jogo,
         ),
       ),
     );
@@ -2886,10 +3983,12 @@ class _HistoricoPageState extends State<HistoricoPage> {
 
 class DetalhesPartidaPage extends StatelessWidget {
   final PartidaRegistrada partida;
+  final String jogo;
 
   const DetalhesPartidaPage({
     super.key,
     required this.partida,
+    this.jogo = 'Super Smash Bros. Ultimate',
   });
 
   Future<void> confirmarApagar(BuildContext context) async {
@@ -2930,6 +4029,7 @@ class DetalhesPartidaPage extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => EditarPartidaPage(
           partida: partida,
+          jogo: jogo,
         ),
       ),
     );
@@ -3084,10 +4184,12 @@ class DetalhesPartidaPage extends StatelessWidget {
 
 class EditarPartidaPage extends StatefulWidget {
   final PartidaRegistrada partida;
+  final String jogo;
 
   const EditarPartidaPage({
     super.key,
     required this.partida,
+    this.jogo = 'Super Smash Bros. Ultimate',
   });
 
   @override
@@ -3182,8 +4284,10 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
     final Character? personagemEscolhido = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SelecionarPersonagemPage(
+        builder: (context) => SelecionarPersonagemPage(
           titulo: 'Editar seu personagem',
+          personagens: rosterDoJogo(widget.jogo),
+          jogoAtual: widget.jogo,
         ),
       ),
     );
@@ -3199,8 +4303,10 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
     final Character? adversarioEscolhido = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SelecionarPersonagemPage(
+        builder: (context) => SelecionarPersonagemPage(
           titulo: 'Editar personagem adversário',
+          personagens: rosterDoJogo(widget.jogo),
+          jogoAtual: widget.jogo,
         ),
       ),
     );
@@ -3338,15 +4444,11 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 28,
-                      child: Text(
-                        personagemJogador.initial,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    CharacterAvatar(
+                      personagem: personagemJogador.name,
+                      jogo: widget.jogo,
+                      size: 56,
+                      initialOverride: personagemJogador.initial,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -3425,16 +4527,23 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 28,
-                      child: Text(
-                        inicialAdversario,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    personagemAdversario == null
+                        ? CircleAvatar(
+                            radius: 28,
+                            child: Text(
+                              inicialAdversario,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : CharacterAvatar(
+                            personagem: personagemAdversario!.name,
+                            jogo: widget.jogo,
+                            size: 56,
+                            initialOverride: personagemAdversario!.initial,
+                          ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
@@ -3657,11 +4766,13 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
 class ResumoTreinoPage extends StatelessWidget {
   final Character personagemAtual;
   final List<PartidaRegistrada> historico;
+  final String jogoAtual;
 
   const ResumoTreinoPage({
     super.key,
     required this.personagemAtual,
     required this.historico,
+    required this.jogoAtual,
   });
 
   String gerarSugestaoTreino({
@@ -3926,11 +5037,27 @@ class ResumoTreinoPage extends StatelessWidget {
                               final String sinalMatchup =
                                   matchup.saldoPdl >= 0 ? '+' : '';
 
-                              return LinhaEstatistica(
-                                titulo:
-                                    '${personagemAtual.name} vs ${matchup.personagemAdversario}',
-                                valor:
-                                    '${matchup.total}x • ${matchup.winrate.toStringAsFixed(1)}% • $sinalMatchup${matchup.saldoPdl} PDL',
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: MatchupHeader(
+                                        jogo: jogoAtual,
+                                        personagem: personagemAtual.name,
+                                        adversario: matchup.personagemAdversario,
+                                        avatarSize: 26,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      '${matchup.total}x • ${matchup.winrate.toStringAsFixed(1)}% • $sinalMatchup${matchup.saldoPdl} PDL',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               );
                             }),
                         ],
@@ -3977,11 +5104,13 @@ class ResumoTreinoPage extends StatelessWidget {
 class EstatisticasPage extends StatelessWidget {
   final Character personagemAtual;
   final List<PartidaRegistrada> historico;
+  final String jogoAtual;
 
   const EstatisticasPage({
     super.key,
     required this.personagemAtual,
     required this.historico,
+    required this.jogoAtual,
   });
 
   void abrirMatchupStats(
@@ -3994,6 +5123,7 @@ class EstatisticasPage extends StatelessWidget {
         builder: (context) => MatchupStatsPage(
           personagemAtual: personagemAtual,
           partidasDoPersonagem: partidasDoPersonagem,
+          jogoAtual: jogoAtual,
         ),
       ),
     );
@@ -4105,9 +5235,15 @@ class EstatisticasPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    '${personagemAtual.rank} • ${personagemAtual.pdl} PDL',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                  Row(
+                    children: [
+                      RankBadge(rank: personagemAtual.rank),
+                      const SizedBox(width: 10),
+                      Text(
+                        '${personagemAtual.pdl} PDL',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
                   Card(
@@ -4338,18 +5474,30 @@ class EstatisticasPage extends StatelessWidget {
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${partida.personagemJogador} vs ${partida.personagemAdversario} • ${partida.nickAdversario} • ${partida.resultado}',
-                                    ),
+                                  MatchupHeader(
+                                    jogo: jogoAtual,
+                                    personagem: partida.personagemJogador,
+                                    adversario: partida.personagemAdversario,
+                                    avatarSize: 26,
                                   ),
-                                  Text(
-                                    '$sinalPdl${partida.pdlGerado} PDL',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${partida.nickAdversario} • ${partida.resultado}',
+                                        ),
+                                      ),
+                                      Text(
+                                        '$sinalPdl${partida.pdlGerado} PDL',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -4369,11 +5517,13 @@ class EstatisticasPage extends StatelessWidget {
 class MatchupStatsPage extends StatelessWidget {
   final Character personagemAtual;
   final List<PartidaRegistrada> partidasDoPersonagem;
+  final String jogoAtual;
 
   const MatchupStatsPage({
     super.key,
     required this.personagemAtual,
     required this.partidasDoPersonagem,
+    required this.jogoAtual,
   });
 
   @override
@@ -4407,8 +5557,11 @@ class MatchupStatsPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${personagemAtual.name} vs ${matchup.personagemAdversario}',
+                        MatchupHeader(
+                          jogo: jogoAtual,
+                          personagem: personagemAtual.name,
+                          adversario: matchup.personagemAdversario,
+                          avatarSize: 34,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
