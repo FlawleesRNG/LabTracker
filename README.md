@@ -1,17 +1,21 @@
 # labtracker
 
-A new Flutter project.
+Primeira versão Alpha do LabTracker.
 
-## Getting Started
+Inclui:
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Perfil simples do jogador
+Seleção de jogo
+Roster completa de Super Smash Bros. Ultimate
+Registro de partidas
+Sistema de PDL personalizado
+Ranks personalizados
+Histórico com filtros avançados
+Estatísticas gerais
+Matchup Stats
+Leitura automática de pontos fortes/fracos
+Observações por partida
+Edição e exclusão de partidas
+Backup local em JSON
+Observação:
+Esta é uma versão Alpha. Bugs podem acontecer.
