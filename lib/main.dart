@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const LabTrackerApp());
@@ -998,13 +999,39 @@ const List<String> stagesSmash = [
   "Yoshi's Story",
 ];
 
+const List<String> opcoesMovimentosSmash = [
+  'Jab',
+  'Dash attack',
+  'F-tilt',
+  'Up tilt',
+  'Down tilt',
+  'F-smash',
+  'Up smash',
+  'Down smash',
+  'Nair',
+  'Fair',
+  'Bair',
+  'Up air',
+  'Down air',
+  'Neutral B',
+  'Side B',
+  'Up B',
+  'Down B',
+  'Grab',
+  'Forward throw',
+  'Back throw',
+  'Up throw',
+  'Down throw',
+  'Shield break',
+];
+
 const List<String> formasDeKill = [
   'Kill confirm',
   'Edgeguard',
   'Ledgetrap',
   'Read',
   'Punish',
-  'Smash attack',
+  ...opcoesMovimentosSmash,
   'Magia',
   'Spike',
   'Gimp',
@@ -1020,6 +1047,10 @@ const List<String> formasDeMorte = [
   'Ledgetrap sofrido',
   'Morreu cedo',
   'Read do adversário',
+  ...opcoesMovimentosSmash,
+  'Magia',
+  'Spike',
+  'Gimp',
   'Outro',
 ];
 
@@ -1075,8 +1106,33 @@ int bonusPorKill(String formaDeKill) {
       return 5;
     case 'Punish':
       return 3;
-    case 'Smash attack':
+    case 'F-smash':
+    case 'Up smash':
+    case 'Down smash':
+    case 'Shield break':
+      return 4;
+    case 'Back throw':
+    case 'Forward throw':
+    case 'Up throw':
+    case 'Down throw':
+    case 'Bair':
+    case 'Up air':
+    case 'Down air':
+      return 3;
+    case 'F-tilt':
+    case 'Up tilt':
+    case 'Down tilt':
+    case 'Fair':
+    case 'Nair':
+    case 'Dash attack':
+    case 'Side B':
+    case 'Up B':
+    case 'Down B':
+    case 'Neutral B':
       return 2;
+    case 'Jab':
+    case 'Grab':
+      return 1;
     case 'Magia':
       return 3;
     case 'Spike':
@@ -1110,6 +1166,36 @@ int penalidadePorMorte(String formaDeMorte) {
       return -5;
     case 'Read do adversário':
       return -4;
+    case 'F-smash':
+    case 'Up smash':
+    case 'Down smash':
+    case 'Shield break':
+    case 'Spike':
+    case 'Gimp':
+      return -5;
+    case 'Back throw':
+    case 'Forward throw':
+    case 'Up throw':
+    case 'Down throw':
+    case 'Bair':
+    case 'Up air':
+    case 'Down air':
+    case 'Magia':
+      return -4;
+    case 'F-tilt':
+    case 'Up tilt':
+    case 'Down tilt':
+    case 'Fair':
+    case 'Nair':
+    case 'Dash attack':
+    case 'Side B':
+    case 'Up B':
+    case 'Down B':
+    case 'Neutral B':
+      return -3;
+    case 'Jab':
+    case 'Grab':
+      return -2;
     case 'Outro':
       return -2;
     case 'Não morreu':
@@ -1408,6 +1494,10 @@ List<String> gerarOpcoesFiltro(List<String> itens) {
   opcoes.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
   return ['Todos', ...opcoes];
+}
+
+List<String> gerarSugestoesPlayers(List<PartidaRegistrada> partidas) {
+  return gerarRankingPlayers(partidas).map((player) => player.nick).toList();
 }
 
 String formatarSaldo(int valor) {
@@ -1965,7 +2055,91 @@ class SelecionarJogoInicialPage extends StatelessWidget {
   }
 }
 
-class SelecionarPersonagemInicialPage extends StatelessWidget {
+
+class _CharacterSelectionCard extends StatelessWidget {
+  final Character personagem;
+  final String jogo;
+  final double avatarSize;
+  final bool isMobile;
+  final VoidCallback onTap;
+
+  const _CharacterSelectionCard({
+    required this.personagem,
+    required this.jogo,
+    required this.avatarSize,
+    required this.isMobile,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: EdgeInsets.all(isMobile ? 10 : 12),
+          child: Row(
+            children: [
+              CharacterAvatar(
+                personagem: personagem.name,
+                jogo: jogo,
+                size: avatarSize,
+                initialOverride: personagem.initial,
+              ),
+              SizedBox(width: isMobile ? 10 : 14),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        personagem.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: isMobile ? 14 : 17,
+                          fontWeight: FontWeight.bold,
+                          height: 1.05,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: isMobile ? 3 : 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isMobile ? 74 : 110,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: RankBadge(rank: personagem.rank),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${personagem.pdl} PDL',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: isMobile ? 12 : 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SelecionarPersonagemInicialPage extends StatefulWidget {
   final String jogoSelecionado;
 
   const SelecionarPersonagemInicialPage({
@@ -1973,12 +2147,21 @@ class SelecionarPersonagemInicialPage extends StatelessWidget {
     required this.jogoSelecionado,
   });
 
+  @override
+  State<SelecionarPersonagemInicialPage> createState() =>
+      _SelecionarPersonagemInicialPageState();
+}
+
+class _SelecionarPersonagemInicialPageState
+    extends State<SelecionarPersonagemInicialPage> {
+  String termoBusca = '';
+
   void entrarNoTracker(BuildContext context, Character personagem) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => HomePage(
-          jogoAtual: jogoSelecionado,
+          jogoAtual: widget.jogoSelecionado,
           personagemInicialNome: personagem.name,
         ),
       ),
@@ -1987,83 +2170,82 @@ class SelecionarPersonagemInicialPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<Character> personagensFiltrados = rosterDoJogo(widget.jogoSelecionado)
+        .where((personagem) {
+          final String termo = termoBusca.trim().toLowerCase();
+          if (termo.isEmpty) return true;
+
+          return personagem.name.toLowerCase().contains(termo) ||
+              personagem.initial.toLowerCase().contains(termo);
+        })
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Escolher personagem'),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              jogoSelecionado,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Escolha o personagem que você vai usar nesta sessão.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: GridView.builder(
-                itemCount: rosterDoJogo(jogoSelecionado).length,
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 230,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 1.55,
-                ),
-                itemBuilder: (context, index) {
-                  final personagem = rosterDoJogo(jogoSelecionado)[index];
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isMobile = constraints.maxWidth < 600;
+          final double horizontalPadding = isMobile ? 20 : 24;
+          final double avatarSize = isMobile ? 42 : 52;
 
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      entrarNoTracker(context, personagem);
-                    },
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            CharacterAvatar(
-                              personagem: personagem.name,
-                              jogo: jogoSelecionado,
-                              size: 52,
-                              initialOverride: personagem.initial,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    personagem.name,
-                                    style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  RankBadge(rank: personagem.rank),
-                                  Text('${personagem.pdl} PDL'),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+          return Padding(
+            padding: EdgeInsets.all(horizontalPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.jogoSelecionado,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Escolha o personagem que você vai usar nesta sessão.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Pesquisar personagem',
+                    hintText: 'Ex: Hero, Cloud, Terry...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      termoBusca = valor;
+                    });
+                  },
+                ),
+                const SizedBox(height: 18),
+                Expanded(
+                  child: GridView.builder(
+                    itemCount: personagensFiltrados.length,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: isMobile ? 180 : 230,
+                      mainAxisSpacing: isMobile ? 12 : 16,
+                      crossAxisSpacing: isMobile ? 12 : 16,
+                      childAspectRatio: isMobile ? 1.30 : 1.55,
                     ),
-                  );
-                },
-              ),
+                    itemBuilder: (context, index) {
+                      final personagem = personagensFiltrados[index];
+
+                      return _CharacterSelectionCard(
+                        personagem: personagem,
+                        jogo: widget.jogoSelecionado,
+                        avatarSize: avatarSize,
+                        isMobile: isMobile,
+                        onTap: () => entrarNoTracker(context, personagem),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -2472,6 +2654,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => RegistrarPartidaPage(
           personagemAtual: personagemAtual,
           jogo: widget.jogoAtual,
+          sugestoesPlayers: gerarSugestoesPlayers(historico),
         ),
       ),
     );
@@ -2627,47 +2810,103 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 32),
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    CharacterAvatar(
-                      personagem: personagem.name,
-                      jogo: widget.jogoAtual,
-                      size: 68,
-                      initialOverride: personagem.initial,
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final bool isMobileCard = constraints.maxWidth < 520;
+                  final double avatarSize = isMobileCard ? 56 : 68;
+
+                  final Widget avatar = CharacterAvatar(
+                    personagem: personagem.name,
+                    jogo: widget.jogoAtual,
+                    size: avatarSize,
+                    initialOverride: personagem.initial,
+                  );
+
+                  final Widget perfilInfo = Column(
+                    crossAxisAlignment: isMobileCard
+                        ? CrossAxisAlignment.center
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Perfil atual',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: isMobileCard ? TextAlign.center : TextAlign.start,
+                        style: TextStyle(
+                          fontSize: isMobileCard ? 20 : 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Jogo: ${widget.jogoAtual}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: isMobileCard ? TextAlign.center : TextAlign.start,
+                      ),
+                      Text(
+                        'Personagem: ${personagem.name}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: isMobileCard ? TextAlign.center : TextAlign.start,
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        alignment: isMobileCard
+                            ? WrapAlignment.center
+                            : WrapAlignment.start,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
-                          const Text(
-                            'Perfil atual',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          const Text('Rank:'),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: RankBadge(rank: personagem.rank),
                           ),
-                          const SizedBox(height: 12),
-                          Text('Jogo: ${widget.jogoAtual}'),
-                          Text('Personagem: ${personagem.name}'),
-                          Row(
-                            children: [
-                              const Text('Rank: '),
-                              RankBadge(rank: personagem.rank),
-                            ],
-                          ),
-                          Text('PDL: ${personagem.pdl}'),
                         ],
                       ),
-                    ),
-                    OutlinedButton(
+                      const SizedBox(height: 4),
+                      Text('PDL: ${personagem.pdl}'),
+                    ],
+                  );
+
+                  final Widget trocarButton = SizedBox(
+                    width: isMobileCard ? double.infinity : null,
+                    child: OutlinedButton(
                       onPressed: abrirSelecaoDePersonagem,
-                      child: const Text('Trocar personagem'),
+                      child: const Text(
+                        'Trocar personagem',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ],
-                ),
+                  );
+
+                  return Padding(
+                    padding: EdgeInsets.all(isMobileCard ? 16 : 20),
+                    child: isMobileCard
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              avatar,
+                              const SizedBox(height: 14),
+                              perfilInfo,
+                              const SizedBox(height: 16),
+                              trocarButton,
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              avatar,
+                              const SizedBox(width: 20),
+                              Expanded(child: perfilInfo),
+                              const SizedBox(width: 12),
+                              trocarButton,
+                            ],
+                          ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 20),
@@ -2783,6 +3022,141 @@ class InfoBox extends StatelessWidget {
         const SizedBox(height: 4),
         Text(titulo),
       ],
+    );
+  }
+}
+
+class SearchableOptionField extends StatelessWidget {
+  final String label;
+  final String value;
+  final List<String> options;
+  final ValueChanged<String> onChanged;
+  final IconData icon;
+
+  const SearchableOptionField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+    this.icon = Icons.search,
+  });
+
+  Future<void> _abrirBusca(BuildContext context) async {
+    final String? escolhido = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        String busca = '';
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final String termo = busca.trim().toLowerCase();
+            final List<String> filtradas = options
+                .where((opcao) => opcao.toLowerCase().contains(termo))
+                .toList();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.78,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Pesquisar',
+                        hintText: 'Digite para filtrar...',
+                        prefixIcon: Icon(icon),
+                        border: const OutlineInputBorder(),
+                      ),
+                      onChanged: (valor) {
+                        setModalState(() {
+                          busca = valor;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: filtradas.isEmpty
+                          ? const Center(
+                              child: Text('Nenhuma opção encontrada.'),
+                            )
+                          : ListView.separated(
+                              itemCount: filtradas.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final String opcao = filtradas[index];
+                                final bool selecionada = opcao == value;
+                                return ListTile(
+                                  title: Text(opcao),
+                                  trailing: selecionada
+                                      ? const Icon(Icons.check_circle)
+                                      : null,
+                                  onTap: () => Navigator.pop(context, opcao),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (escolhido != null) {
+      onChanged(escolhido);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String valorExibido =
+        options.contains(value) || options.isEmpty ? value : options.first;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => _abrirBusca(context),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          suffixIcon: Icon(icon),
+        ),
+        child: Text(
+          valorExibido,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
     );
   }
 }
@@ -2953,7 +3327,7 @@ class MatchupHeader extends StatelessWidget {
   }
 }
 
-class SelecionarPersonagemPage extends StatelessWidget {
+class SelecionarPersonagemPage extends StatefulWidget {
   final String titulo;
   final List<Character> personagens;
   final String jogoAtual;
@@ -2966,67 +3340,80 @@ class SelecionarPersonagemPage extends StatelessWidget {
   });
 
   @override
+  State<SelecionarPersonagemPage> createState() =>
+      _SelecionarPersonagemPageState();
+}
+
+class _SelecionarPersonagemPageState extends State<SelecionarPersonagemPage> {
+  String termoBusca = '';
+
+  @override
   Widget build(BuildContext context) {
+    final List<Character> personagensFiltrados = widget.personagens
+        .where((personagem) {
+          final String termo = termoBusca.trim().toLowerCase();
+          if (termo.isEmpty) return true;
+
+          return personagem.name.toLowerCase().contains(termo) ||
+              personagem.initial.toLowerCase().contains(termo);
+        })
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(titulo),
+        title: Text(widget.titulo),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: GridView.builder(
-          itemCount: personagens.length,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 230,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.55,
-          ),
-          itemBuilder: (context, index) {
-            final personagem = personagens[index];
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isMobile = constraints.maxWidth < 600;
+          final double padding = isMobile ? 20 : 24;
+          final double avatarSize = isMobile ? 42 : 52;
 
-            return InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                Navigator.pop(context, personagem);
-              },
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      CharacterAvatar(
-                        personagem: personagem.name,
-                        jogo: jogoAtual,
-                        size: 52,
-                        initialOverride: personagem.initial,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              personagem.name,
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            RankBadge(rank: personagem.rank),
-                            Text('${personagem.pdl} PDL'),
-                          ],
-                        ),
-                      ),
-                    ],
+          return Padding(
+            padding: EdgeInsets.all(padding),
+            child: Column(
+              children: [
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Pesquisar personagem',
+                    hintText: 'Ex: Hero, Cloud, Terry...',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      termoBusca = valor;
+                    });
+                  },
+                ),
+                const SizedBox(height: 18),
+                Expanded(
+                  child: GridView.builder(
+                    itemCount: personagensFiltrados.length,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: isMobile ? 180 : 230,
+                      mainAxisSpacing: isMobile ? 12 : 16,
+                      crossAxisSpacing: isMobile ? 12 : 16,
+                      childAspectRatio: isMobile ? 1.30 : 1.55,
+                    ),
+                    itemBuilder: (context, index) {
+                      final personagem = personagensFiltrados[index];
+
+                      return _CharacterSelectionCard(
+                        personagem: personagem,
+                        jogo: widget.jogoAtual,
+                        avatarSize: avatarSize,
+                        isMobile: isMobile,
+                        onTap: () => Navigator.pop(context, personagem),
+                      );
+                    },
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -3035,11 +3422,13 @@ class SelecionarPersonagemPage extends StatelessWidget {
 class RegistrarPartidaPage extends StatefulWidget {
   final Character personagemAtual;
   final String jogo;
+  final List<String> sugestoesPlayers;
 
   const RegistrarPartidaPage({
     super.key,
     required this.personagemAtual,
     this.jogo = 'Super Smash Bros. Ultimate',
+    this.sugestoesPlayers = const [],
   });
 
   @override
@@ -3055,6 +3444,8 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
   int porcentagem = 0;
   String formaDeKill = formasDeKill[0];
   String formaDeMorte = formasDeMorte[0];
+  String detalheOutroKill = '';
+  String detalheOutroMorte = '';
   String observacoes = '';
   int pdlCalculado = 0;
 
@@ -3086,6 +3477,26 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
     return 'Derrota: informe quantas stocks o ADVERSÁRIO terminou a partida e qual era a porcentagem final DELE.';
   }
 
+  String get killInformada {
+    if (naoMatou) return 'Não matou';
+    if (formaDeKill == 'Outro') {
+      final String detalhe = detalheOutroKill.trim();
+      return detalhe.isEmpty ? 'Outro' : detalhe;
+    }
+
+    return formaDeKill;
+  }
+
+  String get morteInformada {
+    if (naoMorreu) return 'Não morreu';
+    if (formaDeMorte == 'Outro') {
+      final String detalhe = detalheOutroMorte.trim();
+      return detalhe.isEmpty ? 'Outro' : detalhe;
+    }
+
+    return formaDeMorte;
+  }
+
   Future<void> escolherAdversario() async {
     final Character? adversarioEscolhido = await Navigator.push(
       context,
@@ -3106,15 +3517,12 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
   }
 
   int gerarPdl() {
-    final String killFinal = naoMatou ? 'Não matou' : formaDeKill;
-    final String morteFinal = naoMorreu ? 'Não morreu' : formaDeMorte;
-
     return calcularPdlDaPartida(
       resultado: resultado,
       stocks: stocks,
       porcentagem: porcentagem,
-      formaDeKill: killFinal,
-      formaDeMorte: morteFinal,
+      formaDeKill: killInformada,
+      formaDeMorte: morteInformada,
     );
   }
 
@@ -3174,8 +3582,8 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
     }
 
     final int pdlFinal = gerarPdl();
-    final String killFinal = naoMatou ? 'Não matou' : formaDeKill;
-    final String morteFinal = naoMorreu ? 'Não morreu' : formaDeMorte;
+    final String killFinal = killInformada;
+    final String morteFinal = morteInformada;
 
     setState(() {
       pdlCalculado = pdlFinal;
@@ -3301,16 +3709,45 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Nick do player',
-                border: OutlineInputBorder(),
-                hintText: 'Ex: SpitTrap19, Rafarofael, Grandmemes...',
-              ),
-              onChanged: (valor) {
+            Autocomplete<String>(
+              optionsBuilder: (textEditingValue) {
+                final String busca = textEditingValue.text.trim().toLowerCase();
+                final List<String> sugestoes = widget.sugestoesPlayers;
+
+                if (busca.isEmpty) {
+                  return sugestoes.take(6);
+                }
+
+                return sugestoes.where(
+                  (nick) => nick.toLowerCase().contains(busca),
+                );
+              },
+              onSelected: (valor) {
                 setState(() {
                   nickAdversario = valor;
                 });
+              },
+              fieldViewBuilder: (
+                context,
+                textEditingController,
+                focusNode,
+                onFieldSubmitted,
+              ) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Nick do player',
+                    border: OutlineInputBorder(),
+                    hintText: 'Digite ou escolha um player já enfrentado',
+                    prefixIcon: Icon(Icons.person_search_outlined),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      nickAdversario = valor;
+                    });
+                  },
+                );
               },
             ),
             const SizedBox(height: 24),
@@ -3362,20 +3799,14 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
+            SearchableOptionField(
+              label: 'Pesquisar mapa',
               value: stageSelecionado,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
-              items: stagesSmash.map((stage) {
-                return DropdownMenuItem(
-                  value: stage,
-                  child: Text(stage),
-                );
-              }).toList(),
+              options: stagesSmash,
+              icon: Icons.map_outlined,
               onChanged: (valor) {
                 setState(() {
-                  stageSelecionado = valor ?? stagesSmash[0];
+                  stageSelecionado = valor;
                 });
               },
             ),
@@ -3439,24 +3870,34 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
+              SearchableOptionField(
+                label: 'Pesquisar forma de kill',
                 value: formaDeKill,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-                items: formasDeKill.map((forma) {
-                  return DropdownMenuItem(
-                    value: forma,
-                    child: Text(forma),
-                  );
-                }).toList(),
+                options: formasDeKill,
+                icon: Icons.sports_mma_outlined,
                 onChanged: (valor) {
                   setState(() {
-                    formaDeKill = valor ?? formasDeKill[0];
+                    formaDeKill = valor;
                     pdlCalculado = gerarPdl();
                   });
                 },
               ),
+              if (formaDeKill == 'Outro') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Descreva como matou (opcional)',
+                    hintText: 'Ex: F-tilt na ledge, dash attack, Kaboom...',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      detalheOutroKill = valor;
+                      pdlCalculado = gerarPdl();
+                    });
+                  },
+                ),
+              ],
             ] else ...[
               Card(
                 child: ListTile(
@@ -3475,24 +3916,34 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
+              SearchableOptionField(
+                label: 'Pesquisar forma de morte',
                 value: formaDeMorte,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-                items: formasDeMorte.map((forma) {
-                  return DropdownMenuItem(
-                    value: forma,
-                    child: Text(forma),
-                  );
-                }).toList(),
+                options: formasDeMorte,
+                icon: Icons.warning_amber_outlined,
                 onChanged: (valor) {
                   setState(() {
-                    formaDeMorte = valor ?? formasDeMorte[0];
+                    formaDeMorte = valor;
                     pdlCalculado = gerarPdl();
                   });
                 },
               ),
+              if (formaDeMorte == 'Outro') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Descreva como morreu (opcional)',
+                    hintText: 'Ex: F-smash na ledge, miss input, tech chase...',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      detalheOutroMorte = valor;
+                      pdlCalculado = gerarPdl();
+                    });
+                  },
+                ),
+              ],
             ] else ...[
               Card(
                 child: ListTile(
@@ -3696,21 +4147,11 @@ class _HistoricoPageState extends State<HistoricoPage> {
   }) {
     final String valorSeguro = opcoes.contains(valor) ? valor : 'Todos';
 
-    return DropdownButtonFormField<String>(
+    return SearchableOptionField(
+      label: label,
       value: valorSeguro,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      items: opcoes.map((opcao) {
-        return DropdownMenuItem(
-          value: opcao,
-          child: Text(opcao),
-        );
-      }).toList(),
-      onChanged: (novoValor) {
-        onChanged(novoValor ?? 'Todos');
-      },
+      options: opcoes,
+      onChanged: onChanged,
     );
   }
 
@@ -3721,6 +4162,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
         builder: (context) => DetalhesPartidaPage(
           partida: partida,
           jogo: widget.jogo,
+          sugestoesPlayers: gerarSugestoesPlayers(widget.historico),
         ),
       ),
     );
@@ -3984,11 +4426,13 @@ class _HistoricoPageState extends State<HistoricoPage> {
 class DetalhesPartidaPage extends StatelessWidget {
   final PartidaRegistrada partida;
   final String jogo;
+  final List<String> sugestoesPlayers;
 
   const DetalhesPartidaPage({
     super.key,
     required this.partida,
     this.jogo = 'Super Smash Bros. Ultimate',
+    this.sugestoesPlayers = const [],
   });
 
   Future<void> confirmarApagar(BuildContext context) async {
@@ -4030,6 +4474,7 @@ class DetalhesPartidaPage extends StatelessWidget {
         builder: (context) => EditarPartidaPage(
           partida: partida,
           jogo: jogo,
+          sugestoesPlayers: sugestoesPlayers,
         ),
       ),
     );
@@ -4185,11 +4630,13 @@ class DetalhesPartidaPage extends StatelessWidget {
 class EditarPartidaPage extends StatefulWidget {
   final PartidaRegistrada partida;
   final String jogo;
+  final List<String> sugestoesPlayers;
 
   const EditarPartidaPage({
     super.key,
     required this.partida,
     this.jogo = 'Super Smash Bros. Ultimate',
+    this.sugestoesPlayers = const [],
   });
 
   @override
@@ -4206,11 +4653,15 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
   late int porcentagem;
   late String formaDeKill;
   late String formaDeMorte;
+  late String detalheOutroKill;
+  late String detalheOutroMorte;
   late String observacoes;
   late int pdlCalculado;
 
   late TextEditingController nickController;
   late TextEditingController porcentagemController;
+  late TextEditingController outroKillController;
+  late TextEditingController outroMorteController;
   late TextEditingController observacoesController;
 
   @override
@@ -4228,19 +4679,33 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
     stocks = widget.partida.stocks;
     porcentagem = widget.partida.porcentagem;
 
-    formaDeKill = formasDeKill.contains(widget.partida.formaDeKill)
-        ? widget.partida.formaDeKill
-        : formasDeKill[0];
+    if (formasDeKill.contains(widget.partida.formaDeKill)) {
+      formaDeKill = widget.partida.formaDeKill;
+      detalheOutroKill = '';
+    } else {
+      formaDeKill = 'Outro';
+      detalheOutroKill = widget.partida.formaDeKill == 'Não matou'
+          ? ''
+          : widget.partida.formaDeKill;
+    }
 
-    formaDeMorte = formasDeMorte.contains(widget.partida.formaDeMorte)
-        ? widget.partida.formaDeMorte
-        : formasDeMorte[0];
+    if (formasDeMorte.contains(widget.partida.formaDeMorte)) {
+      formaDeMorte = widget.partida.formaDeMorte;
+      detalheOutroMorte = '';
+    } else {
+      formaDeMorte = 'Outro';
+      detalheOutroMorte = widget.partida.formaDeMorte == 'Não morreu'
+          ? ''
+          : widget.partida.formaDeMorte;
+    }
 
     observacoes = widget.partida.observacoes;
     pdlCalculado = gerarPdl();
 
     nickController = TextEditingController(text: nickAdversario);
     porcentagemController = TextEditingController(text: porcentagem.toString());
+    outroKillController = TextEditingController(text: detalheOutroKill);
+    outroMorteController = TextEditingController(text: detalheOutroMorte);
     observacoesController = TextEditingController(text: observacoes);
   }
 
@@ -4248,6 +4713,8 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
   void dispose() {
     nickController.dispose();
     porcentagemController.dispose();
+    outroKillController.dispose();
+    outroMorteController.dispose();
     observacoesController.dispose();
     super.dispose();
   }
@@ -4278,6 +4745,26 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
     }
 
     return 'Derrota: informe quantas stocks o ADVERSÁRIO terminou a partida e qual era a porcentagem final DELE.';
+  }
+
+  String get killInformada {
+    if (naoMatou) return 'Não matou';
+    if (formaDeKill == 'Outro') {
+      final String detalhe = detalheOutroKill.trim();
+      return detalhe.isEmpty ? 'Outro' : detalhe;
+    }
+
+    return formaDeKill;
+  }
+
+  String get morteInformada {
+    if (naoMorreu) return 'Não morreu';
+    if (formaDeMorte == 'Outro') {
+      final String detalhe = detalheOutroMorte.trim();
+      return detalhe.isEmpty ? 'Outro' : detalhe;
+    }
+
+    return formaDeMorte;
   }
 
   Future<void> escolherPersonagemJogador() async {
@@ -4319,15 +4806,12 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
   }
 
   int gerarPdl() {
-    final String killFinal = naoMatou ? 'Não matou' : formaDeKill;
-    final String morteFinal = naoMorreu ? 'Não morreu' : formaDeMorte;
-
     return calcularPdlDaPartida(
       resultado: resultado,
       stocks: stocks,
       porcentagem: porcentagem,
-      formaDeKill: killFinal,
-      formaDeMorte: morteFinal,
+      formaDeKill: killInformada,
+      formaDeMorte: morteInformada,
     );
   }
 
@@ -4381,8 +4865,8 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
     }
 
     final int pdlFinal = gerarPdl();
-    final String killFinal = naoMatou ? 'Não matou' : formaDeKill;
-    final String morteFinal = naoMorreu ? 'Não morreu' : formaDeMorte;
+    final String killFinal = killInformada;
+    final String morteFinal = morteInformada;
 
     final PartidaRegistrada partidaEditada = PartidaRegistrada(
       personagemJogador: personagemJogador.name,
@@ -4504,16 +4988,45 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: nickController,
-              decoration: const InputDecoration(
-                labelText: 'Nick do player',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (valor) {
+            Autocomplete<String>(
+              initialValue: TextEditingValue(text: nickAdversario),
+              optionsBuilder: (textEditingValue) {
+                final String busca = textEditingValue.text.trim().toLowerCase();
+                final List<String> sugestoes = widget.sugestoesPlayers;
+
+                if (busca.isEmpty) {
+                  return sugestoes.take(6);
+                }
+
+                return sugestoes.where(
+                  (nick) => nick.toLowerCase().contains(busca),
+                );
+              },
+              onSelected: (valor) {
                 setState(() {
                   nickAdversario = valor;
                 });
+              },
+              fieldViewBuilder: (
+                context,
+                textEditingController,
+                focusNode,
+              onFieldSubmitted,
+              ) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Nick do player',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_search_outlined),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      nickAdversario = valor;
+                    });
+                  },
+                );
               },
             ),
             const SizedBox(height: 24),
@@ -4565,22 +5078,16 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
+            SearchableOptionField(
+              label: 'Pesquisar mapa',
               value: stagesSmash.contains(stageSelecionado)
                   ? stageSelecionado
                   : stagesSmash[0],
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-              ),
-              items: stagesSmash.map((stage) {
-                return DropdownMenuItem(
-                  value: stage,
-                  child: Text(stage),
-                );
-              }).toList(),
+              options: stagesSmash,
+              icon: Icons.map_outlined,
               onChanged: (valor) {
                 setState(() {
-                  stageSelecionado = valor ?? stagesSmash[0];
+                  stageSelecionado = valor;
                 });
               },
             ),
@@ -4644,24 +5151,35 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
+              SearchableOptionField(
+                label: 'Pesquisar forma de kill',
                 value: formaDeKill,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-                items: formasDeKill.map((forma) {
-                  return DropdownMenuItem(
-                    value: forma,
-                    child: Text(forma),
-                  );
-                }).toList(),
+                options: formasDeKill,
+                icon: Icons.sports_mma_outlined,
                 onChanged: (valor) {
                   setState(() {
-                    formaDeKill = valor ?? formasDeKill[0];
+                    formaDeKill = valor;
                     pdlCalculado = gerarPdl();
                   });
                 },
               ),
+              if (formaDeKill == 'Outro') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: outroKillController,
+                  decoration: const InputDecoration(
+                    labelText: 'Descreva como matou (opcional)',
+                    hintText: 'Ex: F-tilt na ledge, dash attack, Kaboom...',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      detalheOutroKill = valor;
+                      pdlCalculado = gerarPdl();
+                    });
+                  },
+                ),
+              ],
             ] else ...[
               Card(
                 child: ListTile(
@@ -4680,24 +5198,35 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
+              SearchableOptionField(
+                label: 'Pesquisar forma de morte',
                 value: formaDeMorte,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-                items: formasDeMorte.map((forma) {
-                  return DropdownMenuItem(
-                    value: forma,
-                    child: Text(forma),
-                  );
-                }).toList(),
+                options: formasDeMorte,
+                icon: Icons.warning_amber_outlined,
                 onChanged: (valor) {
                   setState(() {
-                    formaDeMorte = valor ?? formasDeMorte[0];
+                    formaDeMorte = valor;
                     pdlCalculado = gerarPdl();
                   });
                 },
               ),
+              if (formaDeMorte == 'Outro') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: outroMorteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Descreva como morreu (opcional)',
+                    hintText: 'Ex: F-smash na ledge, miss input, tech chase...',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (valor) {
+                    setState(() {
+                      detalheOutroMorte = valor;
+                      pdlCalculado = gerarPdl();
+                    });
+                  },
+                ),
+              ],
             ] else ...[
               Card(
                 child: ListTile(
@@ -5322,7 +5851,7 @@ class EstatisticasPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Leitura automática',
+                            'Leitura de desempenho',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -5373,6 +5902,12 @@ class EstatisticasPage extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  AnalisesSection(
+                    personagemAtual: personagemAtual,
+                    historico: historico,
+                    jogoAtual: jogoAtual,
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -5510,6 +6045,1552 @@ class EstatisticasPage extends StatelessWidget {
                 ],
               ),
             ),
+    );
+  }
+}
+
+class AnaliseComparativaItem {
+  final String nome;
+  final int total;
+  final int vitorias;
+  final int derrotas;
+  final int saldoPdl;
+
+  const AnaliseComparativaItem({
+    required this.nome,
+    required this.total,
+    required this.vitorias,
+    required this.derrotas,
+    required this.saldoPdl,
+  });
+
+  double get winrate => total == 0 ? 0 : (vitorias / total) * 100;
+}
+
+class EvolucaoPdlPonto {
+  final int partida;
+  final int saldo;
+
+  const EvolucaoPdlPonto({
+    required this.partida,
+    required this.saldo,
+  });
+}
+
+List<AnaliseComparativaItem> gerarComparativoPorCampo(
+  List<PartidaRegistrada> partidas,
+  String Function(PartidaRegistrada partida) seletor,
+) {
+  final Map<String, List<PartidaRegistrada>> grupos = {};
+
+  for (final partida in partidas) {
+    final String nome = seletor(partida).trim();
+    if (nome.isEmpty || nome == 'Sem dados') continue;
+
+    grupos.putIfAbsent(nome, () => []);
+    grupos[nome]!.add(partida);
+  }
+
+  final List<AnaliseComparativaItem> ranking = grupos.entries.map((entry) {
+    final List<PartidaRegistrada> partidasDoGrupo = entry.value;
+    final int total = partidasDoGrupo.length;
+    final int vitorias = partidasDoGrupo
+        .where((partida) => partida.resultado == 'Vitória')
+        .length;
+    final int derrotas = partidasDoGrupo
+        .where((partida) => partida.resultado == 'Derrota')
+        .length;
+    final int saldoPdl = partidasDoGrupo.fold(
+      0,
+      (soma, partida) => soma + partida.pdlGerado,
+    );
+
+    return AnaliseComparativaItem(
+      nome: entry.key,
+      total: total,
+      vitorias: vitorias,
+      derrotas: derrotas,
+      saldoPdl: saldoPdl,
+    );
+  }).toList();
+
+  ranking.sort((a, b) {
+    final int totalCompare = b.total.compareTo(a.total);
+    if (totalCompare != 0) return totalCompare;
+
+    final int winrateCompare = b.winrate.compareTo(a.winrate);
+    if (winrateCompare != 0) return winrateCompare;
+
+    return b.saldoPdl.compareTo(a.saldoPdl);
+  });
+
+  return ranking;
+}
+
+List<EvolucaoPdlPonto> gerarEvolucaoPdl(List<PartidaRegistrada> partidas) {
+  final List<PartidaRegistrada> cronologico = partidas.reversed.toList();
+  final List<EvolucaoPdlPonto> pontos = [];
+  int saldo = 0;
+
+  for (int i = 0; i < cronologico.length; i++) {
+    saldo += cronologico[i].pdlGerado;
+    pontos.add(EvolucaoPdlPonto(partida: i + 1, saldo: saldo));
+  }
+
+  return pontos;
+}
+
+DateTime mesAnteriorDe(DateTime data) {
+  if (data.month == 1) {
+    return DateTime(data.year - 1, 12);
+  }
+
+  return DateTime(data.year, data.month - 1);
+}
+
+bool mesmoMesAno(DateTime data, DateTime referencia) {
+  return data.year == referencia.year && data.month == referencia.month;
+}
+
+String nomeMesCurto(int mes) {
+  const meses = [
+    'Jan',
+    'Fev',
+    'Mar',
+    'Abr',
+    'Mai',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Set',
+    'Out',
+    'Nov',
+    'Dez',
+  ];
+
+  return meses[mes - 1];
+}
+
+String rotuloMesAno(DateTime data) {
+  return '${nomeMesCurto(data.month)} ${data.year}';
+}
+
+List<DateTime> gerarMesesDisponiveis(List<PartidaRegistrada> partidas) {
+  final Set<String> chaves = {};
+  final List<DateTime> meses = [];
+
+  for (final partida in partidas) {
+    final String chave = '${partida.data.year}-${partida.data.month}';
+    if (chaves.add(chave)) {
+      meses.add(DateTime(partida.data.year, partida.data.month));
+    }
+  }
+
+  meses.sort((a, b) => b.compareTo(a));
+  return meses;
+}
+
+String resumoMes(List<PartidaRegistrada> partidas, DateTime referencia) {
+  final List<PartidaRegistrada> partidasDoMes = partidas
+      .where((partida) => mesmoMesAno(partida.data, referencia))
+      .toList();
+
+  if (partidasDoMes.isEmpty) {
+    return '${rotuloMesAno(referencia)}: sem partidas';
+  }
+
+  final int total = partidasDoMes.length;
+  final int vitorias = partidasDoMes
+      .where((partida) => partida.resultado == 'Vitória')
+      .length;
+  final int saldo = partidasDoMes.fold(
+    0,
+    (soma, partida) => soma + partida.pdlGerado,
+  );
+  final double winrate = (vitorias / total) * 100;
+
+  return '${rotuloMesAno(referencia)}: $total partidas • ${winrate.toStringAsFixed(1)}% WR • ${formatarSaldo(saldo)} PDL';
+}
+
+bool contemAlgum(String texto, List<String> termos) {
+  final String normalizado = normalizarTexto(texto);
+  return termos.any((termo) => normalizado.contains(normalizarTexto(termo)));
+}
+
+bool mapaTemLateralCurta(String mapa) {
+  return contemAlgum(mapa, [
+    'Smashville',
+    'Town',
+    'Cidade',
+    'Yoshi',
+    'Hollow Bastion',
+  ]);
+}
+
+bool mapaFavoreceVertical(String mapa) {
+  return contemAlgum(mapa, [
+    'Battlefield',
+    'Campo de Batalha',
+    'Yoshi',
+    'Small Battlefield',
+    'Pequeno Campo',
+  ]);
+}
+
+bool personagemPesado(String personagem) {
+  return contemAlgum(personagem, [
+    'Bowser',
+    'Donkey Kong',
+    'King K. Rool',
+    'King Dedede',
+    'Ganondorf',
+    'Incineroar',
+    'Ridley',
+    'Kazuya',
+    'Charizard',
+  ]);
+}
+
+bool personagemLeveOuFragil(String personagem) {
+  return contemAlgum(personagem, [
+    'Pichu',
+    'Pikachu',
+    'Jigglypuff',
+    'Kirby',
+    'Fox',
+    'Sheik',
+    'Greninja',
+    'Sonic',
+    'Sora',
+    'Mr. Game',
+    'Meta Knight',
+  ]);
+}
+
+bool personagemZoner(String personagem) {
+  return contemAlgum(personagem, [
+    'Samus',
+    'Dark Samus',
+    'Link',
+    'Young Link',
+    'Toon Link',
+    'Mega Man',
+    'Snake',
+    'Duck Hunt',
+    'Simon',
+    'Richter',
+    'Min Min',
+    'Steve',
+    'Villager',
+    'Isabelle',
+    'Pac-Man',
+    'Robin',
+    'Hero',
+    'Mii Gunner',
+  ]);
+}
+
+bool personagemEspadachim(String personagem) {
+  return contemAlgum(personagem, [
+    'Cloud',
+    'Marth',
+    'Lucina',
+    'Roy',
+    'Chrom',
+    'Ike',
+    'Shulk',
+    'Corrin',
+    'Byleth',
+    'Sephiroth',
+    'Pyra',
+    'Mythra',
+    'Sora',
+    'Link',
+    'Meta Knight',
+    'Mii Swordfighter',
+  ]);
+}
+
+bool personagemRushdown(String personagem) {
+  return contemAlgum(personagem, [
+    'Fox',
+    'Falco',
+    'Captain Falcon',
+    'Mario',
+    'Roy',
+    'Chrom',
+    'Joker',
+    'Pikachu',
+    'Pichu',
+    'Sheik',
+    'Sonic',
+    'Mythra',
+    'Zero Suit',
+    'Greninja',
+    'Ken',
+    'Ryu',
+    'Terry',
+    'Kazuya',
+  ]);
+}
+
+bool personagemRecoveryExploravel(String personagem) {
+  return contemAlgum(personagem, [
+    'Cloud',
+    'Little Mac',
+    'Chrom',
+    'Ike',
+    'Ganondorf',
+    'Dr. Mario',
+    'Simon',
+    'Richter',
+    'Kazuya',
+    'Donkey Kong',
+    'Captain Falcon',
+  ]);
+}
+
+bool mapaPlano(String mapa) {
+  return contemAlgum(mapa, [
+    'Final Destination',
+    'Kalos',
+    'Pokémon Stadium',
+  ]);
+}
+
+String arquetipoPersonagem(String personagem) {
+  if (personagemPesado(personagem)) return 'pesado';
+  if (personagemZoner(personagem)) return 'zoner';
+  if (personagemEspadachim(personagem)) return 'espadachim';
+  if (personagemRushdown(personagem)) return 'rushdown';
+  if (personagemLeveOuFragil(personagem)) return 'leve';
+  return 'all-rounder';
+}
+
+String planoKoPorPersonagem(String personagem) {
+  final String nome = normalizarTexto(personagem);
+
+  if (nome.contains('cloud')) {
+    return 'F-tilt, back air na lateral e Limit Cross Slash quando tiver limit';
+  }
+  if (nome.contains('hero')) {
+    return 'F-tilt perto da ledge, magia de pressão e finalização segura depois de forçar shield/ledge';
+  }
+  if (nome.contains('terry')) {
+    return 'Buster Wolf, Power Geyser e confirms seguros em vez de se comprometer fora do palco';
+  }
+  if (nome.contains('kazuya')) {
+    return 'punish forte, confirm pesado e pressão de ledge sem overcommit';
+  }
+  if (nome.contains('ryu') || nome.contains('ken')) {
+    return 'confirm de tilt/close hit, Shoryuken e pressão segura de shield';
+  }
+  if (nome.contains('mario')) {
+    return 'back throw perto da ledge, up smash e pressão de ledgetrap';
+  }
+  if (nome.contains('luigi')) {
+    return 'grab confirm, up B punish e ledgetrap simples em vez de chase arriscado';
+  }
+  if (nome.contains('peach') || nome.contains('daisy')) {
+    return 'pressão de float, back air/forward air e punish depois de forçar shield';
+  }
+  if (nome.contains('yoshi')) {
+    return 'up air/forward air em vantagem, pressão aérea e ledgetrap com egg';
+  }
+  if (nome.contains('kirby')) {
+    return 'edgeguard controlado, back air e punish perto da ledge';
+  }
+  if (nome.contains('fox')) {
+    return 'up smash de punish, back air na lateral e ledgetrap rápido';
+  }
+  if (nome.contains('falco')) {
+    return 'juggle com up air, back air e punish de landing';
+  }
+  if (nome.contains('pikachu') || nome.contains('pichu')) {
+    return 'edgeguard seguro, thunder quando preparado e pressão fora do palco só com vantagem';
+  }
+  if (nome.contains('ness')) {
+    return 'back throw na ledge, PK Fire para forçar reação e ledgetrap';
+  }
+  if (nome.contains('lucas')) {
+    return 'back throw, zair/PK pressure e edgeguard controlado';
+  }
+  if (nome.contains('captain falcon')) {
+    return 'knee confirm, stomp quando houver leitura clara e back air na lateral';
+  }
+  if (nome.contains('jigglypuff')) {
+    return 'edgeguard, rest punish quando garantido e back air wall perto da ledge';
+  }
+  if (nome.contains('bowser')) {
+    return 'side B, back air e pressão de ledge sem se expor demais';
+  }
+  if (nome.contains('donkey kong')) {
+    return 'grab/cargo perto da ledge, back air e punish pesado quando o adversário errar';
+  }
+  if (nome.contains('king k') || nome.contains('k rool')) {
+    return 'crown/cannon para forçar reação, back air e ledgetrap pesado';
+  }
+  if (nome.contains('king dedede')) {
+    return 'gordo para ledgetrap, back air e punish quando o adversário respeitar a ledge';
+  }
+  if (nome.contains('ganondorf')) {
+    return 'punish forte, ledgetrap simples e leitura de roll/landing em vez de chase longo';
+  }
+  if (nome.contains('incineroar')) {
+    return 'Alolan Whip/side B, punish de shield e ledgetrap depois de condicionar defesa';
+  }
+  if (nome.contains('ridley')) {
+    return 'back air, ledgetrap e punish de recovery/landing com alcance';
+  }
+  if (nome.contains('ice climbers')) {
+    return 'grab/confirm quando os dois estiverem juntos e ledgetrap sem separar demais';
+  }
+  if (nome.contains('sheik')) {
+    return 'needle confirm, bouncing fish e edgeguard seguro depois de acumular dano';
+  }
+  if (nome.contains('zelda')) {
+    return 'phantom para ledgetrap, lightning kick espaçado e punish de aproximação';
+  }
+  if (nome.contains('dr mario')) {
+    return 'back throw, up B punish e ledgetrap sem ir longe demais offstage';
+  }
+  if (nome.contains('marth')) {
+    return 'tipper bem espaçado, F-tilt/forward smash na lateral e edgeguard só com vantagem clara';
+  }
+  if (nome.contains('lucina')) {
+    return 'aerial espaçado, F-tilt/side B na lateral e edgeguard controlado';
+  }
+  if (nome.contains('roy') || nome.contains('chrom')) {
+    return 'jab confirm, pressão de ledge e golpe forte de perto';
+  }
+  if (nome.contains('ike')) {
+    return 'back air, neutral air confirm e ledgetrap com alcance';
+  }
+  if (nome.contains('corrin')) {
+    return 'pin/side B, back air e controle de alcance na ledge';
+  }
+  if (nome.contains('byleth')) {
+    return 'aerial espaçado, up air/forward air e ledgetrap com alcance';
+  }
+  if (nome.contains('pyra') || nome.contains('mythra')) {
+    return 'Pyra para KO lateral/up air e Mythra para ganhar neutral antes de trocar';
+  }
+  if (nome.contains('shulk')) {
+    return 'Monado Smash/Jump conforme situação, aerial espaçado e ledgetrap com alcance';
+  }
+  if (nome.contains('meta knight')) {
+    return 'edgeguard, ladder quando encaixar e back air perto da ledge';
+  }
+  if (nome.contains('pit')) {
+    return 'edgeguard seguro, back air e ledgetrap com arco para cobrir recuperação';
+  }
+  if (nome.contains('zero suit')) {
+    return 'flip kick quando preparado, back air e punish de landing';
+  }
+  if (nome.contains('wario')) {
+    return 'Waft confirm, back air e ledgetrap enquanto espera recurso';
+  }
+  if (nome.contains('snake')) {
+    return 'controle de granada, C4, up tilt e ledgetrap explosivo';
+  }
+  if (nome.contains('pokemon trainer')) {
+    return 'Ivysaur up air/down air, Charizard back air e Squirtle para ganhar neutral';
+  }
+  if (nome.contains('diddy')) {
+    return 'banana confirm, ledgetrap e punish de escorregão/roll';
+  }
+  if (nome.contains('sonic')) {
+    return 'whiff punish, back air, edgeguard seguro e controle de tempo';
+  }
+  if (nome.contains('olimar')) {
+    return 'acúmulo com pikmin, purple/strong hit na lateral e anti-air quando o adversário força entrada';
+  }
+  if (nome.contains('lucario')) {
+    return 'Aura Sphere, back air e finalização com aura sem se expor antes da hora';
+  }
+  if (nome.contains('r.o.b') || nome.contains('rob')) {
+    return 'gyro ledgetrap, side B punish e controle de zona antes da kill';
+  }
+  if (nome.contains('wolf')) {
+    return 'back air, down smash na ledge e laser para forçar aproximação';
+  }
+  if (nome.contains('villager') || nome.contains('isabelle')) {
+    return 'ledgetrap com árvore/armadilha, slingshot e punish quando o adversário tenta entrar';
+  }
+  if (nome.contains('mega man')) {
+    return 'lemon/metal blade para condicionar, back air/up tilt e ledgetrap com projéteis';
+  }
+  if (nome.contains('wii fit')) {
+    return 'Deep Breathing, back air e pressão de ledge com bola/sol';
+  }
+  if (nome.contains('rosalina')) {
+    return 'controle com Luma, up air e ledgetrap mantendo distância segura';
+  }
+  if (nome.contains('little mac')) {
+    return 'smash/punish no chão, KO Punch quando disponível e evitar perseguição fora do palco';
+  }
+  if (nome.contains('greninja')) {
+    return 'dash attack/up smash confirm, back air e punish rápido de landing';
+  }
+  if (nome.contains('palutena')) {
+    return 'back air, nair para vantagem e ledgetrap com explosive flame/autoreticle';
+  }
+  if (nome.contains('pac')) {
+    return 'bonus fruit/hydrant para condicionar, bell confirm e ledgetrap criativo';
+  }
+  if (nome.contains('robin')) {
+    return 'Arcfire confirm, Levin aerial e controle de recurso antes da kill';
+  }
+  if (nome.contains('bowser jr')) {
+    return 'Mechakoopa ledgetrap, side B punish e aerial forte na lateral';
+  }
+  if (nome.contains('duck hunt')) {
+    return 'can/shot para controle, ledgetrap e punish quando o adversário salta';
+  }
+  if (nome.contains('bayonetta')) {
+    return 'ladder/witch twist quando seguro, back air e ledgetrap sem overextend';
+  }
+  if (nome.contains('inkling')) {
+    return 'roller punish, back air e ledgetrap depois de pintar/acumular dano';
+  }
+  if (nome.contains('simon') || nome.contains('richter')) {
+    return 'holy water confirm, whip na ledge e controle de espaço com projéteis';
+  }
+  if (nome.contains('piranha')) {
+    return 'Ptooie, ledgetrap e punish quando o adversário respeitar a bola';
+  }
+  if (nome.contains('joker')) {
+    return 'back air na lateral, ledgetrap e pressão com Arsene quando disponível';
+  }
+  if (nome.contains('banjo')) {
+    return 'Wonderwing como punish, grenade/egg para condicionar e ledgetrap';
+  }
+  if (nome.contains('min min')) {
+    return 'controle de braços na lateral, ledgetrap à distância e anti-air antes do adversário entrar';
+  }
+  if (nome.contains('steve')) {
+    return 'minecart/anvil, ledgetrap com bloco e punish após forçar recurso';
+  }
+  if (nome.contains('sephiroth')) {
+    return 'back air/F-tilt espaçado e pressão de ledge com alcance';
+  }
+  if (nome.contains('sora')) {
+    return 'back air, F-smash bem espaçado e pressão de ledge com magia';
+  }
+  if (nome.contains('mii brawler')) {
+    return 'confirm físico, up B/side B conforme kit e ledgetrap simples';
+  }
+  if (nome.contains('mii sword')) {
+    return 'aerial espaçado, tornado/side B conforme kit e ledgetrap com alcance';
+  }
+  if (nome.contains('mii gunner')) {
+    return 'projéteis para forçar pulo, ledgetrap e punish quando o adversário entra';
+  }
+
+  if (personagemZoner(personagem)) {
+    return 'controle de espaço, ledgetrap com projétil e punish quando o adversário força entrada';
+  }
+  if (personagemEspadachim(personagem)) {
+    return 'aerial espaçado, F-tilt/ledgetrap na lateral e punish sem se expor fora do palco';
+  }
+  if (personagemPesado(personagem)) {
+    return 'punish forte, grab/pressão de ledge e KO lateral sem chase arriscado';
+  }
+  if (personagemRushdown(personagem)) {
+    return 'whiff punish, confirm rápido e pressão de ledge depois de ganhar neutral';
+  }
+
+  return 'KO lateral seguro, ledgetrap e punish depois de forçar o adversário para a borda';
+}
+
+String planoNeutralPorPersonagem(String personagemAtual, String adversario) {
+  final String meuTipo = arquetipoPersonagem(personagemAtual);
+  final String tipoAdversario = arquetipoPersonagem(adversario);
+
+  if (tipoAdversario == 'pesado') {
+    return 'Plano de matchup: contra personagem pesado, não precisa resolver rápido. Ganhe no acúmulo de dano, force ledge e procure KO seguro; pesado pune muito quando você erra uma kill arriscada.';
+  }
+
+  if (tipoAdversario == 'zoner') {
+    return 'Plano de matchup: contra zoner, avance por partes. Tire espaço, use shield/parry com calma e só entre quando o projétil estiver gasto ou previsível.';
+  }
+
+  if (tipoAdversario == 'rushdown') {
+    return 'Plano de matchup: contra rushdown, não aceite trocar botão toda hora. Segure centro, puna aproximação ruim e transforme defesa boa em punish simples.';
+  }
+
+  if (tipoAdversario == 'espadachim' && meuTipo != 'zoner') {
+    return 'Plano de matchup: contra espadachim, respeite alcance. Tente whiff punish e ledgetrap em vez de disputar hitbox frontal sem vantagem.';
+  }
+
+  if (personagemRecoveryExploravel(adversario)) {
+    return 'Plano de matchup: o recovery adversário é explorável. Faça edgeguard seguro primeiro; se ele gastar recurso cedo, aí sim procure uma finalização fora do palco.';
+  }
+
+  return 'Plano de matchup: jogue para ganhar posição antes da kill. Quando o adversário estiver na ledge, escolha uma finalização estável em vez de procurar highlight toda hora.';
+}
+
+String planoPorMapa(String personagemAtual, String adversario, String mapa) {
+  if (mapa == 'Todos' || mapa.trim().isEmpty || mapa == 'Sem dados') {
+    return 'Plano de mapa: escolha o mapa olhando seu plano de KO. Se seu personagem mata lateral, prefira mapas com ledge/lateral forte; se mata vertical, plataformas ajudam mais.';
+  }
+
+  if (mapaTemLateralCurta(mapa)) {
+    return 'Plano de mapa: $mapa recompensa KO lateral e ledgetrap. Com $personagemAtual, tente empurrar $adversario para a borda e matar sem precisar sair tanto do palco.';
+  }
+
+  if (mapaFavoreceVertical(mapa)) {
+    return 'Plano de mapa: $mapa favorece plataforma, juggle e anti-air. Transforme vantagem em pressão vertical antes de procurar a kill final.';
+  }
+
+  if (mapaPlano(mapa)) {
+    return 'Plano de mapa: $mapa dá menos plataforma para escapar. Controle chão, force reação previsível e puna landings/rolls.';
+  }
+
+  return 'Plano de mapa: use o espaço do mapa para controlar ritmo. Se o adversário recuar muito, ganhe centro antes de buscar kill.';
+}
+
+String planoDefensivoPorMorte(String personagemAtual, String morteMaisComum) {
+  switch (morteMaisComum) {
+    case 'SD':
+      return 'Defesa: você está perdendo stock sozinho nesse recorte. Reduza perseguições fora do palco e priorize voltar vivo antes de tentar finalizar.';
+    case 'Recovery errado':
+      return 'Defesa: varie recovery com $personagemAtual. Alterne altura, timing e rota; voltar sempre igual facilita edgeguard.';
+    case 'Panic option':
+      return 'Defesa: se a pressão apertar, segure mais shield/escape para centro. Panic option vira kill fácil quando o adversário espera sua reação.';
+    case 'Punish sofrido':
+      return 'Defesa: revise quais golpes você está usando sem segurança. Menos botão no automático e mais whiff punish.';
+    case 'Edgeguard sofrido':
+      return 'Defesa: evite gastar recurso cedo fora do palco. Guarde jump/recovery quando possível e varie o timing da volta.';
+    case 'Ledgetrap sofrido':
+      return 'Defesa: na ledge, varie entre esperar, pular, roll e ataque. Se repetir saída, o adversário transforma isso em kill.';
+    case 'Morreu cedo':
+      return 'Defesa: jogue mais limpo em porcentagem média. Evite trade ruim e revise DI/sobrevivência nos golpes que estão matando cedo.';
+    case 'Read do adversário':
+      return 'Defesa: o adversário está lendo hábito. Troque o padrão depois de uma ou duas repetições e não responda pressão sempre igual.';
+    default:
+      return 'Defesa: procure identificar se a morte vem de pressa, ledge ou recovery. Corrigir um padrão defensivo costuma render mais que buscar KO novo.';
+  }
+}
+
+String gerarDicaTecnicaKoGeral({
+  required String personagemAtual,
+  required String adversario,
+  required String mapa,
+  required String killBuscada,
+}) {
+  final bool temAdversario = adversario.trim().isNotEmpty && adversario != 'Sem dados';
+  final bool temMapa = mapa.trim().isNotEmpty && mapa != 'Sem dados';
+  final bool buscandoSpike = contemAlgum(killBuscada, [
+    'Spike',
+    'Meteor',
+    'Meteoro',
+    'Dunk',
+    'Offstage',
+  ]);
+  final bool pesado = personagemPesado(adversario);
+  final String plano = planoKoPorPersonagem(personagemAtual);
+
+  final String alvo = temAdversario ? 'contra $adversario' : 'nesse recorte';
+  final String local = temMapa ? 'em $mapa' : 'no mapa escolhido';
+  final String killTexto =
+      killBuscada == 'Sem dados' || killBuscada == 'Não matou'
+          ? 'uma kill arriscada'
+          : killBuscada;
+
+  if (buscandoSpike && temMapa && mapaTemLateralCurta(mapa)) {
+    return 'Dica de KO: com $personagemAtual $alvo $local, se você está buscando muito $killTexto, pode compensar mais jogar para $plano. Esse mapa favorece KO lateral/ledgetrap, então você não precisa se arriscar tanto fora do palco.';
+  }
+
+  if (buscandoSpike && pesado) {
+    return 'Dica de KO: $adversario é pesado, então forçar spike toda hora pode virar risco desnecessário. Com $personagemAtual, tente primeiro preparar $plano e use spike só quando o recovery do adversário estiver previsível.';
+  }
+
+  if (temMapa && mapaFavoreceVertical(mapa)) {
+    return 'Dica de KO: $local favorece pressão vertical e controle de plataforma. Com $personagemAtual $alvo, tente transformar vantagem em juggle/anti-air antes de buscar uma finalização arriscada.';
+  }
+
+  if (temMapa && mapaTemLateralCurta(mapa)) {
+    return 'Dica de KO: $local costuma recompensar controle de lateral. Com $personagemAtual $alvo, jogue para empurrar o adversário para a ledge e procurar $plano.';
+  }
+
+  return 'Dica de KO: com $personagemAtual $alvo, o plano mais seguro tende a ser preparar $plano. Use kills arriscadas só quando você já tiver vantagem clara.';
+}
+
+List<String> gerarInsightsAvancados(
+  List<PartidaRegistrada> partidas, {
+  required String personagemAtual,
+  String escopo = 'Geral',
+  String alvo = 'Todos',
+  String mapa = 'Todos',
+}) {
+  String contexto() {
+    final List<String> partes = [personagemAtual];
+
+    if (escopo == 'Personagem' && alvo != 'Todos') {
+      partes.add('contra $alvo');
+    } else if (escopo == 'Player' && alvo != 'Todos') {
+      partes.add('contra o player $alvo');
+    }
+
+    if (mapa != 'Todos') {
+      partes.add('em $mapa');
+    }
+
+    return partes.join(' ');
+  }
+
+  final List<String> dicas = [];
+  if (partidas.length < 3) {
+    dicas.add(
+      'Base pequena: ainda há poucas partidas nesse filtro. Use as dicas abaixo como plano geral para ${contexto()} e registre mais jogos para refinar.',
+    );
+  }
+  final String killBuscada = encontrarMaisFrequente(
+    partidas.map((partida) => partida.formaDeKill).toList(),
+  );
+  final String adversarioReferencia =
+      escopo == 'Personagem' && alvo != 'Todos'
+          ? alvo
+          : encontrarMaisFrequente(
+              partidas.map((partida) => partida.personagemAdversario).toList(),
+            );
+  final String mapaReferencia = mapa != 'Todos'
+      ? mapa
+      : encontrarMaisFrequente(
+          partidas.map((partida) => partida.stage).toList(),
+        );
+
+  dicas.add(
+    gerarDicaTecnicaKoGeral(
+      personagemAtual: personagemAtual,
+      adversario: adversarioReferencia,
+      mapa: mapaReferencia,
+      killBuscada: killBuscada,
+    ),
+  );
+
+  dicas.add(planoNeutralPorPersonagem(personagemAtual, adversarioReferencia));
+  dicas.add(planoPorMapa(personagemAtual, adversarioReferencia, mapaReferencia));
+
+  final DateTime agora = DateTime.now();
+  final DateTime mesAnterior = mesAnteriorDe(agora);
+  final List<PartidaRegistrada> partidasMesAtual = partidas
+      .where((partida) => mesmoMesAno(partida.data, agora))
+      .toList();
+  final List<PartidaRegistrada> partidasMesAnterior = partidas
+      .where((partida) => mesmoMesAno(partida.data, mesAnterior))
+      .toList();
+
+  if (partidasMesAtual.isNotEmpty && partidasMesAnterior.isNotEmpty) {
+    final int saldoAtual = partidasMesAtual.fold(
+      0,
+      (soma, partida) => soma + partida.pdlGerado,
+    );
+    final int saldoAnterior = partidasMesAnterior.fold(
+      0,
+      (soma, partida) => soma + partida.pdlGerado,
+    );
+    final int diferenca = saldoAtual - saldoAnterior;
+
+    if (diferenca > 0) {
+      dicas.add(
+        'Você está rendendo melhor agora: neste filtro, seu saldo do mês está ${formatarSaldo(diferenca)} PDL acima do mês anterior.',
+      );
+    } else if (diferenca < 0) {
+      dicas.add(
+        'Cuidado com este recorte: seu saldo do mês está ${formatarSaldo(diferenca)} PDL abaixo do mês anterior. Vale revisar as derrotas recentes.',
+      );
+    }
+  }
+
+  final List<AnaliseComparativaItem> porMapa = gerarComparativoPorCampo(
+    partidas,
+    (partida) => partida.stage,
+  ).where((item) => item.total >= 2).toList();
+
+  if (porMapa.isNotEmpty) {
+    final List<AnaliseComparativaItem> mapasOrdenados = [...porMapa]
+      ..sort((a, b) => b.winrate.compareTo(a.winrate));
+    final AnaliseComparativaItem melhorMapa = mapasOrdenados.first;
+    dicas.add(
+      'Mapa forte com $personagemAtual: ${melhorMapa.nome} aparece com ${melhorMapa.winrate.toStringAsFixed(1)}% de winrate. Se puder escolher stage, considere esse mapa.',
+    );
+  }
+
+  final List<AnaliseComparativaItem> porMatchup = gerarComparativoPorCampo(
+    partidas,
+    (partida) => partida.personagemAdversario,
+  ).where((item) => item.total >= 2).toList();
+
+  if (porMatchup.isNotEmpty) {
+    final List<AnaliseComparativaItem> matchupsOrdenados = [...porMatchup]
+      ..sort((a, b) => a.winrate.compareTo(b.winrate));
+    final AnaliseComparativaItem matchupProblema = matchupsOrdenados.first;
+    dicas.add(
+      'Matchup para revisar com $personagemAtual: contra ${matchupProblema.nome}, seu winrate está em ${matchupProblema.winrate.toStringAsFixed(1)}%. Veja como você está morrendo nesse confronto.',
+    );
+  }
+
+  final Map<String, int> mortesPorMapa = {};
+  final Map<String, String> labelMortesPorMapa = {};
+  final String morteMaisComum = encontrarMaisFrequente(
+    partidas.map((partida) => partida.formaDeMorte).toList(),
+  );
+
+  if (morteMaisComum != 'Sem dados' && morteMaisComum != 'Não morreu') {
+    dicas.add(planoDefensivoPorMorte(personagemAtual, morteMaisComum));
+  }
+
+  for (final partida in partidas) {
+    final String morte = partida.formaDeMorte.trim();
+    final String stage = partida.stage.trim();
+    if (morte.isEmpty || morte == 'Não morreu' || morte == 'Sem dados') continue;
+    if (stage.isEmpty) continue;
+
+    final String chave = '${normalizarTexto(stage)}|${normalizarTexto(morte)}';
+    mortesPorMapa[chave] = (mortesPorMapa[chave] ?? 0) + 1;
+    labelMortesPorMapa.putIfAbsent(chave, () => '$stage|$morte');
+  }
+
+  if (mortesPorMapa.isNotEmpty) {
+    final entry = mortesPorMapa.entries.reduce(
+      (a, b) => a.value >= b.value ? a : b,
+    );
+    final List<String> partes = (labelMortesPorMapa[entry.key] ?? '').split('|');
+    if (entry.value >= 2 && partes.length == 2) {
+      dicas.add(planoDefensivoPorMorte(personagemAtual, partes[1]));
+    }
+  }
+
+  if (dicas.isEmpty) {
+    dicas.add(
+      'Ainda não há padrão forte para ${contexto()}. Continue registrando mapa, kill e morte para o LabTracker gerar dicas mais certeiras.',
+    );
+  }
+
+  final List<String> dicasUnicas = [];
+  for (final dica in dicas) {
+    if (!dicasUnicas.contains(dica)) {
+      dicasUnicas.add(dica);
+    }
+  }
+
+  return dicasUnicas.take(6).toList();
+}
+
+class AnalisesSection extends StatefulWidget {
+  final Character personagemAtual;
+  final List<PartidaRegistrada> historico;
+  final String jogoAtual;
+
+  const AnalisesSection({
+    super.key,
+    required this.personagemAtual,
+    required this.historico,
+    required this.jogoAtual,
+  });
+
+  @override
+  State<AnalisesSection> createState() => _AnalisesSectionState();
+}
+
+class _AnalisesSectionState extends State<AnalisesSection> {
+  DateTime? mesComparativoSelecionado;
+  String escopoSelecionado = 'Geral';
+  String alvoSelecionado = 'Todos';
+  String mapaSelecionado = 'Todos';
+
+  @override
+  Widget build(BuildContext context) {
+    final List<PartidaRegistrada> partidasDoPersonagem = widget.historico
+        .where((partida) => partida.personagemJogador == widget.personagemAtual.name)
+        .toList();
+
+    final List<String> personagensAdversarios = gerarOpcoesFiltro(
+      partidasDoPersonagem
+          .map((partida) => partida.personagemAdversario)
+          .toList(),
+    );
+    final List<String> playersAdversarios = gerarOpcoesFiltro(
+      partidasDoPersonagem.map((partida) => partida.nickAdversario).toList(),
+    );
+    final List<String> mapasDisponiveis = gerarOpcoesFiltro(
+      partidasDoPersonagem.map((partida) => partida.stage).toList(),
+    );
+    final List<String> opcoesAlvo = escopoSelecionado == 'Personagem'
+        ? personagensAdversarios
+        : escopoSelecionado == 'Player'
+            ? playersAdversarios
+            : const ['Todos'];
+
+    if (!opcoesAlvo.contains(alvoSelecionado)) {
+      alvoSelecionado = 'Todos';
+    }
+
+    if (!mapasDisponiveis.contains(mapaSelecionado)) {
+      mapaSelecionado = 'Todos';
+    }
+
+    List<PartidaRegistrada> partidasFiltradas = partidasDoPersonagem;
+
+    if (escopoSelecionado == 'Personagem' && alvoSelecionado != 'Todos') {
+      partidasFiltradas = partidasFiltradas
+          .where((partida) => partida.personagemAdversario == alvoSelecionado)
+          .toList();
+    } else if (escopoSelecionado == 'Player' && alvoSelecionado != 'Todos') {
+      partidasFiltradas = partidasFiltradas
+          .where((partida) => partida.nickAdversario == alvoSelecionado)
+          .toList();
+    }
+
+    if (mapaSelecionado != 'Todos') {
+      partidasFiltradas = partidasFiltradas
+          .where((partida) => partida.stage == mapaSelecionado)
+          .toList();
+    }
+
+    final List<EvolucaoPdlPonto> evolucao = gerarEvolucaoPdl(partidasFiltradas);
+    final List<AnaliseComparativaItem> matchups = gerarComparativoPorCampo(
+      partidasFiltradas,
+      (partida) => partida.personagemAdversario,
+    ).take(6).toList();
+    final List<AnaliseComparativaItem> mapas = gerarComparativoPorCampo(
+      partidasFiltradas,
+      (partida) => partida.stage,
+    ).take(6).toList();
+    final List<FrequenciaItem> kills = gerarRankingFrequencia(
+      partidasFiltradas.map((partida) => partida.formaDeKill).toList(),
+    ).where((item) => item.nome != 'Não matou').take(5).toList();
+    final List<FrequenciaItem> mortes = gerarRankingFrequencia(
+      partidasFiltradas.map((partida) => partida.formaDeMorte).toList(),
+    ).where((item) => item.nome != 'Não morreu').take(5).toList();
+    final List<String> insights = gerarInsightsAvancados(
+      partidasFiltradas,
+      personagemAtual: widget.personagemAtual.name,
+      escopo: escopoSelecionado,
+      alvo: alvoSelecionado,
+      mapa: mapaSelecionado,
+    );
+
+    final DateTime agora = DateTime.now();
+    final DateTime mesAtual = DateTime(agora.year, agora.month);
+    final DateTime mesAnterior = mesAnteriorDe(agora);
+    final List<DateTime> mesesDisponiveis = gerarMesesDisponiveis(
+      partidasFiltradas,
+    );
+    final List<DateTime> mesesComparaveis = mesesDisponiveis
+        .where((mes) => !mesmoMesAno(mes, mesAtual))
+        .toList();
+
+    DateTime? mesComparativo = mesComparativoSelecionado;
+    final bool mesSelecionadoExiste = mesComparativo == null
+        ? false
+        : mesesComparaveis.any((mes) => mesmoMesAno(mes, mesComparativo!));
+
+    if (!mesSelecionadoExiste) {
+      final bool existeMesAnterior = mesesComparaveis.any(
+        (mes) => mesmoMesAno(mes, mesAnterior),
+      );
+
+      if (existeMesAnterior) {
+        mesComparativo = mesesComparaveis.firstWhere(
+          (mes) => mesmoMesAno(mes, mesAnterior),
+        );
+      } else if (mesesComparaveis.isNotEmpty) {
+        mesComparativo = mesesComparaveis.first;
+      } else {
+        mesComparativo = null;
+      }
+    }
+
+    if (partidasDoPersonagem.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            'Registre partidas com ${widget.personagemAtual.name} para liberar gráficos, comparativos e dicas.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MatchupHeader(
+                    jogo: widget.jogoAtual,
+                    personagem: widget.personagemAtual.name,
+                    adversario: 'Histórico',
+                    avatarSize: 42,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Comparativos baseados nas partidas registradas com ${widget.personagemAtual.name}.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Filtro da análise',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: escopoSelecionado,
+                            decoration: const InputDecoration(
+                              labelText: 'Ver dados',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'Geral',
+                                child: Text('No geral'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Personagem',
+                                child: Text('Contra personagem específico'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Player',
+                                child: Text('Contra player específico'),
+                              ),
+                            ],
+                            onChanged: (valor) {
+                              if (valor == null) return;
+                              setState(() {
+                                escopoSelecionado = valor;
+                                alvoSelecionado = 'Todos';
+                              });
+                            },
+                          ),
+                          if (escopoSelecionado != 'Geral') ...[
+                            const SizedBox(height: 12),
+                            SearchableOptionField(
+                              label: escopoSelecionado == 'Personagem'
+                                  ? 'Pesquisar personagem adversário'
+                                  : 'Pesquisar player adversário',
+                              value: alvoSelecionado,
+                              options: opcoesAlvo,
+                              icon: escopoSelecionado == 'Personagem'
+                                  ? Icons.sports_esports_outlined
+                                  : Icons.person_search_outlined,
+                              onChanged: (valor) {
+                                setState(() {
+                                  alvoSelecionado = valor;
+                                });
+                              },
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          SearchableOptionField(
+                            label: 'Pesquisar mapa',
+                            value: mapaSelecionado,
+                            options: mapasDisponiveis,
+                            icon: Icons.map_outlined,
+                            onChanged: (valor) {
+                              setState(() {
+                                mapaSelecionado = valor;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '${partidasFiltradas.length} partidas encontradas nesse filtro.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (partidasFiltradas.isEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(18),
+                        child: Text(
+                          'Sem partidas para esse filtro. Troque o player, personagem ou mapa.',
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (partidasFiltradas.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Evolução de PDL',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text('Gráfico estilo stonks por partida registrada.'),
+                          const SizedBox(height: 18),
+                          SizedBox(
+                            height: 190,
+                            width: double.infinity,
+                            child: PdlLineChart(pontos: evolucao),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Mês atual vs mês escolhido',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (mesesComparaveis.isNotEmpty)
+                            DropdownButtonFormField<DateTime>(
+                              value: mesComparativo,
+                              decoration: const InputDecoration(
+                                labelText: 'Comparar com',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: mesesComparaveis.map((mes) {
+                                return DropdownMenuItem<DateTime>(
+                                  value: mes,
+                                  child: Text(rotuloMesAno(mes)),
+                                );
+                              }).toList(),
+                              onChanged: (novoMes) {
+                                setState(() {
+                                  mesComparativoSelecionado = novoMes;
+                                });
+                              },
+                            ),
+                          if (mesesComparaveis.isNotEmpty)
+                            const SizedBox(height: 12),
+                          LinhaEstatistica(
+                            titulo: 'Mês atual',
+                            valor: resumoMes(partidasFiltradas, agora),
+                          ),
+                          LinhaEstatistica(
+                            titulo: 'Comparativo',
+                            valor: mesComparativo == null
+                                ? 'Sem outro mês registrado'
+                                : resumoMes(partidasFiltradas, mesComparativo),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ComparativoCard(
+                    titulo: 'Matchups',
+                    subtitulo: 'Quem você mais enfrenta e como está seu resultado.',
+                    itens: matchups,
+                    usarWinrate: true,
+                  ),
+                  const SizedBox(height: 16),
+                  ComparativoCard(
+                    titulo: 'Mapas',
+                    subtitulo: 'Onde você mais joga, ganha e perde PDL.',
+                    itens: mapas,
+                    usarWinrate: true,
+                  ),
+                  const SizedBox(height: 16),
+                  FrequenciaCard(
+                    titulo: 'Formas de kill',
+                    subtitulo: 'KOs registrados nesse filtro. As dicas abaixo usam isso como contexto.',
+                    itens: kills,
+                    icon: Icons.flash_on,
+                  ),
+                  const SizedBox(height: 16),
+                  FrequenciaCard(
+                    titulo: 'Formas de morte',
+                    subtitulo: 'Padrões de morte para revisar no treino.',
+                    itens: mortes,
+                    icon: Icons.warning_amber_outlined,
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Dicas para jogar melhor',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...insights.map((insight) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.auto_awesome, size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: Text(insight)),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+              );
+  }
+}
+
+class PdlLineChart extends StatelessWidget {
+  final List<EvolucaoPdlPonto> pontos;
+
+  const PdlLineChart({
+    super.key,
+    required this.pontos,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (pontos.length < 2) {
+      return const Center(
+        child: Text('Registre pelo menos 2 partidas para desenhar a evolução.'),
+      );
+    }
+
+    final int saldoFinal = pontos.last.saldo;
+    final Color corLinha = saldoFinal >= 0 ? Colors.greenAccent : Colors.redAccent;
+
+    return CustomPaint(
+      painter: PdlLineChartPainter(
+        pontos: pontos,
+        lineColor: corLinha,
+        gridColor: Theme.of(context).dividerColor.withOpacity(0.35),
+        textColor: Theme.of(context).textTheme.bodySmall?.color ??
+            Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+  }
+}
+
+class PdlLineChartPainter extends CustomPainter {
+  final List<EvolucaoPdlPonto> pontos;
+  final Color lineColor;
+  final Color gridColor;
+  final Color textColor;
+
+  const PdlLineChartPainter({
+    required this.pontos,
+    required this.lineColor,
+    required this.gridColor,
+    required this.textColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double left = 46;
+    const double right = 12;
+    const double top = 14;
+    const double bottom = 32;
+
+    final double chartWidth = size.width - left - right;
+    final double chartHeight = size.height - top - bottom;
+
+    if (chartWidth <= 0 || chartHeight <= 0) return;
+
+    int minSaldo = pontos.first.saldo;
+    int maxSaldo = pontos.first.saldo;
+
+    for (final ponto in pontos) {
+      if (ponto.saldo < minSaldo) minSaldo = ponto.saldo;
+      if (ponto.saldo > maxSaldo) maxSaldo = ponto.saldo;
+    }
+
+    if (minSaldo == maxSaldo) {
+      minSaldo -= 10;
+      maxSaldo += 10;
+    }
+
+    final Paint gridPaint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 1;
+
+    for (int i = 0; i <= 3; i++) {
+      final double y = top + (chartHeight / 3) * i;
+      canvas.drawLine(Offset(left, y), Offset(size.width - right, y), gridPaint);
+    }
+
+    final double zeroY = top +
+        (maxSaldo / (maxSaldo - minSaldo)) * chartHeight;
+    if (zeroY >= top && zeroY <= top + chartHeight) {
+      final Paint zeroPaint = Paint()
+        ..color = textColor.withOpacity(0.45)
+        ..strokeWidth = 1.2;
+      canvas.drawLine(
+        Offset(left, zeroY),
+        Offset(size.width - right, zeroY),
+        zeroPaint,
+      );
+    }
+
+    Offset pontoParaOffset(int index, EvolucaoPdlPonto ponto) {
+      final double x = left + (chartWidth / (pontos.length - 1)) * index;
+      final double normalizado =
+          (ponto.saldo - minSaldo) / (maxSaldo - minSaldo);
+      final double y = top + chartHeight - (normalizado * chartHeight);
+      return Offset(x, y);
+    }
+
+    final Path path = Path();
+    for (int i = 0; i < pontos.length; i++) {
+      final Offset offset = pontoParaOffset(i, pontos[i]);
+      if (i == 0) {
+        path.moveTo(offset.dx, offset.dy);
+      } else {
+        path.lineTo(offset.dx, offset.dy);
+      }
+    }
+
+    final Paint linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(path, linePaint);
+
+    final Paint dotPaint = Paint()..color = lineColor;
+    for (int i = 0; i < pontos.length; i++) {
+      final bool deveMostrar = i == 0 ||
+          i == pontos.length - 1 ||
+          pontos.length <= 8 ||
+          i % 3 == 0;
+      if (!deveMostrar) continue;
+      canvas.drawCircle(pontoParaOffset(i, pontos[i]), 4, dotPaint);
+    }
+
+    void drawText(String texto, Offset pos, {TextAlign align = TextAlign.left}) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(
+          text: texto,
+          style: TextStyle(color: textColor.withOpacity(0.75), fontSize: 11),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: align,
+      )..layout(maxWidth: 80);
+
+      painter.paint(canvas, pos);
+    }
+
+    drawText('$maxSaldo', const Offset(0, top - 2));
+    drawText('$minSaldo', Offset(0, top + chartHeight - 12));
+    drawText('P1', Offset(left, size.height - 22));
+    drawText('P${pontos.length}', Offset(size.width - right - 34, size.height - 22));
+  }
+
+  @override
+  bool shouldRepaint(covariant PdlLineChartPainter oldDelegate) {
+    return oldDelegate.pontos != pontos ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.textColor != textColor;
+  }
+}
+
+class ComparativoCard extends StatelessWidget {
+  final String titulo;
+  final String subtitulo;
+  final List<AnaliseComparativaItem> itens;
+  final bool usarWinrate;
+
+  const ComparativoCard({
+    super.key,
+    required this.titulo,
+    required this.subtitulo,
+    required this.itens,
+    this.usarWinrate = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final int maiorTotal = itens.isEmpty
+        ? 1
+        : itens.map((item) => item.total).reduce((a, b) => a > b ? a : b);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              titulo,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(subtitulo),
+            const SizedBox(height: 16),
+            if (itens.isEmpty)
+              const Text('Sem dados suficientes.')
+            else
+              ...itens.map((item) {
+                final double fator = item.total / maiorTotal;
+                final String saldo = formatarSaldo(item.saldoPdl);
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.nome,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          Text(
+                            usarWinrate
+                                ? '${item.winrate.toStringAsFixed(1)}% • $saldo PDL'
+                                : '${item.total}x • $saldo PDL',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: fator.clamp(0.08, 1.0).toDouble(),
+                          minHeight: 9,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${item.total} partidas • ${item.vitorias}V / ${item.derrotas}D',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FrequenciaCard extends StatelessWidget {
+  final String titulo;
+  final String subtitulo;
+  final List<FrequenciaItem> itens;
+  final IconData icon;
+
+  const FrequenciaCard({
+    super.key,
+    required this.titulo,
+    required this.subtitulo,
+    required this.itens,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final int maior = itens.isEmpty
+        ? 1
+        : itens.map((item) => item.quantidade).reduce((a, b) => a > b ? a : b);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              titulo,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(subtitulo),
+            const SizedBox(height: 16),
+            if (itens.isEmpty)
+              const Text('Sem dados suficientes.')
+            else
+              ...itens.map((item) {
+                final double fator = item.quantidade / maior;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(icon, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          item.nome,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 4,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            value: fator.clamp(0.08, 1.0).toDouble(),
+                            minHeight: 9,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '${item.quantidade}x',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -5745,6 +7826,13 @@ class _PerfilJogadorPageState extends State<PerfilJogadorPage> {
 }
 
 class ConfiguracoesPage extends StatelessWidget {
+  static const String versaoApp = '1.0.0-alpha';
+  static const String emailSugestoes = 'guilhermegafelipi@gmail.com';
+  static const String textoProjetoIndependente =
+      'LabTracker é um projeto independente de acompanhamento de partidas.\n'
+      'Este app não é afiliado, patrocinado ou aprovado pela Nintendo ou por qualquer publicadora dos jogos mencionados.\n'
+      'Marcas, nomes e personagens pertencem aos seus respectivos donos.';
+
   final String pastaBackupPath;
   final Future<String> Function() exportarBackup;
   final Future<String> Function() importarBackupMaisRecente;
@@ -5777,6 +7865,140 @@ class ConfiguracoesPage extends StatelessWidget {
               child: const Text('Ok'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<void> enviarSugestao(BuildContext context) async {
+    final Uri uri = Uri(
+      scheme: 'mailto',
+      path: emailSugestoes,
+      queryParameters: const {
+        'subject': 'Sugestão para o LabTracker',
+        'body': 'Olá, tenho uma sugestão para o LabTracker:\n\n',
+      },
+    );
+
+    final bool abriu = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!abriu && context.mounted) {
+      await mostrarMensagem(
+        context,
+        'Enviar sugestão',
+        'Não foi possível abrir o app de email automaticamente.\n\n'
+        'Envie sua sugestão para:\n\n$emailSugestoes',
+      );
+    }
+  }
+
+  Future<void> mostrarSobre(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Sobre o LabTracker'),
+          content: const SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'LabTracker',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text('Criado por: Guilherme Felipi / FlawleesRNG'),
+                Text('Versão: 1.0.0-alpha'),
+                SizedBox(height: 16),
+                Text(
+                  'Projeto para acompanhar partidas, evolução, estatísticas, matchups e pontos de melhoria.',
+                ),
+                SizedBox(height: 16),
+                SelectableText(textoProjetoIndependente),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () {
+                enviarSugestao(context);
+              },
+              icon: const Icon(Icons.mail_outline),
+              label: const Text('Enviar sugestão'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> mostrarGlossario(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.82,
+          minChildSize: 0.45,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(24),
+              children: const [
+                Text(
+                  'Glossário de golpes',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Guia rápido para entender as nomenclaturas usadas no registro de partidas.',
+                ),
+                SizedBox(height: 20),
+                LinhaEstatistica(titulo: 'Jab', valor: 'Ataque neutro rápido'),
+                LinhaEstatistica(titulo: 'F-tilt', valor: 'Tilt para frente'),
+                LinhaEstatistica(titulo: 'Up tilt', valor: 'Tilt para cima'),
+                LinhaEstatistica(titulo: 'Down tilt', valor: 'Tilt para baixo'),
+                LinhaEstatistica(titulo: 'F-smash', valor: 'Smash para frente'),
+                LinhaEstatistica(titulo: 'Up smash', valor: 'Smash para cima'),
+                LinhaEstatistica(titulo: 'Down smash', valor: 'Smash para baixo'),
+                LinhaEstatistica(titulo: 'Nair', valor: 'Aerial neutro'),
+                LinhaEstatistica(titulo: 'Fair', valor: 'Aerial para frente'),
+                LinhaEstatistica(titulo: 'Bair', valor: 'Aerial para trás'),
+                LinhaEstatistica(titulo: 'Up air', valor: 'Aerial para cima'),
+                LinhaEstatistica(titulo: 'Down air', valor: 'Aerial para baixo'),
+                LinhaEstatistica(titulo: 'Neutral B', valor: 'Especial neutro'),
+                LinhaEstatistica(titulo: 'Side B', valor: 'Especial lateral'),
+                LinhaEstatistica(titulo: 'Up B', valor: 'Especial para cima / recovery'),
+                LinhaEstatistica(titulo: 'Down B', valor: 'Especial para baixo'),
+                LinhaEstatistica(titulo: 'Grab', valor: 'Agarrão'),
+                LinhaEstatistica(titulo: 'Forward throw', valor: 'Arremesso para frente'),
+                LinhaEstatistica(titulo: 'Back throw', valor: 'Arremesso para trás'),
+                LinhaEstatistica(titulo: 'Up throw', valor: 'Arremesso para cima'),
+                LinhaEstatistica(titulo: 'Down throw', valor: 'Arremesso para baixo'),
+                LinhaEstatistica(titulo: 'Spike', valor: 'Golpe que manda para baixo'),
+                LinhaEstatistica(titulo: 'Shield break', valor: 'Quebra de escudo'),
+              ],
+            );
+          },
         );
       },
     );
@@ -5882,6 +8104,30 @@ class ConfiguracoesPage extends StatelessWidget {
                 subtitle: const Text('Editar nick e região.'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: abrirPerfil,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.help_outline),
+                title: const Text('Glossário de golpes'),
+                subtitle: const Text('Entenda termos como Up B, Bair, F-tilt e throws.'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  mostrarGlossario(context);
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('Sobre o LabTracker'),
+                subtitle: const Text('Versão, créditos e envio de sugestão.'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  mostrarSobre(context);
+                },
               ),
             ),
             const SizedBox(height: 16),
