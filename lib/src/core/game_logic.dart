@@ -1,0 +1,936 @@
+part of '../../main.dart';
+
+String _textoPorCodigos(List<int> codigos) {
+  return String.fromCharCodes(codigos);
+}
+
+String corrigirTextoLegado(String texto) {
+  String corrigido = texto;
+
+  final List<MapEntry<String, String>> substituicoes = [
+    MapEntry(
+      _textoPorCodigos([0x00C3, 0x0192, 0x00C2]),
+      _textoPorCodigos([0x00C3]),
+    ),
+    MapEntry(
+      _textoPorCodigos([0x00C3, 0x0192, 0x00C5, 0x00A0]),
+      _textoPorCodigos([0x00C3, 0x0160]),
+    ),
+    MapEntry(
+      _textoPorCodigos([0x00C3, 0x0192, 0x00E2, 0x20AC, 0x0161]),
+      _textoPorCodigos([0x00C2]),
+    ),
+    MapEntry(_textoPorCodigos([0x00C3, 0x201A]), _textoPorCodigos([0x00C2])),
+    MapEntry(
+      _textoPorCodigos([0x00E2, 0x20AC, 0x00A2]),
+      _textoPorCodigos([0x2022]),
+    ),
+    MapEntry(
+      _textoPorCodigos([0x00E2, 0x20AC, 0x201D]),
+      _textoPorCodigos([0x2014]),
+    ),
+  ];
+
+  for (final substituicao in substituicoes) {
+    corrigido = corrigido.replaceAll(substituicao.key, substituicao.value);
+  }
+
+  for (int tentativa = 0; tentativa < 2; tentativa++) {
+    try {
+      final String proximo = utf8.decode(
+        latin1.encode(corrigido),
+        allowMalformed: false,
+      );
+
+      if (proximo == corrigido) break;
+      corrigido = proximo;
+    } catch (_) {
+      break;
+    }
+  }
+
+  return corrigido;
+}
+
+bool resultadoEhVitoria(String resultado) {
+  return corrigirTextoLegado(resultado) == 'Vitória';
+}
+
+bool resultadoEhDerrota(String resultado) {
+  return corrigirTextoLegado(resultado) == 'Derrota';
+}
+
+String calcularRank(int pdl) {
+  if (pdl < 100) return 'Starter V';
+  if (pdl < 200) return 'Starter IV';
+  if (pdl < 300) return 'Starter III';
+  if (pdl < 400) return 'Starter II';
+  if (pdl < 500) return 'Starter';
+
+  if (pdl < 650) return 'For Fun V';
+  if (pdl < 800) return 'For Fun IV';
+  if (pdl < 950) return 'For Fun III';
+  if (pdl < 1100) return 'For Fun II';
+  if (pdl < 1250) return 'For Fun';
+
+  if (pdl < 1450) return 'Quick Play V';
+  if (pdl < 1650) return 'Quick Play IV';
+  if (pdl < 1850) return 'Quick Play III';
+  if (pdl < 2050) return 'Quick Play II';
+  if (pdl < 2250) return 'Quick Play';
+
+  if (pdl < 2500) return 'Brawl V';
+  if (pdl < 2750) return 'Brawl IV';
+  if (pdl < 3000) return 'Brawl III';
+  if (pdl < 3250) return 'Brawl II';
+  if (pdl < 3500) return 'Brawl';
+
+  if (pdl < 3800) return 'For Glory V';
+  if (pdl < 4100) return 'For Glory IV';
+  if (pdl < 4400) return 'For Glory III';
+  if (pdl < 4700) return 'For Glory II';
+  if (pdl < 5000) return 'For Glory';
+
+  if (pdl < 5400) return 'Melee V';
+  if (pdl < 5800) return 'Melee IV';
+  if (pdl < 6200) return 'Melee III';
+  if (pdl < 6600) return 'Melee II';
+  if (pdl < 7000) return 'Melee';
+
+  return 'Elite Smash';
+}
+
+bool usaLp(String jogo) {
+  return jogo == jogoInvincibleVs;
+}
+
+bool usaRankStreetFighter(String jogo) {
+  return jogo == jogoStreetFighter6;
+}
+
+String labelPontosRank(String jogo) {
+  return usaLp(jogo) ? 'LP' : 'PDL';
+}
+
+String rankInicialDoJogo(String jogo) {
+  if (usaLp(jogo)) return 'New Blood IV';
+  if (usaRankStreetFighter(jogo)) return 'Rookie I';
+  return 'Starter V';
+}
+
+String calcularRankInvincible(int lp) {
+  const List<String> ranks = [
+    'New Blood',
+    'Rookie',
+    'Bronze',
+    'Silver',
+    'Gold',
+    'Platinum',
+    'Diamond',
+    'Superhero',
+  ];
+  const List<String> divisoes = ['IV', 'III', 'II', 'I'];
+
+  final int lpCorrigido = lp < 0 ? 0 : lp;
+  final int indiceDivisao = lpCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length * divisoes.length) {
+    return 'Guardian of the Globe';
+  }
+
+  final String rank = ranks[indiceDivisao ~/ divisoes.length];
+  final String divisao = divisoes[indiceDivisao % divisoes.length];
+
+  return '$rank $divisao';
+}
+
+String calcularRankStreetFighter(int pdl) {
+  const List<String> ranks = [
+    'Rookie',
+    'Iron',
+    'Bronze',
+    'Silver',
+    'Gold',
+    'Platinum',
+    'Diamond',
+  ];
+  const List<String> divisoes = ['I', 'II', 'III', 'IV', 'V'];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 120;
+
+  if (indiceDivisao >= ranks.length * divisoes.length) {
+    return 'Master';
+  }
+
+  final String rank = ranks[indiceDivisao ~/ divisoes.length];
+  final String divisao = divisoes[indiceDivisao % divisoes.length];
+
+  return '$rank $divisao';
+}
+
+String calcularRankDoJogo(String jogo, int pontos) {
+  if (usaLp(jogo)) return calcularRankInvincible(pontos);
+  if (usaRankStreetFighter(jogo)) return calcularRankStreetFighter(pontos);
+  return calcularRank(pontos);
+}
+
+bool partidaPertenceAoJogo(PartidaRegistrada partida, String jogo) {
+  if (jogo == jogoInvincibleVs) {
+    return partida.isInvincible;
+  }
+
+  if (partida.isInvincible) {
+    return false;
+  }
+
+  return partida.jogo.isEmpty || partida.jogo == jogo;
+}
+
+int calcularLpInvincible({
+  required String resultado,
+  required String condicaoVitoria,
+  required String motivoDerrota,
+}) {
+  if (resultadoEhVitoria(resultado)) {
+    int lp = 24;
+
+    switch (corrigirTextoLegado(condicaoVitoria)) {
+      case 'Perfeito / Quase Perfeito':
+        lp += 8;
+        break;
+      case 'Com Personagem Âncora':
+      case 'Virada':
+        lp += 6;
+        break;
+      case 'Confirmação com Assist':
+      case 'Controle de Espaço':
+        lp += 4;
+        break;
+      case 'Combo':
+      case 'Ultimate':
+      case 'Pressão':
+      case 'Mix-up':
+      case 'Whiff Punish':
+      case 'Anti-air':
+      case 'Punição':
+        lp += 3;
+        break;
+      case 'Tempo Esgotado':
+        lp += 1;
+        break;
+    }
+
+    return lp;
+  }
+
+  int lp = -18;
+
+  switch (corrigirTextoLegado(motivoDerrota)) {
+    case 'Erro de Tag':
+    case 'Erro Meu / Miss Input':
+    case 'Drop de Combo':
+      lp -= 6;
+      break;
+    case 'Personagem Caiu Cedo':
+    case 'Não Consegui Sair da Pressão':
+    case 'Pressão no Canto':
+      lp -= 5;
+      break;
+    case 'Assist Mal Usado':
+    case 'Erro de Defesa':
+    case 'Falta de Controle de Espaço':
+      lp -= 4;
+      break;
+    case 'Comeback do Adversário':
+    case 'Perdi no Mix-up':
+    case 'Tomei Whiff Punish':
+    case 'Tomei Anti-air':
+    case 'Punição':
+    case 'Ultimate':
+      lp -= 3;
+      break;
+    case 'Tempo Esgotado':
+      lp -= 1;
+      break;
+  }
+
+  return lp;
+}
+
+int bonusPorKill(String formaDeKill) {
+  switch (formaDeKill) {
+    case 'Kill confirm':
+      return 4;
+    case 'Edgeguard':
+      return 4;
+    case 'Ledgetrap':
+      return 3;
+    case 'Read':
+      return 5;
+    case 'Punish':
+      return 3;
+    case 'F-smash':
+    case 'Up smash':
+    case 'Down smash':
+    case 'Shield break':
+      return 4;
+    case 'Back throw':
+    case 'Forward throw':
+    case 'Up throw':
+    case 'Down throw':
+    case 'Bair':
+    case 'Up air':
+    case 'Down air':
+      return 3;
+    case 'F-tilt':
+    case 'Up tilt':
+    case 'Down tilt':
+    case 'Fair':
+    case 'Nair':
+    case 'Dash attack':
+    case 'Side B':
+    case 'Up B':
+    case 'Down B':
+    case 'Neutral B':
+      return 2;
+    case 'Jab':
+    case 'Grab':
+      return 1;
+    case 'Magia':
+      return 3;
+    case 'Spike':
+      return 5;
+    case 'Gimp':
+      return 4;
+    case 'Outro':
+      return 1;
+    case 'Não matou':
+      return 0;
+    default:
+      return 0;
+  }
+}
+
+int penalidadePorMorte(String formaDeMorte) {
+  switch (formaDeMorte) {
+    case 'SD':
+      return -8;
+    case 'Recovery errado':
+      return -6;
+    case 'Panic option':
+      return -5;
+    case 'Punish sofrido':
+      return -4;
+    case 'Edgeguard sofrido':
+      return -4;
+    case 'Ledgetrap sofrido':
+      return -3;
+    case 'Morreu cedo':
+      return -5;
+    case 'Read do adversário':
+      return -4;
+    case 'F-smash':
+    case 'Up smash':
+    case 'Down smash':
+    case 'Shield break':
+    case 'Spike':
+    case 'Gimp':
+      return -5;
+    case 'Back throw':
+    case 'Forward throw':
+    case 'Up throw':
+    case 'Down throw':
+    case 'Bair':
+    case 'Up air':
+    case 'Down air':
+    case 'Magia':
+      return -4;
+    case 'F-tilt':
+    case 'Up tilt':
+    case 'Down tilt':
+    case 'Fair':
+    case 'Nair':
+    case 'Dash attack':
+    case 'Side B':
+    case 'Up B':
+    case 'Down B':
+    case 'Neutral B':
+      return -3;
+    case 'Jab':
+    case 'Grab':
+      return -2;
+    case 'Outro':
+      return -2;
+    case 'Não morreu':
+      return 0;
+    default:
+      return 0;
+  }
+}
+
+String normalizarTexto(String texto) {
+  return texto.trim().toLowerCase();
+}
+
+String formatarData(DateTime data) {
+  String doisDigitos(int numero) => numero.toString().padLeft(2, '0');
+
+  final dia = doisDigitos(data.day);
+  final mes = doisDigitos(data.month);
+  final ano = data.year;
+  final hora = doisDigitos(data.hour);
+  final minuto = doisDigitos(data.minute);
+
+  return '$dia/$mes/$ano às $hora:$minuto';
+}
+
+bool isMesmoDia(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+String normalizarNomePersonagem(String nome) {
+  final String nomeCorrigido = corrigirTextoLegado(nome).trim();
+
+  switch (nomeCorrigido) {
+    case 'Squirtle':
+    case 'Ivysaur':
+    case 'Charizard':
+      return 'Pokémon Trainer';
+    case 'Alex':
+    case 'Zombie':
+    case 'Enderman':
+      return 'Steve';
+    case 'Pyra':
+    case 'Mythra':
+      return 'Pyra/Mythra';
+    default:
+      return nomeCorrigido;
+  }
+}
+
+String _nomeArquivoPersonagem(String nome) {
+  return nome
+      .trim()
+      .replaceAll("'", '')
+      .replaceAll('#', '')
+      .replaceAll('?', '')
+      .replaceAll('&', 'and')
+      .replaceAll(RegExp(r'\s+'), '_');
+}
+
+String _nomeArquivoPersonagemLower(String nome) {
+  return _nomeArquivoPersonagem(nome).toLowerCase();
+}
+
+String _nomeArquivoPersonagemKebab(String nome) {
+  return nome
+      .trim()
+      .replaceAll("'", '')
+      .replaceAll('#', '')
+      .replaceAll('?', '')
+      .replaceAll('&', 'and')
+      .replaceAll('.', '')
+      .replaceAll(RegExp(r'\s+'), '-');
+}
+
+String _nomeArquivoPersonagemKebabLower(String nome) {
+  return _nomeArquivoPersonagemKebab(nome).toLowerCase();
+}
+
+String _urlArquivoFandom(String wiki, String arquivo) {
+  final String caminho = arquivo.trim();
+  if (caminho.isEmpty) return '';
+  if (caminho.startsWith('http://') || caminho.startsWith('https://')) {
+    return caminho;
+  }
+
+  return 'https://$wiki/wiki/Special:Redirect/file/${Uri.encodeComponent(caminho)}';
+}
+
+List<String> _urlsArquivosFandom(String wiki, Iterable<String> arquivos) {
+  return arquivos
+      .where((arquivo) => arquivo.trim().isNotEmpty)
+      .map((arquivo) => _urlArquivoFandom(wiki, arquivo))
+      .toSet()
+      .toList();
+}
+
+List<String> urlsImagemPersonagem(
+  String nome, [
+  String jogo = 'Super Smash Bros. Ultimate',
+]) {
+  final String nomeLimpo = nome.trim();
+  final String slug = _nomeArquivoPersonagem(nomeLimpo);
+  final String slugLower = _nomeArquivoPersonagemLower(nomeLimpo);
+  final String slugKebabLower = _nomeArquivoPersonagemKebabLower(nomeLimpo);
+  final String nomeSemPontos = nomeLimpo
+      .replaceAll('.', '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  final String nomeSemEspacos = nomeLimpo
+      .replaceAll("'", '')
+      .replaceAll('#', '')
+      .replaceAll('?', '')
+      .replaceAll('&', 'and')
+      .replaceAll('.', '')
+      .replaceAll('-', '')
+      .replaceAll(RegExp(r'\s+'), '');
+  final String? idKofXV = idsKofXV[nomeLimpo];
+
+  // Jogos cujas imagens vêm de mapas diretos (nome -> URL).
+  switch (jogo) {
+    case 'Street Fighter 6':
+      return _urlsArquivosFandom('streetfighter.fandom.com', [
+        imagensStreetFighter6[nomeLimpo] ?? '',
+        ...?imagensAlternativasStreetFighter6[nomeLimpo],
+        'Sf6-$slugKebabLower.png',
+        '$nomeLimpo SF6 Render.png',
+        '$nomeSemPontos SF6 Render.png',
+        '$nomeLimpo SF6.png',
+        '$nomeSemPontos SF6.png',
+        'SF6 $nomeLimpo.png',
+        'SF6 $nomeSemPontos.png',
+        'SF6_$slug.png',
+        'SF6_${slug}_Render.png',
+        '${slug}_SF6_Render.png',
+      ]);
+    case 'Mortal Kombat 1':
+      return _urlsArquivosFandom('mortalkombat.fandom.com', [
+        imagensMortalKombat1[nomeLimpo] ?? '',
+        ...?imagensAlternativasMortalKombat1[nomeLimpo],
+        'https://www.mortalkombatwarehouse.com/mk12/renders/'
+            '${nomeSemEspacos.toLowerCase()}.png',
+        '$nomeLimpo MK1 render.webp',
+        '$nomeLimpo MK1 Render.png',
+        '$nomeLimpo (MK1) Render.png',
+        '$nomeLimpo (MK1) - Default.png',
+        '$nomeLimpo-MK1.png',
+        '$nomeSemEspacos MK1 render.webp',
+        '$nomeSemEspacos MK1 Render.png',
+        '${nomeSemEspacos}MK1.png',
+        '${nomeSemEspacos}rendermk1.png',
+        '${nomeSemEspacos.toLowerCase()}rendermk1.png',
+        '$slug-MK1.png',
+        '$slugLower-mk1.png',
+        '${slug}_MK1_render.webp',
+        '${slug}_MK1_Render.webp',
+        '${slug}_MK1_Render.png',
+        'MK1_${slug}_Render.png',
+        'MK1 $nomeLimpo.jpg',
+        'MK1 $nomeLimpo.png',
+      ]);
+    case 'Avatar Legends: The Fighting Game':
+      return _urlsArquivosFandom('avatar.fandom.com', [
+        imagensAvatarLegends[nomeLimpo] ?? '',
+        '$nomeLimpo.png',
+        '$slug.png',
+        '${slug}_Avatar.png',
+      ]);
+    case 'Guilty Gear -Strive-':
+      return _urlsArquivosFandom('guiltygear.fandom.com', [
+        imagensOficiaisGuiltyGearStrive[nomeLimpo] ?? '',
+        imagensGuiltyGearStrive[nomeLimpo] ?? '',
+        ...?imagensAlternativasGuiltyGearStrive[nomeLimpo],
+        '${slug}_Guilty_Gear_Strive.png',
+        '${slug}_Strive.png',
+        'GGST_${slug}_Render.png',
+        'GGST_$slug.png',
+        '${slug}_GGST.png',
+      ]);
+    case 'The King of Fighters XV':
+      return _urlsArquivosFandom('snk.fandom.com', [
+        if (idKofXV != null)
+          'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/'
+              'character_$idKofXV.png',
+        ...?imagensAlternativasKofXV[nomeLimpo],
+        imagensKofXV[nomeLimpo] ?? '',
+        'Kof_xv_${slugLower}_render.png',
+        'KOFXV_$slug.png',
+        'KOF_XV_$slug.png',
+        '${slug}_KOFXV.png',
+      ]);
+    case 'Dragon Ball FighterZ':
+      return [
+        imagensDBFZ[nomeLimpo] ?? '',
+      ].where((url) => url.isNotEmpty).toList();
+    case 'Fatal Fury':
+      return [
+        imagensFatalFury[nomeLimpo] ?? '',
+      ].where((url) => url.isNotEmpty).toList();
+    case 'Invincible VS':
+      return [
+        imagensInvincible[nomeLimpo] ?? '',
+      ].where((url) => url.isNotEmpty).toList();
+  }
+
+  // Super Smash Bros. Ultimate (padrão): imagem do CDN do Fandom.
+  // (O site oficial smashbros.com bloqueia hotlink, então as imagens não
+  // carregavam; usamos o mesmo CDN confiável dos demais jogos.)
+  return [
+    imagensSmash[normalizarNomePersonagem(nome)] ?? '',
+  ].where((url) => url.isNotEmpty).toList();
+}
+
+String urlImagemPersonagem(
+  String nome, [
+  String jogo = 'Super Smash Bros. Ultimate',
+]) {
+  final List<String> urls = urlsImagemPersonagem(nome, jogo);
+  return urls.isEmpty ? '' : urls.first;
+}
+
+Character personagemPorNome(String nome) {
+  final String nomeNormalizado = normalizarNomePersonagem(nome);
+
+  for (final personagem in [
+    ...personagensSmash,
+    ...personagensStreetFighter6,
+    ...personagensMortalKombat1,
+    ...personagensAvatarLegends,
+    ...personagensGuiltyGearStrive,
+    ...personagensKofXV,
+    ...personagensDBFZ,
+    ...personagensFatalFury,
+    ...personagensInvincible,
+  ]) {
+    if (personagem.name == nomeNormalizado) {
+      return personagem;
+    }
+  }
+
+  return Character(
+    name: nomeNormalizado,
+    initial: nomeNormalizado.isNotEmpty
+        ? nomeNormalizado[0].toUpperCase()
+        : '?',
+    rank: 'Starter V',
+    pdl: 0,
+  );
+}
+
+List<FrequenciaItem> gerarRankingFrequencia(List<String> itens) {
+  final Map<String, int> contagem = {};
+  final Map<String, String> nomeOriginal = {};
+
+  for (final item in itens) {
+    final textoLimpo = item.trim();
+
+    if (textoLimpo.isEmpty || textoLimpo == 'Sem dados') {
+      continue;
+    }
+
+    final chave = normalizarTexto(textoLimpo);
+
+    contagem[chave] = (contagem[chave] ?? 0) + 1;
+    nomeOriginal.putIfAbsent(chave, () => textoLimpo);
+  }
+
+  final List<FrequenciaItem> ranking = contagem.entries.map((entry) {
+    return FrequenciaItem(
+      nome: nomeOriginal[entry.key] ?? entry.key,
+      quantidade: entry.value,
+    );
+  }).toList();
+
+  ranking.sort((a, b) {
+    final comparacaoQuantidade = b.quantidade.compareTo(a.quantidade);
+
+    if (comparacaoQuantidade != 0) {
+      return comparacaoQuantidade;
+    }
+
+    return a.nome.compareTo(b.nome);
+  });
+
+  return ranking;
+}
+
+List<PlayerResumo> gerarRankingPlayers(List<PartidaRegistrada> partidas) {
+  final Map<String, int> total = {};
+  final Map<String, int> vitorias = {};
+  final Map<String, int> derrotas = {};
+  final Map<String, String> nomeOriginal = {};
+
+  for (final partida in partidas) {
+    final nickLimpo = partida.nickAdversario.trim();
+
+    if (nickLimpo.isEmpty || nickLimpo == 'Sem nick') {
+      continue;
+    }
+
+    final chave = normalizarTexto(nickLimpo);
+
+    nomeOriginal.putIfAbsent(chave, () => nickLimpo);
+    total[chave] = (total[chave] ?? 0) + 1;
+
+    if (partida.resultado == 'Vitória') {
+      vitorias[chave] = (vitorias[chave] ?? 0) + 1;
+    } else if (partida.resultado == 'Derrota') {
+      derrotas[chave] = (derrotas[chave] ?? 0) + 1;
+    }
+  }
+
+  final List<PlayerResumo> ranking = total.keys.map((chave) {
+    return PlayerResumo(
+      nick: nomeOriginal[chave] ?? chave,
+      total: total[chave] ?? 0,
+      vitorias: vitorias[chave] ?? 0,
+      derrotas: derrotas[chave] ?? 0,
+    );
+  }).toList();
+
+  ranking.sort((a, b) {
+    final comparacaoTotal = b.total.compareTo(a.total);
+
+    if (comparacaoTotal != 0) {
+      return comparacaoTotal;
+    }
+
+    return a.nick.compareTo(b.nick);
+  });
+
+  return ranking;
+}
+
+List<MatchupResumo> gerarRankingMatchups(List<PartidaRegistrada> partidas) {
+  final Map<String, List<PartidaRegistrada>> partidasPorMatchup = {};
+
+  for (final partida in partidas) {
+    final chave = partida.personagemAdversario.trim();
+
+    if (chave.isEmpty) {
+      continue;
+    }
+
+    partidasPorMatchup.putIfAbsent(chave, () => []);
+    partidasPorMatchup[chave]!.add(partida);
+  }
+
+  final List<MatchupResumo> ranking = partidasPorMatchup.entries.map((entry) {
+    final personagemAdversario = entry.key;
+    final partidasDoMatchup = entry.value;
+
+    final int total = partidasDoMatchup.length;
+    final int vitorias = partidasDoMatchup
+        .where((partida) => partida.resultado == 'Vitória')
+        .length;
+    final int derrotas = partidasDoMatchup
+        .where((partida) => partida.resultado == 'Derrota')
+        .length;
+
+    final int saldoPdl = partidasDoMatchup.fold(
+      0,
+      (soma, partida) => soma + partida.pdlGerado,
+    );
+
+    return MatchupResumo(
+      personagemAdversario: personagemAdversario,
+      total: total,
+      vitorias: vitorias,
+      derrotas: derrotas,
+      saldoPdl: saldoPdl,
+      killMaisComum: encontrarMaisFrequente(
+        partidasDoMatchup.map((partida) => partida.formaDeKill).toList(),
+      ),
+      morteMaisComum: encontrarMaisFrequente(
+        partidasDoMatchup.map((partida) => partida.formaDeMorte).toList(),
+      ),
+      stageMaisJogado: encontrarMaisFrequente(
+        partidasDoMatchup.map((partida) => partida.stage).toList(),
+      ),
+    );
+  }).toList();
+
+  ranking.sort((a, b) {
+    final comparacaoTotal = b.total.compareTo(a.total);
+
+    if (comparacaoTotal != 0) {
+      return comparacaoTotal;
+    }
+
+    return a.personagemAdversario.compareTo(b.personagemAdversario);
+  });
+
+  return ranking;
+}
+
+String encontrarMaisFrequente(List<String> itens) {
+  final ranking = gerarRankingFrequencia(itens);
+
+  if (ranking.isEmpty) {
+    return 'Sem dados';
+  }
+
+  return ranking.first.nome;
+}
+
+int calcularPdlDaPartida({
+  required String resultado,
+  required int stocks,
+  required int porcentagem,
+  required String formaDeKill,
+  required String formaDeMorte,
+}) {
+  int pdl = 0;
+
+  if (resultado == 'Vitória') {
+    pdl += 20;
+
+    if (stocks == 2) {
+      pdl += 8;
+    } else if (stocks == 3) {
+      pdl += 15;
+    }
+
+    if (porcentagem <= 50) {
+      pdl += 5;
+    } else if (porcentagem >= 150) {
+      pdl -= 3;
+    }
+  } else {
+    pdl -= 18;
+
+    if (stocks == 2) {
+      pdl -= 8;
+    } else if (stocks == 3) {
+      pdl -= 15;
+    }
+
+    if (porcentagem >= 120) {
+      pdl += 5;
+    } else if (porcentagem <= 50) {
+      pdl -= 5;
+    }
+  }
+
+  pdl += bonusPorKill(formaDeKill);
+  pdl += penalidadePorMorte(formaDeMorte);
+
+  return pdl;
+}
+
+int calcularPdlStreetFighter({
+  required int roundsVencidos,
+  required int roundsPerdidos,
+  required bool venceuRound1,
+  required bool chegouAoRound3,
+  required bool venceuRound3,
+}) {
+  final bool venceuPartida = roundsVencidos >= 2;
+  int pdl = venceuPartida ? 24 : -20;
+
+  if (venceuPartida && roundsPerdidos == 0) {
+    pdl += 8;
+  } else if (!venceuPartida && roundsVencidos == 0) {
+    pdl -= 8;
+  }
+
+  if (venceuRound1) {
+    pdl += 3;
+  } else {
+    pdl -= 2;
+  }
+
+  if (chegouAoRound3) {
+    pdl += venceuRound3 ? 5 : -5;
+  }
+
+  return pdl;
+}
+
+List<String> gerarOpcoesFiltro(List<String> itens) {
+  final List<String> opcoes = itens
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty && item != 'Sem dados')
+      .toSet()
+      .toList();
+
+  opcoes.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+  return ['Todos', ...opcoes];
+}
+
+List<String> gerarSugestoesPlayers(List<PartidaRegistrada> partidas) {
+  return gerarRankingPlayers(partidas).map((player) => player.nick).toList();
+}
+
+String formatarSaldo(int valor) {
+  return valor >= 0 ? '+$valor' : '$valor';
+}
+
+MatchupResumo? melhorMatchupPorWinrate(List<MatchupResumo> matchups) {
+  if (matchups.isEmpty) return null;
+
+  final List<MatchupResumo> ordenados = [...matchups];
+  ordenados.sort((a, b) {
+    final winrateCompare = b.winrate.compareTo(a.winrate);
+    if (winrateCompare != 0) return winrateCompare;
+
+    final saldoCompare = b.saldoPdl.compareTo(a.saldoPdl);
+    if (saldoCompare != 0) return saldoCompare;
+
+    return b.total.compareTo(a.total);
+  });
+
+  return ordenados.first;
+}
+
+MatchupResumo? piorMatchupPorWinrate(List<MatchupResumo> matchups) {
+  if (matchups.isEmpty) return null;
+
+  final List<MatchupResumo> ordenados = [...matchups];
+  ordenados.sort((a, b) {
+    final winrateCompare = a.winrate.compareTo(b.winrate);
+    if (winrateCompare != 0) return winrateCompare;
+
+    final saldoCompare = a.saldoPdl.compareTo(b.saldoPdl);
+    if (saldoCompare != 0) return saldoCompare;
+
+    return b.total.compareTo(a.total);
+  });
+
+  return ordenados.first;
+}
+
+MatchupResumo? maiorGanhoPdlPorMatchup(List<MatchupResumo> matchups) {
+  if (matchups.isEmpty) return null;
+
+  final List<MatchupResumo> ordenados = [...matchups];
+  ordenados.sort((a, b) => b.saldoPdl.compareTo(a.saldoPdl));
+  return ordenados.first;
+}
+
+MatchupResumo? maiorPerdaPdlPorMatchup(List<MatchupResumo> matchups) {
+  if (matchups.isEmpty) return null;
+
+  final List<MatchupResumo> ordenados = [...matchups];
+  ordenados.sort((a, b) => a.saldoPdl.compareTo(b.saldoPdl));
+  return ordenados.first;
+}
+
+String gerarFocoAutomatico(String morteMaisComum, String piorMatchup) {
+  switch (morteMaisComum) {
+    case 'SD':
+      return 'Foco: diminuir SDs e revisar controle de risco fora do palco.';
+    case 'Recovery errado':
+      return 'Foco: treinar recovery, mixups de volta e rotas seguras para o ledge.';
+    case 'Panic option':
+      return 'Foco: jogar mais calmo sob pressão e escolher opções defensivas melhores.';
+    case 'Punish sofrido':
+      return 'Foco: atacar menos no automático e deixar suas opções mais seguras.';
+    case 'Edgeguard sofrido':
+      return 'Foco: variar timing de recovery e evitar voltar sempre pelo mesmo caminho.';
+    case 'Ledgetrap sofrido':
+      return 'Foco: treinar saída da ledge e parar de escolher sempre a mesma opção.';
+    case 'Morreu cedo':
+      return 'Foco: revisar DI, sobrevivência e situações em que você toma kill cedo.';
+    case 'Read do adversário':
+      return 'Foco: variar hábitos e não repetir a mesma resposta em pressão.';
+    default:
+      if (piorMatchup != 'Sem dados') {
+        return 'Foco: revisar o matchup contra $piorMatchup e anotar o que mais te prende nele.';
+      }
+      return 'Foco: registrar mais partidas para o LabTracker encontrar padrões mais confiáveis.';
+  }
+}
