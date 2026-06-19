@@ -463,6 +463,11 @@ const PlayerProfile perfilPadrao = PlayerProfile(
 
 const List<String> jogosDisponiveis = [
   'Super Smash Bros. Ultimate',
+  'Street Fighter 6',
+  'Mortal Kombat 1',
+  'Avatar Legends: The Fighting Game',
+  'Guilty Gear -Strive-',
+  'The King of Fighters XV',
   'Invincible VS',
   'Dragon Ball FighterZ',
   'Fatal Fury',
@@ -778,6 +783,193 @@ const List<Character> personagensInvincible = [
   Character(name: 'The Immortal', initial: 'IM', rank: 'Starter V', pdl: 0),
 ];
 
+const List<Character> personagensStreetFighter6 = [
+  Character(name: 'Ryu', initial: 'RY', rank: 'Starter V', pdl: 0),
+  Character(name: 'Luke', initial: 'LU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Jamie', initial: 'JA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Chun-Li', initial: 'CL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Guile', initial: 'GU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kimberly', initial: 'KI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Juri', initial: 'JU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ken', initial: 'KE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Blanka', initial: 'BL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Dhalsim', initial: 'DH', rank: 'Starter V', pdl: 0),
+  Character(name: 'E. Honda', initial: 'EH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Dee Jay', initial: 'DJ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Manon', initial: 'MA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Marisa', initial: 'MR', rank: 'Starter V', pdl: 0),
+  Character(name: 'JP', initial: 'JP', rank: 'Starter V', pdl: 0),
+  Character(name: 'Zangief', initial: 'ZA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Lily', initial: 'LI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Cammy', initial: 'CA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Rashid', initial: 'RA', rank: 'Starter V', pdl: 0),
+  Character(name: 'A.K.I.', initial: 'AK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ed', initial: 'ED', rank: 'Starter V', pdl: 0),
+  Character(name: 'Akuma', initial: 'AK', rank: 'Starter V', pdl: 0),
+  Character(name: 'M. Bison', initial: 'MB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Terry', initial: 'TE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Mai', initial: 'MA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Elena', initial: 'EL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Sagat', initial: 'SA', rank: 'Starter V', pdl: 0),
+  Character(name: 'C. Viper', initial: 'CV', rank: 'Starter V', pdl: 0),
+  Character(name: 'Alex', initial: 'AL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ingrid', initial: 'IN', rank: 'Starter V', pdl: 0),
+];
+
+const List<Character> personagensMortalKombat1 = [
+  Character(name: 'Ashrah', initial: 'AS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Baraka', initial: 'BA', rank: 'Starter V', pdl: 0),
+  Character(name: 'General Shao', initial: 'GS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Geras', initial: 'GE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Havik', initial: 'HA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Johnny Cage', initial: 'JC', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kenshi', initial: 'KE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kitana', initial: 'KI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kung Lao', initial: 'KL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Li Mei', initial: 'LM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Liu Kang', initial: 'LK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Mileena', initial: 'MI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Nitara', initial: 'NI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Raiden', initial: 'RA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Rain', initial: 'RN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Reiko', initial: 'RE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Reptile', initial: 'RP', rank: 'Starter V', pdl: 0),
+  Character(name: 'Scorpion', initial: 'SC', rank: 'Starter V', pdl: 0),
+  Character(name: 'Shang Tsung', initial: 'ST', rank: 'Starter V', pdl: 0),
+  Character(name: 'Sindel', initial: 'SI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Smoke', initial: 'SM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Sub-Zero', initial: 'SZ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Tanya', initial: 'TA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Quan Chi', initial: 'QC', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ermac', initial: 'ER', rank: 'Starter V', pdl: 0),
+  Character(name: 'Takeda', initial: 'TK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Peacemaker', initial: 'PM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Omni-Man', initial: 'OM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Homelander', initial: 'HL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Cyrax', initial: 'CY', rank: 'Starter V', pdl: 0),
+  Character(name: 'Sektor', initial: 'SE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Noob Saibot', initial: 'NS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ghostface', initial: 'GF', rank: 'Starter V', pdl: 0),
+  Character(name: 'Conan', initial: 'CO', rank: 'Starter V', pdl: 0),
+  Character(name: 'T-1000', initial: 'T1', rank: 'Starter V', pdl: 0),
+];
+
+const List<Character> personagensAvatarLegends = [
+  Character(name: 'Aang', initial: 'AA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Korra', initial: 'KO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Katara', initial: 'KA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Sokka', initial: 'SO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Zuko', initial: 'ZU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Toph', initial: 'TO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Azula', initial: 'AZ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Zaheer', initial: 'ZH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ozai', initial: 'OZ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kyoshi', initial: 'KY', rank: 'Starter V', pdl: 0),
+];
+
+const List<Character> personagensGuiltyGearStrive = [
+  Character(name: 'Sol Badguy', initial: 'SB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ky Kiske', initial: 'KK', rank: 'Starter V', pdl: 0),
+  Character(name: 'May', initial: 'MY', rank: 'Starter V', pdl: 0),
+  Character(name: 'Axl Low', initial: 'AL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Chipp Zanuff', initial: 'CZ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Potemkin', initial: 'PO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Faust', initial: 'FA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Millia Rage', initial: 'MR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Zato-1', initial: 'Z1', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ramlethal Valentine', initial: 'RV', rank: 'Starter V', pdl: 0),
+  Character(name: 'Leo Whitefang', initial: 'LW', rank: 'Starter V', pdl: 0),
+  Character(name: 'Nagoriyuki', initial: 'NA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Giovanna', initial: 'GI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Anji Mito', initial: 'AM', rank: 'Starter V', pdl: 0),
+  Character(name: 'I-No', initial: 'IN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goldlewis Dickinson', initial: 'GD', rank: 'Starter V', pdl: 0),
+  Character(name: "Jack-O'", initial: 'JO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Happy Chaos', initial: 'HC', rank: 'Starter V', pdl: 0),
+  Character(name: 'Baiken', initial: 'BA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Testament', initial: 'TE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Bridget', initial: 'BR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Sin Kiske', initial: 'SK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Bedman?', initial: 'BD', rank: 'Starter V', pdl: 0),
+  Character(name: 'Asuka R#', initial: 'AR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Johnny', initial: 'JO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Elphelt Valentine', initial: 'EV', rank: 'Starter V', pdl: 0),
+  Character(name: 'A.B.A', initial: 'AB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Slayer', initial: 'SL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Queen Dizzy', initial: 'QD', rank: 'Starter V', pdl: 0),
+  Character(name: 'Venom', initial: 'VE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Unika', initial: 'UN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Lucy Kushinada', initial: 'LK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Jam Kuradoberi', initial: 'JK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Robo-Ky', initial: 'RK', rank: 'Starter V', pdl: 0),
+];
+
+const List<Character> personagensKofXV = [
+  Character(name: "Shun'ei", initial: 'SH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Meitenkun', initial: 'ME', rank: 'Starter V', pdl: 0),
+  Character(name: 'Benimaru Nikaido', initial: 'BN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ash Crimson', initial: 'AC', rank: 'Starter V', pdl: 0),
+  Character(name: 'Elisabeth Blanctorche', initial: 'EB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kukri', initial: 'KU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kyo Kusanagi', initial: 'KK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Iori Yagami', initial: 'IY', rank: 'Starter V', pdl: 0),
+  Character(name: 'Chizuru Kagura', initial: 'CK', rank: 'Starter V', pdl: 0),
+  Character(name: "K'", initial: 'K', rank: 'Starter V', pdl: 0),
+  Character(name: 'Maxima', initial: 'MA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Whip', initial: 'WH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Isla', initial: 'IS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Heidern', initial: 'HE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Dolores', initial: 'DO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Terry Bogard', initial: 'TB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Andy Bogard', initial: 'AB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Joe Higashi', initial: 'JH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ryo Sakazaki', initial: 'RS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Robert Garcia', initial: 'RG', rank: 'Starter V', pdl: 0),
+  Character(name: 'King', initial: 'KI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Yashiro Nanakase', initial: 'YN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Shermie', initial: 'SE', rank: 'Starter V', pdl: 0),
+  Character(name: 'Chris', initial: 'CH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Athena Asamiya', initial: 'AA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Mai Shiranui', initial: 'MS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Yuri Sakazaki', initial: 'YS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Leona Heidern', initial: 'LH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ralf Jones', initial: 'RJ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Clark Still', initial: 'CS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Antonov', initial: 'AN', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ramon', initial: 'RA', rank: 'Starter V', pdl: 0),
+  Character(name: 'King of Dinosaurs', initial: 'KD', rank: 'Starter V', pdl: 0),
+  Character(name: 'Krohnen McDougall', initial: 'KM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kula Diamond', initial: 'KD', rank: 'Starter V', pdl: 0),
+  Character(name: 'Angel', initial: 'AG', rank: 'Starter V', pdl: 0),
+  Character(name: 'Blue Mary', initial: 'BM', rank: 'Starter V', pdl: 0),
+  Character(name: 'Vanessa', initial: 'VA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Luong', initial: 'LU', rank: 'Starter V', pdl: 0),
+  Character(name: 'Rock Howard', initial: 'RH', rank: 'Starter V', pdl: 0),
+  Character(name: 'B. Jenet', initial: 'BJ', rank: 'Starter V', pdl: 0),
+  Character(name: 'Gato', initial: 'GA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Geese Howard', initial: 'GH', rank: 'Starter V', pdl: 0),
+  Character(name: 'Billy Kane', initial: 'BK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Ryuji Yamazaki', initial: 'RY', rank: 'Starter V', pdl: 0),
+  Character(name: 'Orochi Yashiro', initial: 'OY', rank: 'Starter V', pdl: 0),
+  Character(name: 'Orochi Shermie', initial: 'OS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Orochi Chris', initial: 'OC', rank: 'Starter V', pdl: 0),
+  Character(name: 'Haohmaru', initial: 'HA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Nakoruru', initial: 'NA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Darli Dagger', initial: 'DD', rank: 'Starter V', pdl: 0),
+  Character(name: 'Shingo Yabuki', initial: 'SY', rank: 'Starter V', pdl: 0),
+  Character(name: 'Kim Kaphwan', initial: 'KK', rank: 'Starter V', pdl: 0),
+  Character(name: 'Sylvie Paula Paula', initial: 'SP', rank: 'Starter V', pdl: 0),
+  Character(name: 'Goenitz', initial: 'GO', rank: 'Starter V', pdl: 0),
+  Character(name: 'Najd', initial: 'NA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Duo Lon', initial: 'DL', rank: 'Starter V', pdl: 0),
+  Character(name: 'Hinako Shijo', initial: 'HS', rank: 'Starter V', pdl: 0),
+  Character(name: 'Mature', initial: 'MA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Vice', initial: 'VI', rank: 'Starter V', pdl: 0),
+  Character(name: 'Omega Rugal', initial: 'OR', rank: 'Starter V', pdl: 0),
+  Character(name: 'Re Verse', initial: 'RV', rank: 'Starter V', pdl: 0),
+  Character(name: 'Otoma=Raga', initial: 'OR', rank: 'Starter V', pdl: 0),
+];
+
 // Mapas nome -> URL da imagem (puxadas da internet, CDN do Fandom).
 const Map<String, String> imagensSmash = {
   'Mario': 'https://static.wikia.nocookie.net/ssb/images/4/44/Mario_SSBU.png/revision/latest?cb=20180612204958',
@@ -962,8 +1154,442 @@ const Map<String, String> imagensInvincible = {
   'The Immortal': 'https://static.wikia.nocookie.net/amazon-invincible/images/e/e8/Immortal-render.png/revision/latest/scale-to-width-down/134?cb=20250401155811',
 };
 
+const Map<String, String> imagensStreetFighter6 = {
+  'Ryu': 'Sf6-ryu.png',
+  'Luke': 'Sf6-luke.png',
+  'Jamie': 'Sf6-jamie.png',
+  'Chun-Li': 'Chun-Li SF6 Render.png',
+  'Guile': 'Guile SF6.png',
+  'Kimberly': 'Sf6-kimberly.png',
+  'Juri': 'Sf6-juri.png',
+  'Ken': 'Ken SF6 Render.png',
+  'Blanka': 'Blanka SF6 Render.png',
+  'Dhalsim': 'Dhalsim SF6 Render.png',
+  'E. Honda': 'EHonda SF6 Render.png',
+  'Dee Jay': 'SF6 Dee Jay.png',
+  'Manon': 'SF6 Manon.png',
+  'Marisa': 'SF6 Marisa.png',
+  'JP': 'SF6 JP.png',
+  'Zangief': 'SF6 Zangief.png',
+  'Lily': 'Sf6-lily.png',
+  'Cammy': 'SF6_Cammy.png',
+  'Rashid': 'Rashid SF6 Render.png',
+  'A.K.I.': 'A.K.I. SF6 Render.png',
+  'Ed': 'Ed SF6 Render.png',
+  'Akuma': 'Akuma SF6 Render.png',
+  'M. Bison': 'M Bison SF6.png',
+  'Terry': 'Terry SF6.png',
+  'Mai': 'Sf6mairender.png',
+  'Elena': 'Sf6elenarender.png',
+  'Sagat': 'Sf6sagatrender.png',
+  'C. Viper': 'Cvipers6render.png',
+  'Alex': 'Sf6alexrender3d.png',
+  'Ingrid': "Ingrid's character select screen render for Street Fighter 6..png",
+};
+
+const Map<String, List<String>> imagensAlternativasStreetFighter6 = {
+  'Terry': [
+    'Terry Bogard SF6 Render.png',
+    'Terry Bogard SF6.png',
+    'SF6 Terry Bogard.png',
+  ],
+  'Mai': [
+    'Mai Shiranui SF6 Render.png',
+    'Mai Shiranui SF6.png',
+    'SF6 Mai Shiranui.png',
+  ],
+  'M. Bison': [
+    'M. Bison SF6 Render.png',
+    'M.Bison SF6 Render.png',
+    'SF6 M. Bison.png',
+  ],
+  'C. Viper': [
+    'C. Viper SF6 Render.png',
+    'Crimson Viper SF6 Render.png',
+    'SF6 C. Viper.png',
+  ],
+  'A.K.I.': [
+    'AKI SF6 Render.png',
+    'A.K.I SF6 Render.png',
+    'SF6 AKI.png',
+  ],
+};
+
+const Map<String, String> imagensMortalKombat1 = {
+  'Ashrah': 'https://www.mortalkombatwarehouse.com/mk12/renders/ashrah.png',
+  'Baraka': 'https://www.mortalkombatwarehouse.com/mk12/renders/baraka.png',
+  'General Shao':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/generalshao.png',
+  'Geras': 'https://www.mortalkombatwarehouse.com/mk12/renders/geras.png',
+  'Havik': 'https://www.mortalkombatwarehouse.com/mk12/renders/havik.png',
+  'Johnny Cage':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/johnnycage.png',
+  'Kenshi': 'https://www.mortalkombatwarehouse.com/mk12/renders/kenshi.png',
+  'Kitana': 'https://www.mortalkombatwarehouse.com/mk12/renders/kitana.png',
+  'Kung Lao':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/kunglao.png',
+  'Li Mei': 'https://www.mortalkombatwarehouse.com/mk12/renders/limei.png',
+  'Liu Kang':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/liukang.png',
+  'Mileena':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/mileena.png',
+  'Nitara': 'https://www.mortalkombatwarehouse.com/mk12/renders/nitara.png',
+  'Raiden': 'https://www.mortalkombatwarehouse.com/mk12/renders/raiden.png',
+  'Rain': 'https://www.mortalkombatwarehouse.com/mk12/renders/rain.png',
+  'Reiko': 'https://www.mortalkombatwarehouse.com/mk12/renders/reiko.png',
+  'Reptile':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/reptile.png',
+  'Scorpion':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/scorpion.png',
+  'Shang Tsung':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/shangtsung.png',
+  'Sindel': 'https://www.mortalkombatwarehouse.com/mk12/renders/sindel.png',
+  'Smoke': 'https://www.mortalkombatwarehouse.com/mk12/renders/smoke.png',
+  'Sub-Zero':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/subzero.png',
+  'Tanya': 'https://www.mortalkombatwarehouse.com/mk12/renders/tanya.png',
+  'Quan Chi':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/quanchi.png',
+  'Ermac': 'https://www.mortalkombatwarehouse.com/mk12/renders/ermac.png',
+  'Takeda': 'https://www.mortalkombatwarehouse.com/mk12/renders/takeda.png',
+  'Peacemaker':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/peacemaker.png',
+  'Omni-Man':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/omniman.png',
+  'Homelander':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/homelander.png',
+  'Cyrax': 'https://www.mortalkombatwarehouse.com/mk12/renders/cyrax.png',
+  'Sektor': 'https://www.mortalkombatwarehouse.com/mk12/renders/sektor.png',
+  'Noob Saibot':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/noobsaibot.png',
+  'Ghostface':
+      'https://www.mortalkombatwarehouse.com/mk12/renders/ghostface.png',
+  'Conan': 'https://www.mortalkombatwarehouse.com/mk12/renders/conan.png',
+  'T-1000': 'https://www.mortalkombatwarehouse.com/mk12/renders/t1000.png',
+};
+
+const Map<String, List<String>> imagensAlternativasMortalKombat1 = {
+  'Cyrax': [
+    'https://www.mortalkombatwarehouse.com/mk12/characters/cyrax/UIPortraits/Cyrax-Tall.png',
+    'https://www.mortalkombatwarehouse.com/mk12/characters/cyrax/UIPortraits/Cyrax-CharSelect.png',
+    'https://www.mortalkombatwarehouse.com/mk12/renders/ekk/K1_CyraxHero.png',
+  ],
+  'Sektor': [
+    'https://www.mortalkombatwarehouse.com/mk12/characters/sektor/UIPortraits/Sektor-Tall.png',
+    'https://www.mortalkombatwarehouse.com/mk12/characters/sektor/UIPortraits/Sektor-CharSelect.png',
+    'https://www.mortalkombatwarehouse.com/mk12/renders/ekk/K1_SektorAction.png',
+  ],
+  'Ghostface': [
+    'https://www.mortalkombatwarehouse.com/mk12/characters/ghostface/UIPortraits/Ghostface-Tall.png',
+    'https://www.mortalkombatwarehouse.com/mk12/characters/ghostface/UIPortraits/Ghostface-CharSelect.png',
+    'https://www.mortalkombatwarehouse.com/mk12/storerenders/GhostfaceCell.png',
+  ],
+  'Conan': [
+    'https://www.mortalkombatwarehouse.com/mk12/characters/conan/UIPortraits/Conan-Tall.png',
+    'https://www.mortalkombatwarehouse.com/mk12/characters/conan/UIPortraits/Conan-CharSelect.png',
+  ],
+};
+
+const Map<String, String> imagensAvatarLegends = {
+  'Aang': 'https://static.wikia.nocookie.net/avatar/images/a/ae/Aang_at_Jasmine_Dragon.png/revision/latest?cb=20250504214141',
+  'Korra': 'https://static.wikia.nocookie.net/avatar/images/3/31/Korra_smiling.png/revision/latest?cb=20200907192928',
+  'Katara': 'https://static.wikia.nocookie.net/avatar/images/7/7a/Katara_smiles_at_coronation.png/revision/latest?cb=20150104171449',
+  'Sokka': 'https://static.wikia.nocookie.net/avatar/images/c/cc/Sokka.png/revision/latest?cb=20140905085428',
+  'Zuko': 'https://static.wikia.nocookie.net/avatar/images/4/4b/Zuko.png/revision/latest?cb=20180630112142',
+  'Toph': 'https://static.wikia.nocookie.net/avatar/images/4/46/Toph_Beifong.png/revision/latest?cb=20131230122047',
+  'Azula': 'https://static.wikia.nocookie.net/avatar/images/1/12/Azula.png/revision/latest?cb=20140905084941',
+  'Zaheer': 'https://static.wikia.nocookie.net/avatar/images/e/e1/Zaheer.png/revision/latest?cb=20140825190111',
+  'Ozai': 'https://static.wikia.nocookie.net/avatar/images/4/4a/Ozai.png/revision/latest?cb=20130612170743',
+  'Kyoshi': 'https://static.wikia.nocookie.net/avatar/images/3/39/Kyoshi.png/revision/latest?cb=20230729120809',
+};
+
+const Map<String, String> imagensGuiltyGearStrive = {
+  'Sol Badguy': 'GGST_Sol_Badguy.png',
+  'Ky Kiske': 'GGST_Ky_Kiske.png',
+  'May': 'GGST_May.png',
+  'Axl Low': 'GGST_Axl_Low.png',
+  'Chipp Zanuff': 'GGST_Chipp_Zanuff.png',
+  'Potemkin': 'GGST_Potemkin.png',
+  'Faust': 'GGST_Faust.png',
+  'Millia Rage': 'GGST_Millia_Rage.png',
+  'Zato-1': 'GGST_Zato-1.png',
+  'Ramlethal Valentine': 'GGST_Ramlethal_Valentine.png',
+  'Leo Whitefang': 'GGST_Leo_Whitefang.png',
+  'Nagoriyuki': 'GGST_Nagoriyuki.png',
+  'Giovanna': 'GGST_Giovanna.png',
+  'Anji Mito': 'GGST_Anji_Mito.png',
+  'I-No': 'GGST_I-No.png',
+  'Goldlewis Dickinson': 'GGST_Goldlewis_Dickinson.png',
+  "Jack-O'": 'GGST_Jack-O.png',
+  'Happy Chaos': 'GGST_Happy_Chaos.png',
+  'Baiken': 'GGST_Baiken.png',
+  'Testament': 'GGST_Testament.png',
+  'Bridget': 'GGST_Bridget.png',
+  'Sin Kiske': 'GGST_Sin_Kiske.png',
+  'Bedman?': 'GGST_Bedman.png',
+  'Asuka R#': 'GGST_Asuka_R.png',
+  'Johnny': 'GGST_Johnny.png',
+  'Elphelt Valentine': 'GGST_Elphelt_Valentine.png',
+  'A.B.A': 'GGST_A.B.A.png',
+  'Slayer': 'GGST_Slayer.png',
+  'Queen Dizzy': 'GGST_Queen_Dizzy.png',
+  'Venom': 'GGST_Venom.png',
+  'Unika': 'GGST_Unika.png',
+  'Lucy Kushinada': 'GGST_Lucy_Kushinada.png',
+  'Jam Kuradoberi': 'GGST_Jam_Kuradoberi.png',
+  'Robo-Ky':
+      'https://static.wikia.nocookie.net/guilty-gear/images/5/56/Robo-Ky.png/revision/latest?cb=20111210180011',
+};
+
+const Map<String, String> imagensOficiaisGuiltyGearStrive = {
+  'Sol Badguy':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara.png',
+  'Ky Kiske':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_kyk.png',
+  'May':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_may.png',
+  'Axl Low':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_axl.png',
+  'Chipp Zanuff':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_chp.png',
+  'Potemkin':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_pot.png',
+  'Faust':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_fau.png',
+  'Millia Rage':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_mil.png',
+  'Zato-1':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_zat.png',
+  'Ramlethal Valentine':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_ram.png',
+  'Leo Whitefang':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_leo.png',
+  'Nagoriyuki':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_nag.png',
+  'Giovanna':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_gio.png',
+  'Anji Mito':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_anji.png',
+  'I-No':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2020/09/chara_ino.png',
+  'Goldlewis Dickinson':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2021/07/chara_gol-1024x2010.png',
+  "Jack-O'":
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2021/08/chara_jko-1024x1984.png',
+  'Happy Chaos':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2021/11/chara_82nCeh3s.png',
+  'Baiken':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2022/01/chara_sp_94gvos0f.png',
+  'Testament':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2022/03/chara_sp_48nfusi.png',
+  'Bridget':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2022/08/chara_38nd9nd2jd73.png',
+  'Sin Kiske':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2022/11/chara_n5idg73diw3.png',
+  'Bedman?':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2023/03/chara_sp_5fve3hdwci.webp',
+  'Asuka R#':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2023/05/chara_sp_xnNj771Auw.png',
+  'Johnny':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2023/08/chara_sp_4ny9b-6nvi.png',
+  'Elphelt Valentine':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2023/12/chara_sp_4nf89dcoo3.png',
+  'A.B.A':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2024/03/chara_sp_3uf9vnso76.png',
+  'Slayer':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2024/04/chara_sp_4tg8hdo2.png',
+  'Queen Dizzy':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2018/10/chara_sp-ny040fsi2.png',
+  'Venom':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2025/03/chara_sp_adhfjha.png',
+  'Unika':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2025/05/chara_sp_khfauiy.png',
+  'Lucy Kushinada':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2025/08/chara_sp_qokdhj.png',
+  'Jam Kuradoberi':
+      'https://www.guiltygear.com/ggst/en/wordpress/wp-content/uploads/2026/04/chara_sp_jam.png',
+};
+
+const Map<String, List<String>> imagensAlternativasGuiltyGearStrive = {
+  'Jack-O\'': [
+    'GGST_Jack-O_Valentine.png',
+    'GGST_Jack-O_Valentine_Render.png',
+  ],
+  'Queen Dizzy': [
+    'GGST_Dizzy.png',
+    'GGST_Queen_Dizzy.png',
+    'Dizzy_Guilty_Gear_Strive.png',
+  ],
+  'Lucy Kushinada': [
+    'GGST_Lucyna_Kushinada.png',
+    'GGST_Lucy.png',
+    'Lucyna_Kushinada_GGST.png',
+  ],
+};
+
+const Map<String, String> imagensKofXV = {
+  "Shun'ei": 'KOFXV_Shunei.png',
+  'Meitenkun': 'KOFXV_Meitenkun.png',
+  'Benimaru Nikaido': 'KOFXV_Benimaru_Nikaido.png',
+  'Ash Crimson': 'KOFXV_Ash_Crimson.png',
+  'Elisabeth Blanctorche': 'KOFXV_Elisabeth_Blanctorche.png',
+  'Kukri': 'KOFXV_Kukri.png',
+  'Kyo Kusanagi': 'KOFXV_Kyo_Kusanagi.png',
+  'Iori Yagami': 'KOFXV_Iori_Yagami.png',
+  'Chizuru Kagura': 'KOFXV_Chizuru_Kagura.png',
+  "K'": 'KOFXV_K.png',
+  'Maxima': 'KOFXV_Maxima.png',
+  'Whip': 'KOFXV_Whip.png',
+  'Isla': 'KOFXV_Isla.png',
+  'Heidern': 'KOFXV_Heidern.png',
+  'Dolores': 'KOFXV_Dolores.png',
+  'Terry Bogard': 'KOFXV_Terry_Bogard.png',
+  'Andy Bogard': 'KOFXV_Andy_Bogard.png',
+  'Joe Higashi': 'KOFXV_Joe_Higashi.png',
+  'Ryo Sakazaki': 'KOFXV_Ryo_Sakazaki.png',
+  'Robert Garcia': 'KOFXV_Robert_Garcia.png',
+  'King': 'KOFXV_King.png',
+  'Yashiro Nanakase': 'KOFXV_Yashiro_Nanakase.png',
+  'Shermie': 'KOFXV_Shermie.png',
+  'Chris': 'KOFXV_Chris.png',
+  'Athena Asamiya': 'KOFXV_Athena_Asamiya.png',
+  'Mai Shiranui': 'KOFXV_Mai_Shiranui.png',
+  'Yuri Sakazaki': 'KOFXV_Yuri_Sakazaki.png',
+  'Leona Heidern': 'KOFXV_Leona_Heidern.png',
+  'Ralf Jones': 'KOFXV_Ralf_Jones.png',
+  'Clark Still': 'KOFXV_Clark_Still.png',
+  'Antonov': 'KOFXV_Antonov.png',
+  'Ramon': 'KOFXV_Ramon.png',
+  'King of Dinosaurs': 'KOFXV_King_of_Dinosaurs.png',
+  'Krohnen McDougall': 'KOFXV_Krohnen_McDougall.png',
+  'Kula Diamond': 'KOFXV_Kula_Diamond.png',
+  'Angel': 'KOFXV_Angel.png',
+  'Blue Mary': 'KOFXV_Blue_Mary.png',
+  'Vanessa': 'KOFXV_Vanessa.png',
+  'Luong': 'KOFXV_Luong.png',
+  'Rock Howard': 'KOFXV_Rock_Howard.png',
+  'B. Jenet': 'KOFXV_B._Jenet.png',
+  'Gato': 'KOFXV_Gato.png',
+  'Geese Howard': 'KOFXV_Geese_Howard.png',
+  'Billy Kane': 'KOFXV_Billy_Kane.png',
+  'Ryuji Yamazaki': 'KOFXV_Ryuji_Yamazaki.png',
+  'Orochi Yashiro': 'KOFXV_Orochi_Yashiro.png',
+  'Orochi Shermie': 'KOFXV_Orochi_Shermie.png',
+  'Orochi Chris': 'KOFXV_Orochi_Chris.png',
+  'Haohmaru': 'KOFXV_Haohmaru.png',
+  'Nakoruru': 'KOFXV_Nakoruru.png',
+  'Darli Dagger': 'KOFXV_Darli_Dagger.png',
+  'Shingo Yabuki': 'KOFXV_Shingo_Yabuki.png',
+  'Kim Kaphwan': 'KOFXV_Kim_Kaphwan.png',
+  'Sylvie Paula Paula': 'KOFXV_Sylvie_Paula_Paula.png',
+  'Goenitz': 'KOFXV_Goenitz.png',
+  'Najd': 'KOFXV_Najd.png',
+  'Duo Lon': 'KOFXV_Duo_Lon.png',
+  'Hinako Shijo': 'KOFXV_Hinako_Shijo.png',
+  'Mature': 'KOFXV_Mature.png',
+  'Vice': 'KOFXV_Vice.png',
+  'Omega Rugal': 'KOFXV_Omega_Rugal.png',
+  'Re Verse':
+      'https://static.wikia.nocookie.net/snk/images/4/4a/ReVerse-Render.png/revision/latest?cb=20220912085221',
+  'Otoma=Raga':
+      'https://static.wikia.nocookie.net/snk/images/d/dd/OtomaRaga-Render.png/revision/latest?cb=20220912085310',
+};
+
+const Map<String, String> idsKofXV = {
+  "Shun'ei": 'shunei',
+  'Meitenkun': 'meitenkun',
+  'Benimaru Nikaido': 'benimaru',
+  'Ash Crimson': 'ash',
+  'Elisabeth Blanctorche': 'elisabeth',
+  'Kukri': 'kukri',
+  'Kyo Kusanagi': 'kyo',
+  'Iori Yagami': 'iori',
+  'Chizuru Kagura': 'chizuru',
+  "K'": 'k',
+  'Maxima': 'maxima',
+  'Whip': 'whip',
+  'Isla': 'isla',
+  'Heidern': 'heidern',
+  'Dolores': 'dolores',
+  'Terry Bogard': 'terry',
+  'Andy Bogard': 'andy',
+  'Joe Higashi': 'joe',
+  'Ryo Sakazaki': 'ryo',
+  'Robert Garcia': 'robert',
+  'King': 'king',
+  'Yashiro Nanakase': 'yashiro',
+  'Shermie': 'shermie',
+  'Chris': 'chris',
+  'Athena Asamiya': 'athena',
+  'Mai Shiranui': 'mai',
+  'Yuri Sakazaki': 'yuri',
+  'Leona Heidern': 'leona',
+  'Ralf Jones': 'ralf',
+  'Clark Still': 'clark',
+  'Antonov': 'antonov',
+  'Ramon': 'ramon',
+  'King of Dinosaurs': 'kod',
+  'Krohnen McDougall': 'krohnen',
+  'Kula Diamond': 'kula',
+  'Angel': 'angel',
+  'Blue Mary': 'bluemary',
+  'Vanessa': 'vanessa',
+  'Luong': 'luong',
+  'Rock Howard': 'rock',
+  'Gato': 'gato',
+  'Geese Howard': 'geese',
+  'Billy Kane': 'billy',
+  'Ryuji Yamazaki': 'yamazaki',
+  'Orochi Yashiro': 'orochi_yashiro',
+  'Orochi Shermie': 'orochi_shermie',
+  'Orochi Chris': 'orochi_chris',
+  'Haohmaru': 'haohmaru',
+  'Nakoruru': 'nakoruru',
+  'Darli Dagger': 'darli',
+  'Shingo Yabuki': 'shingo',
+  'Kim Kaphwan': 'kim',
+  'Sylvie Paula Paula': 'sylvie',
+  'Goenitz': 'goenitz',
+  'Najd': 'najd',
+  'Duo Lon': 'duolon',
+  'Hinako Shijo': 'hinako',
+  'Mature': 'mature',
+  'Vice': 'vice',
+  'Omega Rugal': 'omega',
+};
+
+const Map<String, List<String>> imagensAlternativasKofXV = {
+  'King of Dinosaurs': [
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_kod.png',
+  ],
+  'Blue Mary': [
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_bluemary.png',
+  ],
+  'B. Jenet': [
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_jenet.jpg',
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_jenet.png',
+  ],
+  'Orochi Yashiro': [
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_oyashiro.png',
+  ],
+  'Orochi Shermie': [
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_oshermie.png',
+  ],
+  'Orochi Chris': [
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_ochris.png',
+  ],
+  'Omega Rugal': [
+    'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/character_omegarugal.png',
+  ],
+};
+
 const Map<String, String> logosJogos = {
   'Super Smash Bros. Ultimate': 'https://static.wikia.nocookie.net/ssb/images/2/23/Super_Smash_Bros._Ultimate.png/revision/latest/scale-to-width-down/308?cb=20180823005835',
+  'Street Fighter 6': 'https://static.wikia.nocookie.net/streetfighter/images/4/47/Street_fighter_6_logo.png/revision/latest?cb=20220603151920',
+  'Mortal Kombat 1': 'https://static.wikia.nocookie.net/mkwikia/images/4/41/MK1_%282023%29_Cover_Art.jpeg/revision/latest?cb=20230804010326',
+  'Avatar Legends: The Fighting Game': 'https://static.wikia.nocookie.net/avatar/images/b/bd/Avatar_Legends_The_Fighting_Game.png/revision/latest?cb=20260524062108',
+  'Guilty Gear -Strive-': 'https://static.wikia.nocookie.net/guilty-gear/images/6/6a/GGStrive_Logo.png/revision/latest?cb=20211006180650',
+  'The King of Fighters XV': 'https://static.wikia.nocookie.net/snk/images/0/07/KOFXV_Main_Promotional_Illustration.jpg/revision/latest?cb=20210826163620',
   'Dragon Ball FighterZ': 'https://static.wikia.nocookie.net/dragonballfighterz/images/9/92/Dragon_Ball_FighterZ_Cover.jpg/revision/latest/scale-to-width-down/455?cb=20180902175307',
   'Fatal Fury': 'https://static.wikia.nocookie.net/snk/images/c/c9/Garou-city-of-the-wolves-18ymi.jpg/revision/latest/scale-to-width-down/375?cb=20260122142200',
   'Invincible VS': 'https://static.wikia.nocookie.net/amazon-invincible/images/9/9e/Invincible_VS_Logo.png/revision/latest/scale-to-width-down/500?cb=20260107143744',
@@ -972,6 +1598,16 @@ const Map<String, String> logosJogos = {
 /// Roster de personagens conforme o jogo selecionado.
 List<Character> rosterDoJogo(String jogo) {
   switch (jogo) {
+    case 'Street Fighter 6':
+      return personagensStreetFighter6;
+    case 'Mortal Kombat 1':
+      return personagensMortalKombat1;
+    case 'Avatar Legends: The Fighting Game':
+      return personagensAvatarLegends;
+    case 'Guilty Gear -Strive-':
+      return personagensGuiltyGearStrive;
+    case 'The King of Fighters XV':
+      return personagensKofXV;
     case 'Dragon Ball FighterZ':
       return personagensDBFZ;
     case 'Fatal Fury':
@@ -1243,21 +1879,169 @@ String normalizarNomePersonagem(String nome) {
   }
 }
 
-String urlImagemPersonagem(String nome, [String jogo = 'Super Smash Bros. Ultimate']) {
+String _nomeArquivoPersonagem(String nome) {
+  return nome
+      .trim()
+      .replaceAll("'", '')
+      .replaceAll('#', '')
+      .replaceAll('?', '')
+      .replaceAll('&', 'and')
+      .replaceAll(RegExp(r'\s+'), '_');
+}
+
+String _nomeArquivoPersonagemLower(String nome) {
+  return _nomeArquivoPersonagem(nome).toLowerCase();
+}
+
+String _nomeArquivoPersonagemKebab(String nome) {
+  return nome
+      .trim()
+      .replaceAll("'", '')
+      .replaceAll('#', '')
+      .replaceAll('?', '')
+      .replaceAll('&', 'and')
+      .replaceAll('.', '')
+      .replaceAll(RegExp(r'\s+'), '-');
+}
+
+String _nomeArquivoPersonagemKebabLower(String nome) {
+  return _nomeArquivoPersonagemKebab(nome).toLowerCase();
+}
+
+String _urlArquivoFandom(String wiki, String arquivo) {
+  final String caminho = arquivo.trim();
+  if (caminho.isEmpty) return '';
+  if (caminho.startsWith('http://') || caminho.startsWith('https://')) {
+    return caminho;
+  }
+
+  return 'https://$wiki/wiki/Special:Redirect/file/${Uri.encodeComponent(caminho)}';
+}
+
+List<String> _urlsArquivosFandom(String wiki, Iterable<String> arquivos) {
+  return arquivos
+      .where((arquivo) => arquivo.trim().isNotEmpty)
+      .map((arquivo) => _urlArquivoFandom(wiki, arquivo))
+      .toSet()
+      .toList();
+}
+
+List<String> urlsImagemPersonagem(
+  String nome, [
+  String jogo = 'Super Smash Bros. Ultimate',
+]) {
+  final String nomeLimpo = nome.trim();
+  final String slug = _nomeArquivoPersonagem(nomeLimpo);
+  final String slugLower = _nomeArquivoPersonagemLower(nomeLimpo);
+  final String slugKebabLower = _nomeArquivoPersonagemKebabLower(nomeLimpo);
+  final String nomeSemPontos = nomeLimpo
+      .replaceAll('.', '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  final String nomeSemEspacos = nomeLimpo
+      .replaceAll("'", '')
+      .replaceAll('#', '')
+      .replaceAll('?', '')
+      .replaceAll('&', 'and')
+      .replaceAll('.', '')
+      .replaceAll('-', '')
+      .replaceAll(RegExp(r'\s+'), '');
+  final String? idKofXV = idsKofXV[nomeLimpo];
+
   // Jogos cujas imagens vêm de mapas diretos (nome -> URL).
   switch (jogo) {
+    case 'Street Fighter 6':
+      return _urlsArquivosFandom('streetfighter.fandom.com', [
+        imagensStreetFighter6[nomeLimpo] ?? '',
+        ...?imagensAlternativasStreetFighter6[nomeLimpo],
+        'Sf6-$slugKebabLower.png',
+        '$nomeLimpo SF6 Render.png',
+        '$nomeSemPontos SF6 Render.png',
+        '$nomeLimpo SF6.png',
+        '$nomeSemPontos SF6.png',
+        'SF6 $nomeLimpo.png',
+        'SF6 $nomeSemPontos.png',
+        'SF6_$slug.png',
+        'SF6_${slug}_Render.png',
+        '${slug}_SF6_Render.png',
+      ]);
+    case 'Mortal Kombat 1':
+      return _urlsArquivosFandom('mortalkombat.fandom.com', [
+        imagensMortalKombat1[nomeLimpo] ?? '',
+        ...?imagensAlternativasMortalKombat1[nomeLimpo],
+        'https://www.mortalkombatwarehouse.com/mk12/renders/'
+            '${nomeSemEspacos.toLowerCase()}.png',
+        '$nomeLimpo MK1 render.webp',
+        '$nomeLimpo MK1 Render.png',
+        '$nomeLimpo (MK1) Render.png',
+        '$nomeLimpo (MK1) - Default.png',
+        '$nomeLimpo-MK1.png',
+        '$nomeSemEspacos MK1 render.webp',
+        '$nomeSemEspacos MK1 Render.png',
+        '${nomeSemEspacos}MK1.png',
+        '${nomeSemEspacos}rendermk1.png',
+        '${nomeSemEspacos.toLowerCase()}rendermk1.png',
+        '$slug-MK1.png',
+        '$slugLower-mk1.png',
+        '${slug}_MK1_render.webp',
+        '${slug}_MK1_Render.webp',
+        '${slug}_MK1_Render.png',
+        'MK1_${slug}_Render.png',
+        'MK1 $nomeLimpo.jpg',
+        'MK1 $nomeLimpo.png',
+      ]);
+    case 'Avatar Legends: The Fighting Game':
+      return _urlsArquivosFandom('avatar.fandom.com', [
+        imagensAvatarLegends[nomeLimpo] ?? '',
+        '$nomeLimpo.png',
+        '$slug.png',
+        '${slug}_Avatar.png',
+      ]);
+    case 'Guilty Gear -Strive-':
+      return _urlsArquivosFandom('guiltygear.fandom.com', [
+        imagensOficiaisGuiltyGearStrive[nomeLimpo] ?? '',
+        imagensGuiltyGearStrive[nomeLimpo] ?? '',
+        ...?imagensAlternativasGuiltyGearStrive[nomeLimpo],
+        '${slug}_Guilty_Gear_Strive.png',
+        '${slug}_Strive.png',
+        'GGST_${slug}_Render.png',
+        'GGST_$slug.png',
+        '${slug}_GGST.png',
+      ]);
+    case 'The King of Fighters XV':
+      return _urlsArquivosFandom('snk.fandom.com', [
+        if (idKofXV != null)
+          'https://www.snk-corp.co.jp/us/games/kof-xv/characters/img/'
+              'character_$idKofXV.png',
+        ...?imagensAlternativasKofXV[nomeLimpo],
+        imagensKofXV[nomeLimpo] ?? '',
+        'Kof_xv_${slugLower}_render.png',
+        'KOFXV_$slug.png',
+        'KOF_XV_$slug.png',
+        '${slug}_KOFXV.png',
+      ]);
     case 'Dragon Ball FighterZ':
-      return imagensDBFZ[nome.trim()] ?? '';
+      return [imagensDBFZ[nomeLimpo] ?? ''].where((url) => url.isNotEmpty).toList();
     case 'Fatal Fury':
-      return imagensFatalFury[nome.trim()] ?? '';
+      return [imagensFatalFury[nomeLimpo] ?? ''].where((url) => url.isNotEmpty).toList();
     case 'Invincible VS':
-      return imagensInvincible[nome.trim()] ?? '';
+      return [imagensInvincible[nomeLimpo] ?? ''].where((url) => url.isNotEmpty).toList();
   }
 
   // Super Smash Bros. Ultimate (padrão): imagem do CDN do Fandom.
   // (O site oficial smashbros.com bloqueia hotlink, então as imagens não
   // carregavam; usamos o mesmo CDN confiável dos demais jogos.)
-  return imagensSmash[normalizarNomePersonagem(nome)] ?? '';
+  return [
+    imagensSmash[normalizarNomePersonagem(nome)] ?? '',
+  ].where((url) => url.isNotEmpty).toList();
+}
+
+String urlImagemPersonagem(
+  String nome, [
+  String jogo = 'Super Smash Bros. Ultimate',
+]) {
+  final List<String> urls = urlsImagemPersonagem(nome, jogo);
+  return urls.isEmpty ? '' : urls.first;
 }
 
 Character personagemPorNome(String nome) {
@@ -1265,6 +2049,11 @@ Character personagemPorNome(String nome) {
 
   for (final personagem in [
     ...personagensSmash,
+    ...personagensStreetFighter6,
+    ...personagensMortalKombat1,
+    ...personagensAvatarLegends,
+    ...personagensGuiltyGearStrive,
+    ...personagensKofXV,
     ...personagensDBFZ,
     ...personagensFatalFury,
     ...personagensInvincible,
@@ -1976,8 +2765,16 @@ class _CriarPerfilInicialPageState extends State<CriarPerfilInicialPage> {
   }
 }
 
-class SelecionarJogoInicialPage extends StatelessWidget {
+class SelecionarJogoInicialPage extends StatefulWidget {
   const SelecionarJogoInicialPage({super.key});
+
+  @override
+  State<SelecionarJogoInicialPage> createState() =>
+      _SelecionarJogoInicialPageState();
+}
+
+class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
+  String busca = '';
 
   void abrirSelecaoPersonagem(BuildContext context, String jogo) {
     Navigator.push(
@@ -1990,66 +2787,306 @@ class SelecionarJogoInicialPage extends StatelessWidget {
     );
   }
 
+  String siglaDoJogo(String jogo) {
+    switch (jogo) {
+      case 'Super Smash Bros. Ultimate':
+        return 'SSBU';
+      case 'Street Fighter 6':
+        return 'SF6';
+      case 'Mortal Kombat 1':
+        return 'MK1';
+      case 'Avatar Legends: The Fighting Game':
+        return 'ATLA';
+      case 'Guilty Gear -Strive-':
+        return 'GGST';
+      case 'The King of Fighters XV':
+        return 'KOF';
+      case 'Dragon Ball FighterZ':
+        return 'DBFZ';
+      case 'Invincible VS':
+        return 'IVS';
+      case 'Fatal Fury':
+        return 'FF';
+      default:
+        return jogo.isNotEmpty ? jogo[0].toUpperCase() : '?';
+    }
+  }
+
+  Color corDoJogo(String jogo) {
+    switch (jogo) {
+      case 'Super Smash Bros. Ultimate':
+        return const Color(0xFFE11D48);
+      case 'Street Fighter 6':
+        return const Color(0xFF2563EB);
+      case 'Mortal Kombat 1':
+        return const Color(0xFFF59E0B);
+      case 'Avatar Legends: The Fighting Game':
+        return const Color(0xFF0EA5E9);
+      case 'Guilty Gear -Strive-':
+        return const Color(0xFFDC2626);
+      case 'The King of Fighters XV':
+        return const Color(0xFF7C3AED);
+      case 'Dragon Ball FighterZ':
+        return const Color(0xFFF97316);
+      case 'Invincible VS':
+        return const Color(0xFF22C55E);
+      case 'Fatal Fury':
+        return const Color(0xFFEF4444);
+      default:
+        return BrandColors.ambarDourado;
+    }
+  }
+
+  int colunasPorLargura(double largura) {
+    if (largura >= 1180) return 5;
+    if (largura >= 920) return 4;
+    if (largura >= 620) return 3;
+    return 2;
+  }
+
+  Widget capaDoJogo(String jogo) {
+    final String logo = logoDoJogo(jogo);
+    final Color cor = corDoJogo(jogo);
+    final String sigla = siglaDoJogo(jogo);
+
+    Widget fallback() {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              cor,
+              Color.lerp(cor, Colors.black, 0.45) ?? cor,
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -18,
+              bottom: -22,
+              child: Icon(
+                Icons.sports_esports,
+                size: 108,
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+            Center(
+              child: Text(
+                sigla,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (logo.isEmpty) return fallback();
+
+    if (logo.startsWith('assets/')) {
+      return Container(
+        color: BrandColors.pretoCarvao,
+        child: Image.asset(
+          logo,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallback(),
+        ),
+      );
+    }
+
+    return Container(
+      color: BrandColors.pretoCarvao,
+      padding: const EdgeInsets.all(10),
+      child: Image.network(
+        logo,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => fallback(),
+      ),
+    );
+  }
+
+  Widget cardJogo(String jogo) {
+    final int totalPersonagens = rosterDoJogo(jogo).length;
+    final Color cor = corDoJogo(jogo);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          abrirSelecaoPersonagem(context, jogo);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  capaDoJogo(jogo),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.16),
+                        ),
+                      ),
+                      child: Text(
+                        siglaDoJogo(jogo),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: BrandColors.grafite,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    jogo,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: cor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          '$totalPersonagens personagens',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String termo = busca.trim().toLowerCase();
+    final List<String> jogosFiltrados = jogosDisponiveis
+        .where((jogo) => jogo.toLowerCase().contains(termo))
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const LtLogo(scale: 0.85),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Qual jogo você vai treinar agora?',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Cada jogo tem seu próprio elenco e imagens. Escolha por onde começar.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: ListView.builder(
-                itemCount: jogosDisponiveis.length,
-                itemBuilder: (context, index) {
-                  final jogo = jogosDisponiveis[index];
-                  final String logo = logoDoJogo(jogo);
-                  final int totalPersonagens = rosterDoJogo(jogo).length;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool telaLarga = constraints.maxWidth >= 900;
+          final int colunas = colunasPorLargura(constraints.maxWidth);
 
-                  return Card(
-                    child: ListTile(
-                      leading: SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: logo.isEmpty
-                              ? CircleAvatar(child: Text(jogo[0]))
-                              : Image.network(
-                                  logo,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) =>
-                                      CircleAvatar(child: Text(jogo[0])),
-                                ),
-                        ),
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: telaLarga ? 1180 : double.infinity,
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: telaLarga ? 32 : 18,
+                  vertical: 24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Biblioteca de jogos',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Escolha um jogo para treinar, registrar partidas e acompanhar evolução.',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 18),
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Pesquisar jogo',
+                        hintText: 'Ex: Smash, KOF, Guilty Gear...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
                       ),
-                      title: Text(jogo),
-                      subtitle: Text('$totalPersonagens personagens'),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () {
-                        abrirSelecaoPersonagem(context, jogo);
+                      onChanged: (valor) {
+                        setState(() {
+                          busca = valor;
+                        });
                       },
                     ),
-                  );
-                },
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: jogosFiltrados.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum jogo encontrado.'),
+                            )
+                          : GridView.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: colunas,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 14,
+                                childAspectRatio: telaLarga ? 0.82 : 0.76,
+                              ),
+                              itemCount: jogosFiltrados.length,
+                              itemBuilder: (context, index) {
+                                return cardJogo(jogosFiltrados[index]);
+                              },
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -3161,7 +4198,7 @@ class SearchableOptionField extends StatelessWidget {
   }
 }
 
-class CharacterAvatar extends StatelessWidget {
+class CharacterAvatar extends StatefulWidget {
   final String personagem;
   final String jogo;
   final double size;
@@ -3176,27 +4213,44 @@ class CharacterAvatar extends StatelessWidget {
   });
 
   @override
+  State<CharacterAvatar> createState() => _CharacterAvatarState();
+}
+
+class _CharacterAvatarState extends State<CharacterAvatar> {
+  int indiceUrl = 0;
+
+  @override
+  void didUpdateWidget(covariant CharacterAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.personagem != widget.personagem || oldWidget.jogo != widget.jogo) {
+      indiceUrl = 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final String imageUrl = urlImagemPersonagem(personagem, jogo);
-    final String initial = initialOverride ??
-        (personagem.isNotEmpty ? personagem[0].toUpperCase() : '?');
+    final List<String> imageUrls = urlsImagemPersonagem(widget.personagem, widget.jogo);
+    final String imageUrl =
+        indiceUrl < imageUrls.length ? imageUrls[indiceUrl] : '';
+    final String initial = widget.initialOverride ??
+        (widget.personagem.isNotEmpty ? widget.personagem[0].toUpperCase() : '?');
 
     Widget fallback() => Center(
           child: Text(
             initial,
             style: TextStyle(
-              fontSize: size * 0.45,
+              fontSize: widget.size * 0.45,
               fontWeight: FontWeight.bold,
             ),
           ),
         );
 
     return SizedBox(
-      width: size,
-      height: size,
+      width: widget.size,
+      height: widget.size,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(size / 2),
+        borderRadius: BorderRadius.circular(widget.size / 2),
         child: Container(
           color: scheme.surfaceContainerHighest,
           child: imageUrl.isEmpty
@@ -3205,7 +4259,18 @@ class CharacterAvatar extends StatelessWidget {
                   imageUrl,
                   fit: BoxFit.cover,
                   alignment: Alignment.topCenter,
-                  errorBuilder: (_, __, ___) => fallback(),
+                  errorBuilder: (_, __, ___) {
+                    if (indiceUrl + 1 < imageUrls.length) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() => indiceUrl += 1);
+                        }
+                      });
+                      return fallback();
+                    }
+
+                    return fallback();
+                  },
                 ),
         ),
       ),
