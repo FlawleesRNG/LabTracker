@@ -26,6 +26,8 @@ class _HomePageState extends State<HomePage> {
   TimePrincipalInvincible timePrincipalInvincible =
       timePrincipalInvincibleVazio;
 
+  Map<String, String> smashCoverPreferences = {};
+
   List<PartidaRegistrada> historico = [];
 
   bool carregando = true;
@@ -61,12 +63,27 @@ class _HomePageState extends State<HomePage> {
         );
   }
 
+  List<PartidaRegistrada> get historicoDoContextoAtual {
+    return filtrarHistoricoPorContextoAtual(
+      historico,
+      jogo: widget.jogoAtual,
+      personagemAtual: personagemAtual.name,
+      timePrincipalInvincible: timePrincipalInvincible,
+    );
+  }
+
+  PartidaRegistrada? get ultimaPartidaDoContextoAtual {
+    final List<PartidaRegistrada> partidas = historicoDoContextoAtual;
+    return partidas.isEmpty ? null : partidas.first;
+  }
+
   Map<String, dynamic> gerarDadosPersistidos() {
     return {
       'perfilJogador': perfil.toJson(),
       'jogoAtual': widget.jogoAtual,
       'personagemAtualNome': personagemAtualNome,
       'timePrincipalInvincible': timePrincipalInvincible.toJson(),
+      prefsKeySmashCoverPreferences: smashCoverPreferences,
       'personagens': personagens.values
           .map((personagem) => personagem.toJson())
           .toList(),
@@ -80,6 +97,8 @@ class _HomePageState extends State<HomePage> {
     final dynamic personagemAtualRaw = dados['personagemAtualNome'];
     final dynamic timePrincipalRaw = dados['timePrincipalInvincible'];
     final dynamic perfilRaw = dados['perfilJogador'];
+    final dynamic smashCoverPreferencesRaw =
+        dados[prefsKeySmashCoverPreferences];
 
     personagens = {
       for (final personagem in rosterDoJogo(widget.jogoAtual))
@@ -142,6 +161,25 @@ class _HomePageState extends State<HomePage> {
         perfil = PlayerProfile.fromJson(perfilRaw);
       } catch (_) {}
     }
+
+    smashCoverPreferences = normalizarPreferenciasCapaSmash(
+      smashCoverPreferencesRaw,
+    );
+  }
+
+  Future<Map<String, String>> carregarPreferenciasCapaSmashPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? preferenciasRaw = prefs.getString(
+      prefsKeySmashCoverPreferences,
+    );
+
+    if (preferenciasRaw == null) return {};
+
+    try {
+      return normalizarPreferenciasCapaSmash(jsonDecode(preferenciasRaw));
+    } catch (_) {
+      return {};
+    }
   }
 
   Future<void> carregarDados() async {
@@ -163,6 +201,9 @@ class _HomePageState extends State<HomePage> {
       final String? perfilSalvo = prefs.getString('perfilJogador');
       final String? timePrincipalSalvo = prefs.getString(
         'timePrincipalInvincible',
+      );
+      final String? preferenciasCapaSmashSalvas = prefs.getString(
+        prefsKeySmashCoverPreferences,
       );
 
       if (personagensSalvos != null) {
@@ -228,6 +269,18 @@ class _HomePageState extends State<HomePage> {
           }
         } catch (_) {}
       }
+
+      if (preferenciasCapaSmashSalvas != null) {
+        try {
+          smashCoverPreferences = normalizarPreferenciasCapaSmash(
+            jsonDecode(preferenciasCapaSmashSalvas),
+          );
+        } catch (_) {}
+      }
+    }
+
+    if (smashCoverPreferences.isEmpty) {
+      smashCoverPreferences = await carregarPreferenciasCapaSmashPrefs();
     }
 
     if (widget.personagemInicialNome != null &&
@@ -266,6 +319,10 @@ class _HomePageState extends State<HomePage> {
       jsonEncode(timePrincipalInvincible.toJson()),
     );
     await prefs.setString('perfilJogador', jsonEncode(perfil.toJson()));
+    await prefs.setString(
+      prefsKeySmashCoverPreferences,
+      jsonEncode(smashCoverPreferences),
+    );
     await prefs.remove('personagens');
     await prefs.remove('historico');
   }
@@ -289,6 +346,7 @@ class _HomePageState extends State<HomePage> {
       'jogoAtual': widget.jogoAtual,
       'personagemAtualNome': personagemAtualNome,
       'timePrincipalInvincible': timePrincipalInvincible.toJson(),
+      prefsKeySmashCoverPreferences: smashCoverPreferences,
       'personagens': personagens.values
           .map((personagem) => personagem.toJson())
           .toList(),
@@ -464,6 +522,7 @@ class _HomePageState extends State<HomePage> {
     await prefs.remove('personagemAtualNome');
     await prefs.remove('timePrincipalInvincible');
     await prefs.remove('perfilJogador');
+    await prefs.remove(prefsKeySmashCoverPreferences);
 
     setState(() {
       personagens = {
@@ -473,8 +532,33 @@ class _HomePageState extends State<HomePage> {
       historico = [];
       personagemAtualNome = personagemPadraoDoJogo;
       timePrincipalInvincible = timePrincipalInvincibleVazio;
+      smashCoverPreferences = {};
       perfil = perfilPadrao;
     });
+  }
+
+  Future<void> atualizarPreferenciaCapaSmash(
+    String personagem,
+    String preferencia,
+  ) async {
+    if (!jogoEhSmash(widget.jogoAtual)) return;
+
+    final String nome = normalizarPersonagemCapaSmash(personagem);
+    if (!personagemTemPreferenciaCapaSmash(nome)) return;
+
+    final Map<String, String> novasPreferencias = {...smashCoverPreferences};
+
+    if (opcaoCapaSmashPorId(nome, preferencia) == null) {
+      novasPreferencias.remove(nome);
+    } else {
+      novasPreferencias[nome] = preferencia;
+    }
+
+    setState(() {
+      smashCoverPreferences = novasPreferencias;
+    });
+
+    await salvarDados();
   }
 
   Future<void> abrirSelecaoDePersonagem() async {
@@ -494,6 +578,8 @@ class _HomePageState extends State<HomePage> {
         personagemAtualNome = personagemEscolhido.name;
       });
 
+      await marcarPersonagemRecente(widget.jogoAtual, personagemEscolhido.name);
+      await marcarJogoRecente(widget.jogoAtual);
       await salvarDados();
     }
   }
@@ -517,20 +603,34 @@ class _HomePageState extends State<HomePage> {
       }
     });
 
+    await marcarJogoRecente(widget.jogoAtual);
+    for (final personagem in time.personagens) {
+      await marcarPersonagemRecente(widget.jogoAtual, personagem);
+    }
+
     await salvarDados();
     return true;
   }
 
-  Future<void> abrirRegistrarPartida() async {
+  List<String> sugestoesFrequentes(Iterable<String> itens) {
+    return gerarRankingFrequencia(
+      itens.toList(),
+    ).map((item) => item.nome).take(8).toList();
+  }
+
+  Future<void> abrirRegistrarPartida({
+    PartidaRegistrada? partidaInicial,
+    bool repetirUltima = false,
+  }) async {
     if (widget.jogoAtual == jogoInvincibleVs &&
         !timePrincipalInvincible.completo) {
       final bool montouTime = await abrirMontarTimePrincipal();
       if (!montouTime || !timePrincipalInvincible.completo) return;
     }
 
-    final List<PartidaRegistrada> partidasDoJogo = historico
-        .where((partida) => partidaPertenceAoJogo(partida, widget.jogoAtual))
-        .toList();
+    if (!mounted) return;
+
+    final List<PartidaRegistrada> partidasDoContexto = historicoDoContextoAtual;
 
     final PartidaRegistrada? partida = await Navigator.push(
       context,
@@ -539,8 +639,10 @@ class _HomePageState extends State<HomePage> {
           if (widget.jogoAtual == jogoInvincibleVs) {
             return RegistrarPartidaInvinciblePage(
               jogo: widget.jogoAtual,
-              sugestoesPlayers: gerarSugestoesPlayers(partidasDoJogo),
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
               timePrincipal: timePrincipalInvincible,
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
             );
           }
 
@@ -548,14 +650,26 @@ class _HomePageState extends State<HomePage> {
             return RegistrarPartidaStreetFighterPage(
               personagemAtual: personagemAtual,
               jogo: widget.jogoAtual,
-              sugestoesPlayers: gerarSugestoesPlayers(partidasDoJogo),
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
             );
           }
 
           return RegistrarPartidaPage(
             personagemAtual: personagemAtual,
             jogo: widget.jogoAtual,
-            sugestoesPlayers: gerarSugestoesPlayers(partidasDoJogo),
+            sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+            sugestoesStages: sugestoesFrequentes(
+              partidasDoContexto.map((partida) => partida.stage),
+            ),
+            sugestoesKills: sugestoesFrequentes(
+              partidasDoContexto.map((partida) => partida.formaDeKill),
+            ),
+            sugestoesMortes: sugestoesFrequentes(
+              partidasDoContexto.map((partida) => partida.formaDeMorte),
+            ),
+            partidaInicial: partidaInicial,
           );
         },
       ),
@@ -567,8 +681,29 @@ class _HomePageState extends State<HomePage> {
         recalcularPersonagensPeloHistorico();
       });
 
+      await marcarJogoRecente(widget.jogoAtual);
+      if (widget.jogoAtual == jogoInvincibleVs) {
+        for (final personagem in partida.meuTime) {
+          await marcarPersonagemRecente(widget.jogoAtual, personagem);
+        }
+      } else {
+        await marcarPersonagemRecente(
+          widget.jogoAtual,
+          partida.personagemJogador,
+        );
+      }
       await salvarDados();
     }
+  }
+
+  Future<void> abrirRepetirUltimaPartida() async {
+    final PartidaRegistrada? ultimaPartida = ultimaPartidaDoContextoAtual;
+    if (ultimaPartida == null) return;
+
+    await abrirRegistrarPartida(
+      partidaInicial: ultimaPartida,
+      repetirUltima: true,
+    );
   }
 
   Future<void> abrirHistorico() async {
@@ -579,6 +714,8 @@ class _HomePageState extends State<HomePage> {
           historico: historico,
           personagemAtual: personagemReferenciaAtual(),
           jogo: widget.jogoAtual,
+          timePrincipalInvincible: timePrincipalInvincible,
+          smashCoverPreferences: smashCoverPreferences,
         ),
       ),
     );
@@ -601,6 +738,7 @@ class _HomePageState extends State<HomePage> {
             return EstatisticasInvinciblePage(
               historico: historico,
               jogoAtual: widget.jogoAtual,
+              timePrincipalInvincible: timePrincipalInvincible,
             );
           }
 
@@ -616,6 +754,7 @@ class _HomePageState extends State<HomePage> {
             personagemAtual: personagemAtual,
             historico: historico,
             jogoAtual: widget.jogoAtual,
+            smashCoverPreferences: smashCoverPreferences,
           );
         },
       ),
@@ -631,6 +770,7 @@ class _HomePageState extends State<HomePage> {
             return EstatisticasInvinciblePage(
               historico: historico,
               jogoAtual: widget.jogoAtual,
+              timePrincipalInvincible: timePrincipalInvincible,
             );
           }
 
@@ -646,6 +786,7 @@ class _HomePageState extends State<HomePage> {
             personagemAtual: personagemAtual,
             historico: historico,
             jogoAtual: widget.jogoAtual,
+            smashCoverPreferences: smashCoverPreferences,
           );
         },
       ),
@@ -659,9 +800,14 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => PerfilJogadorPage(
           perfil: perfil,
           personagemAtual: personagemReferenciaAtual(),
+          jogoAtual: widget.jogoAtual,
+          smashCoverPreferences: smashCoverPreferences,
+          onSmashCoverPreferenceChanged: atualizarPreferenciaCapaSmash,
         ),
       ),
     );
+
+    smashCoverPreferences = await carregarPreferenciasCapaSmashPrefs();
 
     if (perfilEditado != null) {
       setState(() {
@@ -686,23 +832,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void voltarParaBibliotecaJogos() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SelecionarJogoInicialPage(),
+      ),
+    );
+  }
+
   int get totalPartidasDoJogo {
-    return historico
-        .where((partida) => partidaPertenceAoJogo(partida, widget.jogoAtual))
-        .length;
+    return historicoDoContextoAtual.length;
   }
 
   int get totalVitorias {
-    return historico
-        .where((partida) => partidaPertenceAoJogo(partida, widget.jogoAtual))
-        .where((partida) => partida.resultado == 'Vitória')
+    return historicoDoContextoAtual
+        .where((partida) => resultadoEhVitoria(partida.resultado))
         .length;
   }
 
   int get totalDerrotas {
-    return historico
-        .where((partida) => partidaPertenceAoJogo(partida, widget.jogoAtual))
-        .where((partida) => partida.resultado == 'Derrota')
+    return historicoDoContextoAtual
+        .where((partida) => resultadoEhDerrota(partida.resultado))
         .length;
   }
 
@@ -710,11 +861,7 @@ class _HomePageState extends State<HomePage> {
     if (!timePrincipalInvincible.completo) return 0;
 
     int lp = 0;
-    final List<PartidaRegistrada> partidasDoTime = historico.where((partida) {
-      return partidaPertenceAoJogo(partida, widget.jogoAtual) &&
-          partida.isInvincible &&
-          timePrincipalInvincible.mesmaComposicao(partida.meuTime);
-    }).toList();
+    final List<PartidaRegistrada> partidasDoTime = historicoDoContextoAtual;
 
     for (final partida in partidasDoTime.reversed) {
       lp += partida.pdlGerado;
@@ -754,6 +901,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const LtLogo(scale: 0.8, showProgress: false),
         centerTitle: true,
+        leading: IconButton(
+          onPressed: voltarParaBibliotecaJogos,
+          tooltip: 'Voltar para jogos',
+          icon: const Icon(Icons.arrow_back),
+        ),
         actions: [
           IconButton(
             onPressed: abrirPerfil,
@@ -845,6 +997,8 @@ class _HomePageState extends State<HomePage> {
                           jogo: widget.jogoAtual,
                           size: avatarSize,
                           initialOverride: personagem.initial,
+                          smashCoverPreferences: smashCoverPreferences,
+                          usarPreferenciaVisualSmash: true,
                         );
 
                   final Widget perfilInfo = Column(
@@ -999,7 +1153,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: abrirRegistrarPartida,
+                    onPressed: () => abrirRegistrarPartida(),
                     child: const Text('Registrar partida'),
                   ),
                 ),
@@ -1012,6 +1166,17 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+            if (ultimaPartidaDoContextoAtual != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: abrirRepetirUltimaPartida,
+                  icon: const Icon(Icons.replay_outlined),
+                  label: const Text('Repetir ultima partida'),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,

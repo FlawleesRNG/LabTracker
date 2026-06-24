@@ -184,7 +184,61 @@ bool partidaPertenceAoJogo(PartidaRegistrada partida, String jogo) {
     return false;
   }
 
-  return partida.jogo.isEmpty || partida.jogo == jogo;
+  if (jogo == jogoStreetFighter6) {
+    return partida.isStreetFighter;
+  }
+
+  if (partida.isStreetFighter) {
+    return false;
+  }
+
+  if (partida.jogo.isEmpty) {
+    return jogo == 'Super Smash Bros. Ultimate';
+  }
+
+  return partida.jogo == jogo;
+}
+
+bool partidaPertenceAoContextoAtual(
+  PartidaRegistrada partida, {
+  required String jogo,
+  String personagemAtual = '',
+  TimePrincipalInvincible timePrincipalInvincible =
+      timePrincipalInvincibleVazio,
+}) {
+  if (!partidaPertenceAoJogo(partida, jogo)) {
+    return false;
+  }
+
+  if (jogo == jogoInvincibleVs) {
+    return partida.isInvincible &&
+        timePrincipalInvincible.completo &&
+        timePrincipalInvincible.mesmaComposicao(partida.meuTime);
+  }
+
+  final String personagem = personagemAtual.trim();
+  if (personagem.isEmpty) return false;
+
+  return partida.personagemJogador == personagem;
+}
+
+List<PartidaRegistrada> filtrarHistoricoPorContextoAtual(
+  List<PartidaRegistrada> historico, {
+  required String jogo,
+  String personagemAtual = '',
+  TimePrincipalInvincible timePrincipalInvincible =
+      timePrincipalInvincibleVazio,
+}) {
+  return historico
+      .where(
+        (partida) => partidaPertenceAoContextoAtual(
+          partida,
+          jogo: jogo,
+          personagemAtual: personagemAtual,
+          timePrincipalInvincible: timePrincipalInvincible,
+        ),
+      )
+      .toList();
 }
 
 int calcularLpInvincible({
@@ -385,6 +439,217 @@ String formatarData(DateTime data) {
   return '$dia/$mes/$ano às $hora:$minuto';
 }
 
+String formatarDataCurta(DateTime data) {
+  String doisDigitos(int numero) => numero.toString().padLeft(2, '0');
+
+  return '${doisDigitos(data.day)}/'
+      '${doisDigitos(data.month)}/${data.year}';
+}
+
+List<String> _listaUnicaOrdenada(dynamic raw) {
+  if (raw is! Iterable) return const [];
+
+  final List<String> itens = [];
+  for (final item in raw) {
+    final String valor = item.toString().trim();
+    if (valor.isNotEmpty && !itens.contains(valor)) {
+      itens.add(valor);
+    }
+  }
+
+  return itens;
+}
+
+Map<String, List<String>> normalizarMapaListasString(dynamic raw) {
+  final Map<String, List<String>> mapa = {};
+  if (raw is! Map) return mapa;
+
+  raw.forEach((key, value) {
+    final String jogo = key.toString().trim();
+    if (jogo.isEmpty) return;
+
+    final List<String> itens = _listaUnicaOrdenada(value);
+    if (itens.isNotEmpty) {
+      mapa[jogo] = itens;
+    }
+  });
+
+  return mapa;
+}
+
+List<String> _inserirRecente(String item, List<String> atuais, int limite) {
+  final String valor = item.trim();
+  if (valor.isEmpty) return atuais;
+
+  final List<String> atualizados = [
+    valor,
+    ...atuais.where((existente) => existente != valor),
+  ];
+
+  return atualizados.take(limite).toList();
+}
+
+Future<List<PartidaRegistrada>> carregarHistoricoPersistido() async {
+  final Map<String, dynamic>? dadosArquivo = await _lerDadosArquivo();
+  final dynamic historicoArquivo = dadosArquivo?['historico'];
+
+  if (historicoArquivo is List) {
+    return historicoArquivo
+        .whereType<Map<String, dynamic>>()
+        .map((item) => PartidaRegistrada.fromJson(item))
+        .toList();
+  }
+
+  final prefs = await SharedPreferences.getInstance();
+  final String? historicoPrefs = prefs.getString('historico');
+  if (historicoPrefs == null) return const [];
+
+  try {
+    final dynamic decoded = jsonDecode(historicoPrefs);
+    if (decoded is List) {
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map((item) => PartidaRegistrada.fromJson(item))
+          .toList();
+    }
+  } catch (_) {}
+
+  return const [];
+}
+
+Future<Set<String>> carregarJogosFavoritos() async {
+  final prefs = await SharedPreferences.getInstance();
+  return (prefs.getStringList(prefsKeyFavoriteGames) ?? const []).toSet();
+}
+
+Future<void> salvarJogosFavoritos(Set<String> favoritos) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setStringList(prefsKeyFavoriteGames, favoritos.toList()..sort());
+}
+
+Future<List<String>> carregarJogosRecentes() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getStringList(prefsKeyRecentGames) ?? const [];
+}
+
+Future<List<String>> marcarJogoRecente(String jogo) async {
+  final prefs = await SharedPreferences.getInstance();
+  final List<String> recentes = _inserirRecente(
+    jogo,
+    prefs.getStringList(prefsKeyRecentGames) ?? const [],
+    8,
+  );
+  await prefs.setStringList(prefsKeyRecentGames, recentes);
+  return recentes;
+}
+
+Future<Map<String, List<String>>> carregarPersonagensFavoritosPorJogo() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? raw = prefs.getString(prefsKeyFavoriteCharactersByGame);
+  if (raw == null) return {};
+
+  try {
+    return normalizarMapaListasString(jsonDecode(raw));
+  } catch (_) {
+    return {};
+  }
+}
+
+Future<void> salvarPersonagensFavoritosPorJogo(
+  Map<String, List<String>> favoritos,
+) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(
+    prefsKeyFavoriteCharactersByGame,
+    jsonEncode(favoritos),
+  );
+}
+
+Future<Map<String, List<String>>> carregarPersonagensRecentesPorJogo() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? raw = prefs.getString(prefsKeyRecentCharactersByGame);
+  if (raw == null) return {};
+
+  try {
+    return normalizarMapaListasString(jsonDecode(raw));
+  } catch (_) {
+    return {};
+  }
+}
+
+Future<Map<String, List<String>>> marcarPersonagemRecente(
+  String jogo,
+  String personagem,
+) async {
+  final Map<String, List<String>> recentes =
+      await carregarPersonagensRecentesPorJogo();
+  recentes[jogo] = _inserirRecente(personagem, recentes[jogo] ?? const [], 10);
+
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(prefsKeyRecentCharactersByGame, jsonEncode(recentes));
+  return recentes;
+}
+
+Map<String, GameUsageStats> calcularUsoPorJogo(
+  List<PartidaRegistrada> historico,
+) {
+  final Map<String, GameUsageStats> stats = {
+    for (final jogo in jogosDisponiveis) jogo: const GameUsageStats(),
+  };
+
+  for (final jogo in jogosDisponiveis) {
+    for (final partida in historico) {
+      if (partidaPertenceAoJogo(partida, jogo)) {
+        stats[jogo] = (stats[jogo] ?? const GameUsageStats()).adicionar(
+          partida,
+        );
+      }
+    }
+  }
+
+  return stats;
+}
+
+bool partidaUsaPersonagemNoJogo(
+  PartidaRegistrada partida,
+  String jogo,
+  String personagem,
+) {
+  if (!partidaPertenceAoJogo(partida, jogo)) return false;
+
+  final String nome = normalizarNomePersonagem(personagem);
+  if (jogo == jogoInvincibleVs) {
+    return partida.meuTime.contains(nome) || partida.personagemJogador == nome;
+  }
+
+  return partida.personagemJogador == nome;
+}
+
+Map<String, CharacterUsageStats> calcularUsoPersonagensPorJogo(
+  List<PartidaRegistrada> historico,
+  String jogo,
+) {
+  final Map<String, CharacterUsageStats> stats = {
+    for (final personagem in rosterDoJogo(jogo))
+      personagem.name: const CharacterUsageStats(),
+  };
+
+  for (final personagem in rosterDoJogo(jogo)) {
+    CharacterUsageStats acumulado =
+        stats[personagem.name] ?? const CharacterUsageStats();
+
+    for (final partida in historico) {
+      if (partidaUsaPersonagemNoJogo(partida, jogo, personagem.name)) {
+        acumulado = acumulado.adicionar(partida);
+      }
+    }
+
+    stats[personagem.name] = acumulado;
+  }
+
+  return stats;
+}
+
 bool isMesmoDia(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;
 }
@@ -456,9 +721,91 @@ List<String> _urlsArquivosFandom(String wiki, Iterable<String> arquivos) {
       .toList();
 }
 
+bool jogoEhSmash(String jogo) {
+  return jogo == jogoSmashUltimate;
+}
+
+String normalizarPersonagemCapaSmash(String personagem) {
+  return normalizarNomePersonagem(personagem);
+}
+
+List<SmashCoverOption> opcoesCapaSmash(String personagem) {
+  final String nome = normalizarPersonagemCapaSmash(personagem);
+  return opcoesCapaSmashPorPersonagem[nome] ?? const [];
+}
+
+bool personagemTemPreferenciaCapaSmash(String personagem) {
+  return opcoesCapaSmash(personagem).isNotEmpty;
+}
+
+SmashCoverOption? opcaoCapaSmashPorId(String personagem, String id) {
+  final String preferencia = id.trim();
+  if (preferencia.isEmpty) return null;
+
+  for (final opcao in opcoesCapaSmash(personagem)) {
+    if (opcao.id == preferencia) return opcao;
+  }
+
+  return null;
+}
+
+Map<String, String> normalizarPreferenciasCapaSmash(dynamic raw) {
+  final Map<String, String> preferencias = {};
+  if (raw is! Map) return preferencias;
+
+  raw.forEach((key, value) {
+    if (key == null || value == null) return;
+
+    final String personagem = normalizarPersonagemCapaSmash(key.toString());
+    final String preferencia = value.toString().trim();
+
+    if (opcaoCapaSmashPorId(personagem, preferencia) != null) {
+      preferencias[personagem] = preferencia;
+    }
+  });
+
+  return preferencias;
+}
+
+String rotuloPreferenciaCapaSmash(
+  String personagem,
+  Map<String, String> preferencias,
+) {
+  final String nome = normalizarPersonagemCapaSmash(personagem);
+  final String? preferencia = preferencias[nome];
+  final SmashCoverOption? opcao = preferencia == null
+      ? null
+      : opcaoCapaSmashPorId(nome, preferencia);
+
+  return opcao?.label ?? 'Padrão';
+}
+
+List<String> urlsImagemPersonagemComPreferenciaVisual(
+  String nome,
+  String jogo,
+  Map<String, String> preferencias,
+) {
+  if (!jogoEhSmash(jogo)) {
+    return urlsImagemPersonagem(nome, jogo);
+  }
+
+  final String personagem = normalizarPersonagemCapaSmash(nome);
+  final String? preferencia = preferencias[personagem];
+  final SmashCoverOption? opcao = preferencia == null
+      ? null
+      : opcaoCapaSmashPorId(personagem, preferencia);
+  final List<String> urlsPadrao = urlsImagemPersonagem(personagem, jogo);
+
+  if (opcao == null || opcao.imageUrls.isEmpty) {
+    return urlsPadrao;
+  }
+
+  return [...opcao.imageUrls, ...urlsPadrao];
+}
+
 List<String> urlsImagemPersonagem(
   String nome, [
-  String jogo = 'Super Smash Bros. Ultimate',
+  String jogo = jogoSmashUltimate,
 ]) {
   final String nomeLimpo = nome.trim();
   final String slug = _nomeArquivoPersonagem(nomeLimpo);
@@ -550,6 +897,10 @@ List<String> urlsImagemPersonagem(
         'KOF_XV_$slug.png',
         '${slug}_KOFXV.png',
       ]);
+    case jogoTekken8:
+    case jogo2Xko:
+    case jogoRivalsOfAether2:
+      return const [];
     case 'Dragon Ball FighterZ':
       return [
         imagensDBFZ[nomeLimpo] ?? '',
@@ -572,10 +923,7 @@ List<String> urlsImagemPersonagem(
   ].where((url) => url.isNotEmpty).toList();
 }
 
-String urlImagemPersonagem(
-  String nome, [
-  String jogo = 'Super Smash Bros. Ultimate',
-]) {
+String urlImagemPersonagem(String nome, [String jogo = jogoSmashUltimate]) {
   final List<String> urls = urlsImagemPersonagem(nome, jogo);
   return urls.isEmpty ? '' : urls.first;
 }
@@ -590,6 +938,9 @@ Character personagemPorNome(String nome) {
     ...personagensAvatarLegends,
     ...personagensGuiltyGearStrive,
     ...personagensKofXV,
+    ...personagensTekken8,
+    ...personagens2XKO,
+    ...personagensRivalsOfAether2,
     ...personagensDBFZ,
     ...personagensFatalFury,
     ...personagensInvincible,

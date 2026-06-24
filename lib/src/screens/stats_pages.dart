@@ -4,12 +4,14 @@ class ResumoTreinoPage extends StatelessWidget {
   final Character personagemAtual;
   final List<PartidaRegistrada> historico;
   final String jogoAtual;
+  final Map<String, String> smashCoverPreferences;
 
   const ResumoTreinoPage({
     super.key,
     required this.personagemAtual,
     required this.historico,
     required this.jogoAtual,
+    this.smashCoverPreferences = const {},
   });
 
   String gerarSugestaoTreino({
@@ -60,12 +62,15 @@ class ResumoTreinoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final DateTime hoje = DateTime.now();
 
-    final List<PartidaRegistrada> partidasHoje = historico
+    final List<PartidaRegistrada> partidasHojePersonagem = historico
+        .where(
+          (partida) => partidaPertenceAoContextoAtual(
+            partida,
+            jogo: jogoAtual,
+            personagemAtual: personagemAtual.name,
+          ),
+        )
         .where((partida) => isMesmoDia(partida.data, hoje))
-        .toList();
-
-    final List<PartidaRegistrada> partidasHojePersonagem = partidasHoje
-        .where((partida) => partida.personagemJogador == personagemAtual.name)
         .toList();
 
     final int totalPartidas = partidasHojePersonagem.length;
@@ -287,6 +292,9 @@ class ResumoTreinoPage extends StatelessWidget {
                                         adversario:
                                             matchup.personagemAdversario,
                                         avatarSize: 26,
+                                        smashCoverPreferences:
+                                            smashCoverPreferences,
+                                        usarPreferenciaVisualSmash: true,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -347,12 +355,14 @@ class EstatisticasPage extends StatelessWidget {
   final Character personagemAtual;
   final List<PartidaRegistrada> historico;
   final String jogoAtual;
+  final Map<String, String> smashCoverPreferences;
 
   const EstatisticasPage({
     super.key,
     required this.personagemAtual,
     required this.historico,
     required this.jogoAtual,
+    this.smashCoverPreferences = const {},
   });
 
   void abrirMatchupStats(
@@ -366,6 +376,7 @@ class EstatisticasPage extends StatelessWidget {
           personagemAtual: personagemAtual,
           partidasDoPersonagem: partidasDoPersonagem,
           jogoAtual: jogoAtual,
+          smashCoverPreferences: smashCoverPreferences,
         ),
       ),
     );
@@ -374,8 +385,13 @@ class EstatisticasPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<PartidaRegistrada> partidasDoPersonagem = historico
-        .where((partida) => partidaPertenceAoJogo(partida, jogoAtual))
-        .where((partida) => partida.personagemJogador == personagemAtual.name)
+        .where(
+          (partida) => partidaPertenceAoContextoAtual(
+            partida,
+            jogo: jogoAtual,
+            personagemAtual: personagemAtual.name,
+          ),
+        )
         .toList();
 
     final int totalPartidas = partidasDoPersonagem.length;
@@ -614,8 +630,9 @@ class EstatisticasPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   AnalisesSection(
                     personagemAtual: personagemAtual,
-                    historico: historico,
+                    historico: partidasDoPersonagem,
                     jogoAtual: jogoAtual,
+                    smashCoverPreferences: smashCoverPreferences,
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -726,6 +743,9 @@ class EstatisticasPage extends StatelessWidget {
                                     personagem: partida.personagemJogador,
                                     adversario: partida.personagemAdversario,
                                     avatarSize: 26,
+                                    smashCoverPreferences:
+                                        smashCoverPreferences,
+                                    usarPreferenciaVisualSmash: true,
                                   ),
                                   const SizedBox(height: 6),
                                   Row(
@@ -798,8 +818,13 @@ class EstatisticasStreetFighterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<PartidaRegistrada> partidas = historico
-        .where((partida) => partidaPertenceAoJogo(partida, jogoAtual))
-        .where((partida) => partida.personagemJogador == personagemAtual.name)
+        .where(
+          (partida) => partidaPertenceAoContextoAtual(
+            partida,
+            jogo: jogoAtual,
+            personagemAtual: personagemAtual.name,
+          ),
+        )
         .toList();
 
     final int totalPartidas = partidas.length;
@@ -1131,11 +1156,13 @@ class EstatisticasStreetFighterPage extends StatelessWidget {
 class EstatisticasInvinciblePage extends StatelessWidget {
   final List<PartidaRegistrada> historico;
   final String jogoAtual;
+  final TimePrincipalInvincible timePrincipalInvincible;
 
   const EstatisticasInvinciblePage({
     super.key,
     required this.historico,
     required this.jogoAtual,
+    this.timePrincipalInvincible = timePrincipalInvincibleVazio,
   });
 
   AnaliseComparativaItem? melhorPorWinrate(List<AnaliseComparativaItem> itens) {
@@ -1179,9 +1206,17 @@ class EstatisticasInvinciblePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<PartidaRegistrada> partidas = historico
-        .where((partida) => partidaPertenceAoJogo(partida, jogoAtual))
-        .where((partida) => partida.isInvincible)
+        .where(
+          (partida) => partidaPertenceAoContextoAtual(
+            partida,
+            jogo: jogoAtual,
+            timePrincipalInvincible: timePrincipalInvincible,
+          ),
+        )
         .toList();
+    final String tituloEscopo = timePrincipalInvincible.completo
+        ? timePrincipalInvincible.texto
+        : 'Time atual';
 
     final int totalPartidas = partidas.length;
     final int vitorias = partidas
@@ -1268,10 +1303,10 @@ class EstatisticasInvinciblePage extends StatelessWidget {
         centerTitle: true,
       ),
       body: totalPartidas == 0
-          ? const Center(
+          ? Center(
               child: Text(
-                'Ainda não existem partidas 3v3 registradas em Invincible VS.',
-                style: TextStyle(fontSize: 18),
+                'Ainda não existem partidas 3v3 registradas com $tituloEscopo.',
+                style: const TextStyle(fontSize: 18),
               ),
             )
           : SingleChildScrollView(
@@ -1280,7 +1315,7 @@ class EstatisticasInvinciblePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Invincible VS',
+                    tituloEscopo,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),

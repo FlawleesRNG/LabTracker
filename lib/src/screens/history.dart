@@ -4,12 +4,16 @@ class HistoricoPage extends StatefulWidget {
   final List<PartidaRegistrada> historico;
   final Character personagemAtual;
   final String jogo;
+  final TimePrincipalInvincible timePrincipalInvincible;
+  final Map<String, String> smashCoverPreferences;
 
   const HistoricoPage({
     super.key,
     required this.historico,
     required this.personagemAtual,
     this.jogo = 'Super Smash Bros. Ultimate',
+    this.timePrincipalInvincible = timePrincipalInvincibleVazio,
+    this.smashCoverPreferences = const {},
   });
 
   @override
@@ -18,7 +22,6 @@ class HistoricoPage extends StatefulWidget {
 
 class _HistoricoPageState extends State<HistoricoPage> {
   String filtroResultado = 'Todos';
-  bool apenasPersonagemAtual = false;
   String busca = '';
   bool houveAlteracao = false;
 
@@ -47,9 +50,12 @@ class _HistoricoPageState extends State<HistoricoPage> {
   }
 
   List<PartidaRegistrada> get historicoDoJogo {
-    return widget.historico
-        .where((partida) => partidaPertenceAoJogo(partida, widget.jogo))
-        .toList();
+    return filtrarHistoricoPorContextoAtual(
+      widget.historico,
+      jogo: widget.jogo,
+      personagemAtual: widget.personagemAtual.name,
+      timePrincipalInvincible: widget.timePrincipalInvincible,
+    );
   }
 
   List<String> get opcoesPlayers {
@@ -167,12 +173,6 @@ class _HistoricoPageState extends State<HistoricoPage> {
       final bool passaResultado =
           filtroResultado == 'Todos' || partida.resultado == filtroResultado;
 
-      final bool passaPersonagem =
-          !apenasPersonagemAtual ||
-          (isInvincible
-              ? partida.meuTime.contains(widget.personagemAtual.name)
-              : partida.personagemJogador == widget.personagemAtual.name);
-
       final bool passaPlayer =
           filtroPlayer == 'Todos' || partida.nickAdversario == filtroPlayer;
 
@@ -286,7 +286,6 @@ class _HistoricoPageState extends State<HistoricoPage> {
           textoBusca.isEmpty || textoPartida.toLowerCase().contains(textoBusca);
 
       return passaResultado &&
-          passaPersonagem &&
           passaPlayer &&
           passaAdversario &&
           passaStage &&
@@ -350,6 +349,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
           partida: partida,
           jogo: widget.jogo,
           sugestoesPlayers: gerarSugestoesPlayers(historicoDoJogo),
+          smashCoverPreferences: widget.smashCoverPreferences,
         ),
       ),
     );
@@ -439,19 +439,20 @@ class _HistoricoPageState extends State<HistoricoPage> {
                           },
                         ),
                         const SizedBox(height: 8),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            isInvincible
-                                ? 'Mostrar só partidas com ${widget.personagemAtual.name} no meu time'
-                                : 'Mostrar só partidas com ${widget.personagemAtual.name}',
+                        Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.history_outlined),
+                            title: Text(
+                              isInvincible
+                                  ? 'Histórico do time atual'
+                                  : 'Histórico de ${widget.personagemAtual.name}',
+                            ),
+                            subtitle: Text(
+                              isInvincible
+                                  ? widget.timePrincipalInvincible.texto
+                                  : widget.jogo,
+                            ),
                           ),
-                          value: apenasPersonagemAtual,
-                          onChanged: (valor) {
-                            setState(() {
-                              apenasPersonagemAtual = valor;
-                            });
-                          },
                         ),
                         Card(
                           child: ExpansionTile(
@@ -829,12 +830,14 @@ class DetalhesPartidaPage extends StatelessWidget {
   final PartidaRegistrada partida;
   final String jogo;
   final List<String> sugestoesPlayers;
+  final Map<String, String> smashCoverPreferences;
 
   const DetalhesPartidaPage({
     super.key,
     required this.partida,
     this.jogo = 'Super Smash Bros. Ultimate',
     this.sugestoesPlayers = const [],
+    this.smashCoverPreferences = const {},
   });
 
   Future<void> confirmarApagar(BuildContext context) async {
@@ -896,6 +899,7 @@ class DetalhesPartidaPage extends StatelessWidget {
             partida: partida,
             jogo: jogo,
             sugestoesPlayers: sugestoesPlayers,
+            smashCoverPreferences: smashCoverPreferences,
           );
         },
       ),
@@ -1331,12 +1335,14 @@ class EditarPartidaPage extends StatefulWidget {
   final PartidaRegistrada partida;
   final String jogo;
   final List<String> sugestoesPlayers;
+  final Map<String, String> smashCoverPreferences;
 
   const EditarPartidaPage({
     super.key,
     required this.partida,
     this.jogo = 'Super Smash Bros. Ultimate',
     this.sugestoesPlayers = const [],
+    this.smashCoverPreferences = const {},
   });
 
   @override
@@ -1356,6 +1362,7 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
   late String detalheOutroKill;
   late String detalheOutroMorte;
   late String observacoes;
+  late DateTime dataPartida;
   late int pdlCalculado;
 
   late TextEditingController nickController;
@@ -1402,6 +1409,7 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
     }
 
     observacoes = widget.partida.observacoes;
+    dataPartida = widget.partida.data;
     pdlCalculado = gerarPdl();
 
     nickController = TextEditingController(text: nickAdversario);
@@ -1583,7 +1591,7 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
       formaDeMorte: morteFinal,
       observacoes: observacoes.trim(),
       pdlGerado: pdlFinal,
-      data: widget.partida.data,
+      data: dataPartida,
     );
 
     Navigator.pop(context, partidaEditada);
@@ -1633,6 +1641,8 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
                       jogo: widget.jogo,
                       size: 56,
                       initialOverride: personagemJogador.initial,
+                      smashCoverPreferences: widget.smashCoverPreferences,
+                      usarPreferenciaVisualSmash: true,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -1766,6 +1776,16 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 24),
+            DatePickerField(
+              label: 'Data da partida',
+              data: dataPartida,
+              onChanged: (valor) {
+                setState(() {
+                  dataPartida = valor;
+                });
+              },
             ),
             const SizedBox(height: 24),
             const Text(

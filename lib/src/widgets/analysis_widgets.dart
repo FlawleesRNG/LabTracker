@@ -4,12 +4,14 @@ class AnalisesSection extends StatefulWidget {
   final Character personagemAtual;
   final List<PartidaRegistrada> historico;
   final String jogoAtual;
+  final Map<String, String> smashCoverPreferences;
 
   const AnalisesSection({
     super.key,
     required this.personagemAtual,
     required this.historico,
     required this.jogoAtual,
+    this.smashCoverPreferences = const {},
   });
 
   @override
@@ -149,6 +151,8 @@ class _AnalisesSectionState extends State<AnalisesSection> {
           adversario: 'Histórico',
           avatarSize: 42,
           style: Theme.of(context).textTheme.headlineSmall,
+          smashCoverPreferences: widget.smashCoverPreferences,
+          usarPreferenciaVisualSmash: true,
         ),
         const SizedBox(height: 8),
         Text(
@@ -713,12 +717,14 @@ class MatchupStatsPage extends StatelessWidget {
   final Character personagemAtual;
   final List<PartidaRegistrada> partidasDoPersonagem;
   final String jogoAtual;
+  final Map<String, String> smashCoverPreferences;
 
   const MatchupStatsPage({
     super.key,
     required this.personagemAtual,
     required this.partidasDoPersonagem,
     required this.jogoAtual,
+    this.smashCoverPreferences = const {},
   });
 
   @override
@@ -754,6 +760,8 @@ class MatchupStatsPage extends StatelessWidget {
                           personagem: personagemAtual.name,
                           adversario: matchup.personagemAdversario,
                           avatarSize: 34,
+                          smashCoverPreferences: smashCoverPreferences,
+                          usarPreferenciaVisualSmash: true,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,

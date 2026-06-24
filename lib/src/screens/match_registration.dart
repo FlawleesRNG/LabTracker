@@ -4,12 +4,20 @@ class RegistrarPartidaPage extends StatefulWidget {
   final Character personagemAtual;
   final String jogo;
   final List<String> sugestoesPlayers;
+  final List<String> sugestoesStages;
+  final List<String> sugestoesKills;
+  final List<String> sugestoesMortes;
+  final PartidaRegistrada? partidaInicial;
 
   const RegistrarPartidaPage({
     super.key,
     required this.personagemAtual,
     this.jogo = 'Super Smash Bros. Ultimate',
     this.sugestoesPlayers = const [],
+    this.sugestoesStages = const [],
+    this.sugestoesKills = const [],
+    this.sugestoesMortes = const [],
+    this.partidaInicial,
   });
 
   @override
@@ -28,7 +36,27 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
   String detalheOutroKill = '';
   String detalheOutroMorte = '';
   String observacoes = '';
+  DateTime dataPartida = DateTime.now();
   int pdlCalculado = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final PartidaRegistrada? partida = widget.partidaInicial;
+    if (partida != null) {
+      nickAdversario = partida.nickAdversario == 'Sem nick'
+          ? ''
+          : partida.nickAdversario;
+      personagemAdversario = encontrarPersonagem(partida.personagemAdversario);
+
+      if (partida.stage.trim().isNotEmpty) {
+        stageSelecionado = partida.stage;
+      }
+    }
+
+    pdlCalculado = gerarPdl();
+  }
 
   bool get venceu {
     return resultado == 'Vitória';
@@ -76,6 +104,40 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
     }
 
     return formaDeMorte;
+  }
+
+  List<String> opcoesComSugestoes(
+    List<String> opcoesBase,
+    List<String> sugestoes,
+  ) {
+    final List<String> ordenadas = [];
+
+    for (final sugestao in sugestoes) {
+      if (opcoesBase.contains(sugestao) && !ordenadas.contains(sugestao)) {
+        ordenadas.add(sugestao);
+      }
+    }
+
+    for (final opcao in opcoesBase) {
+      if (!ordenadas.contains(opcao)) {
+        ordenadas.add(opcao);
+      }
+    }
+
+    return ordenadas;
+  }
+
+  Character? encontrarPersonagem(String nome) {
+    if (nome.trim().isEmpty) return null;
+
+    final String nomeNormalizado = normalizarNomePersonagem(nome);
+    for (final personagem in rosterDoJogo(widget.jogo)) {
+      if (personagem.name == nomeNormalizado) {
+        return personagem;
+      }
+    }
+
+    return null;
   }
 
   Future<void> escolherAdversario() async {
@@ -183,7 +245,7 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
       formaDeMorte: morteFinal,
       observacoes: observacoes.trim(),
       pdlGerado: pdlFinal,
-      data: DateTime.now(),
+      data: dataPartida,
     );
 
     showDialog(
@@ -284,6 +346,7 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
             ),
             const SizedBox(height: 8),
             Autocomplete<String>(
+              initialValue: TextEditingValue(text: nickAdversario),
               optionsBuilder: (textEditingValue) {
                 final String busca = textEditingValue.text.trim().toLowerCase();
                 final List<String> sugestoes = widget.sugestoesPlayers;
@@ -369,6 +432,16 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
               ),
             ),
             const SizedBox(height: 24),
+            DatePickerField(
+              label: 'Data da partida',
+              data: dataPartida,
+              onChanged: (valor) {
+                setState(() {
+                  dataPartida = valor;
+                });
+              },
+            ),
+            const SizedBox(height: 24),
             const Text(
               'Stage / Mapa',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -377,7 +450,7 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
             SearchableOptionField(
               label: 'Pesquisar mapa',
               value: stageSelecionado,
-              options: stagesSmash,
+              options: opcoesComSugestoes(stagesSmash, widget.sugestoesStages),
               icon: Icons.map_outlined,
               onChanged: (valor) {
                 setState(() {
@@ -437,7 +510,10 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
               SearchableOptionField(
                 label: 'Pesquisar forma de kill',
                 value: formaDeKill,
-                options: formasDeKill,
+                options: opcoesComSugestoes(
+                  formasDeKill,
+                  widget.sugestoesKills,
+                ),
                 icon: Icons.sports_mma_outlined,
                 onChanged: (valor) {
                   setState(() {
@@ -483,7 +559,10 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
               SearchableOptionField(
                 label: 'Pesquisar forma de morte',
                 value: formaDeMorte,
-                options: formasDeMorte,
+                options: opcoesComSugestoes(
+                  formasDeMorte,
+                  widget.sugestoesMortes,
+                ),
                 icon: Icons.warning_amber_outlined,
                 onChanged: (valor) {
                   setState(() {
@@ -585,6 +664,7 @@ class RegistrarPartidaStreetFighterPage extends StatefulWidget {
   final String jogo;
   final List<String> sugestoesPlayers;
   final PartidaRegistrada? partidaInicial;
+  final bool repetirUltima;
 
   const RegistrarPartidaStreetFighterPage({
     super.key,
@@ -592,6 +672,7 @@ class RegistrarPartidaStreetFighterPage extends StatefulWidget {
     this.jogo = jogoStreetFighter6,
     this.sugestoesPlayers = const [],
     this.partidaInicial,
+    this.repetirUltima = false,
   });
 
   @override
@@ -613,7 +694,7 @@ class _RegistrarPartidaStreetFighterPageState
   late TextEditingController observacoesController;
 
   bool get editando {
-    return widget.partidaInicial != null;
+    return widget.partidaInicial != null && !widget.repetirUltima;
   }
 
   bool get precisaRound3 {
@@ -653,13 +734,6 @@ class _RegistrarPartidaStreetFighterPageState
         : '$resultadoFinal $placar';
   }
 
-  String get dataPartidaTexto {
-    String doisDigitos(int numero) => numero.toString().padLeft(2, '0');
-
-    return '${doisDigitos(dataPartida.day)}/'
-        '${doisDigitos(dataPartida.month)}/${dataPartida.year}';
-  }
-
   @override
   void initState() {
     super.initState();
@@ -670,18 +744,21 @@ class _RegistrarPartidaStreetFighterPageState
       nickAdversario = partida.nickAdversario == 'Sem nick'
           ? ''
           : partida.nickAdversario;
-      observacoes = partida.observacoes;
-      dataPartida = partida.data;
 
-      if (partida.round1Resultado.trim().isNotEmpty &&
-          partida.round2Resultado.trim().isNotEmpty) {
-        round1Resultado = partida.round1Resultado;
-        round2Resultado = partida.round2Resultado;
-        round3Resultado = partida.round3Resultado.trim().isEmpty
-            ? null
-            : partida.round3Resultado;
-      } else {
-        aplicarRoundsPorPlacar(partida.resultado, partida.stage);
+      if (!widget.repetirUltima) {
+        observacoes = partida.observacoes;
+        dataPartida = partida.data;
+
+        if (partida.round1Resultado.trim().isNotEmpty &&
+            partida.round2Resultado.trim().isNotEmpty) {
+          round1Resultado = partida.round1Resultado;
+          round2Resultado = partida.round2Resultado;
+          round3Resultado = partida.round3Resultado.trim().isEmpty
+              ? null
+              : partida.round3Resultado;
+        } else {
+          aplicarRoundsPorPlacar(partida.resultado, partida.stage);
+        }
       }
     }
 
@@ -771,27 +848,6 @@ class _RegistrarPartidaStreetFighterPageState
         personagemAdversario = adversarioEscolhido;
       });
     }
-  }
-
-  Future<void> escolherDataPartida() async {
-    final DateTime? dataEscolhida = await showDatePicker(
-      context: context,
-      initialDate: dataPartida,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
-    );
-
-    if (dataEscolhida == null) return;
-
-    setState(() {
-      dataPartida = DateTime(
-        dataEscolhida.year,
-        dataEscolhida.month,
-        dataEscolhida.day,
-        dataPartida.hour,
-        dataPartida.minute,
-      );
-    });
   }
 
   int gerarPdl() {
@@ -1094,20 +1150,14 @@ class _RegistrarPartidaStreetFighterPageState
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Data da partida',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.event_outlined),
-                title: Text(dataPartidaTexto),
-                trailing: OutlinedButton(
-                  onPressed: escolherDataPartida,
-                  child: const Text('Alterar'),
-                ),
-              ),
+            DatePickerField(
+              label: 'Data da partida',
+              data: dataPartida,
+              onChanged: (valor) {
+                setState(() {
+                  dataPartida = valor;
+                });
+              },
             ),
             const SizedBox(height: 24),
             const Text(
@@ -1204,6 +1254,7 @@ class RegistrarPartidaInvinciblePage extends StatefulWidget {
   final List<String> sugestoesPlayers;
   final PartidaRegistrada? partidaInicial;
   final TimePrincipalInvincible? timePrincipal;
+  final bool repetirUltima;
 
   const RegistrarPartidaInvinciblePage({
     super.key,
@@ -1211,6 +1262,7 @@ class RegistrarPartidaInvinciblePage extends StatefulWidget {
     this.sugestoesPlayers = const [],
     this.partidaInicial,
     this.timePrincipal,
+    this.repetirUltima = false,
   });
 
   @override
@@ -1241,7 +1293,7 @@ class _RegistrarPartidaInvinciblePageState
   late TextEditingController observacoesController;
 
   bool get editando {
-    return widget.partidaInicial != null;
+    return widget.partidaInicial != null && !widget.repetirUltima;
   }
 
   List<String> get nomesMeuTime {
@@ -1277,9 +1329,16 @@ class _RegistrarPartidaInvinciblePageState
     final PartidaRegistrada? partida = widget.partidaInicial;
 
     if (partida != null) {
-      meuSlot1 = encontrarPersonagemInvincible(partida.meuTimeSlot1);
-      meuSlot2 = encontrarPersonagemInvincible(partida.meuTimeSlot2);
-      meuSlot3 = encontrarPersonagemInvincible(partida.meuTimeSlot3);
+      if (widget.repetirUltima && widget.timePrincipal?.completo == true) {
+        final TimePrincipalInvincible time = widget.timePrincipal!;
+        meuSlot1 = encontrarPersonagemInvincible(time.slot1);
+        meuSlot2 = encontrarPersonagemInvincible(time.slot2);
+        meuSlot3 = encontrarPersonagemInvincible(time.slot3);
+      } else {
+        meuSlot1 = encontrarPersonagemInvincible(partida.meuTimeSlot1);
+        meuSlot2 = encontrarPersonagemInvincible(partida.meuTimeSlot2);
+        meuSlot3 = encontrarPersonagemInvincible(partida.meuTimeSlot3);
+      }
       adversarioSlot1 = encontrarPersonagemInvincible(
         partida.timeAdversarioSlot1,
       );
@@ -1305,6 +1364,16 @@ class _RegistrarPartidaInvinciblePageState
           : motivosDerrotaInvincible[0];
       observacoes = partida.observacoes;
       dataPartida = partida.data;
+      if (widget.repetirUltima) {
+        resultado = 'Vit\u00C3\u00B3ria';
+        personagemDestaque = '';
+        primeiroDerrotado = '';
+        personagemInimigoProblema = '';
+        condicaoVitoria = condicoesVitoriaInvincible[0];
+        motivoDerrota = motivosDerrotaInvincible[0];
+        observacoes = '';
+        dataPartida = DateTime.now();
+      }
     } else if (widget.timePrincipal?.completo == true) {
       final TimePrincipalInvincible time = widget.timePrincipal!;
       meuSlot1 = encontrarPersonagemInvincible(time.slot1);
@@ -1389,34 +1458,6 @@ class _RegistrarPartidaInvinciblePageState
   void calcularLp() {
     setState(() {
       lpCalculado = gerarLp();
-    });
-  }
-
-  String get dataPartidaTexto {
-    String doisDigitos(int numero) => numero.toString().padLeft(2, '0');
-
-    return '${doisDigitos(dataPartida.day)}/'
-        '${doisDigitos(dataPartida.month)}/${dataPartida.year}';
-  }
-
-  Future<void> escolherDataPartida() async {
-    final DateTime? dataEscolhida = await showDatePicker(
-      context: context,
-      initialDate: dataPartida,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
-    );
-
-    if (dataEscolhida == null) return;
-
-    setState(() {
-      dataPartida = DateTime(
-        dataEscolhida.year,
-        dataEscolhida.month,
-        dataEscolhida.day,
-        dataPartida.hour,
-        dataPartida.minute,
-      );
     });
   }
 
@@ -1703,20 +1744,14 @@ class _RegistrarPartidaInvinciblePageState
             const SizedBox(height: 8),
             construirAutocompletePlayer(),
             const SizedBox(height: 24),
-            const Text(
-              'Data da partida',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.event_outlined),
-                title: Text(dataPartidaTexto),
-                trailing: OutlinedButton(
-                  onPressed: escolherDataPartida,
-                  child: const Text('Alterar'),
-                ),
-              ),
+            DatePickerField(
+              label: 'Data da partida',
+              data: dataPartida,
+              onChanged: (valor) {
+                setState(() {
+                  dataPartida = valor;
+                });
+              },
             ),
             const SizedBox(height: 24),
             const Text(

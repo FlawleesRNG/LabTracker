@@ -396,6 +396,67 @@ class SelecionarJogoInicialPage extends StatefulWidget {
 
 class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
   String busca = '';
+  Set<String> jogosFavoritos = {};
+  List<String> jogosRecentes = [];
+  List<PartidaRegistrada> historicoPersistido = [];
+  String filtroJogos = 'Todos';
+  String ordenacaoJogos = 'Favoritos primeiro';
+
+  static const List<String> filtrosJogos = ['Todos', 'Favoritos', 'Recentes'];
+  static const List<String> ordenacoesJogos = [
+    'Favoritos primeiro',
+    'Mais jogados',
+    'Menos jogados',
+    'Mais recente',
+    'A-Z',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    carregarPersonalizacaoBiblioteca();
+  }
+
+  Future<void> carregarPersonalizacaoBiblioteca() async {
+    final Set<String> favoritos = await carregarJogosFavoritos();
+    final List<String> recentes = await carregarJogosRecentes();
+    final List<PartidaRegistrada> historico =
+        await carregarHistoricoPersistido();
+
+    if (!mounted) return;
+
+    setState(() {
+      jogosFavoritos = favoritos;
+      jogosRecentes = recentes;
+      historicoPersistido = historico;
+    });
+  }
+
+  Future<void> alternarFavoritoJogo(String jogo) async {
+    final Set<String> favoritos = {...jogosFavoritos};
+
+    if (favoritos.contains(jogo)) {
+      favoritos.remove(jogo);
+    } else {
+      favoritos.add(jogo);
+    }
+
+    setState(() {
+      jogosFavoritos = favoritos;
+    });
+
+    await salvarJogosFavoritos(favoritos);
+  }
+
+  Future<void> registrarAcessoJogo(String jogo) async {
+    final List<String> recentes = await marcarJogoRecente(jogo);
+
+    if (!mounted) return;
+
+    setState(() {
+      jogosRecentes = recentes;
+    });
+  }
 
   Future<void> abrirSelecaoPersonagem(BuildContext context, String jogo) async {
     if (jogo == jogoInvincibleVs) {
@@ -407,7 +468,10 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
             ),
           );
 
-      if (time == null || !mounted) return;
+      if (time == null || !context.mounted) return;
+
+      await registrarAcessoJogo(jogo);
+      if (!context.mounted) return;
 
       Navigator.pushReplacement(
         context,
@@ -418,6 +482,9 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
       );
       return;
     }
+
+    await registrarAcessoJogo(jogo);
+    if (!context.mounted) return;
 
     Navigator.push(
       context,
@@ -442,6 +509,12 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
         return 'GGST';
       case 'The King of Fighters XV':
         return 'KOF';
+      case jogoTekken8:
+        return 'T8';
+      case jogo2Xko:
+        return '2XKO';
+      case jogoRivalsOfAether2:
+        return 'ROA2';
       case 'Dragon Ball FighterZ':
         return 'DBFZ';
       case 'Invincible VS':
@@ -467,6 +540,12 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
         return const Color(0xFFDC2626);
       case 'The King of Fighters XV':
         return const Color(0xFF7C3AED);
+      case jogoTekken8:
+        return const Color(0xFFE11D48);
+      case jogo2Xko:
+        return const Color(0xFFB9FF3D);
+      case jogoRivalsOfAether2:
+        return const Color(0xFF38BDF8);
       case 'Dragon Ball FighterZ':
         return const Color(0xFFF97316);
       case 'Invincible VS':
@@ -478,6 +557,41 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
     }
   }
 
+  bool usaFundoClaroNaCapa(String jogo) {
+    return {
+      'Super Smash Bros. Ultimate',
+      'Dragon Ball FighterZ',
+    }.contains(jogo);
+  }
+
+  BoxDecoration decoracaoCapaDoJogo(String jogo) {
+    final Color cor = corDoJogo(jogo);
+
+    if (usaFundoClaroNaCapa(jogo)) {
+      return BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Color.lerp(cor, Colors.white, 0.82) ?? Colors.white,
+          ],
+        ),
+      );
+    }
+
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          BrandColors.pretoCarvao,
+          Color.lerp(cor, Colors.black, 0.72) ?? BrandColors.pretoCarvao,
+        ],
+      ),
+    );
+  }
+
   int colunasPorLargura(double largura) {
     if (largura >= 1180) return 5;
     if (largura >= 920) return 4;
@@ -485,10 +599,143 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
     return 2;
   }
 
+  int indiceRecenteJogo(String jogo) {
+    final int indice = jogosRecentes.indexOf(jogo);
+    return indice == -1 ? 9999 : indice;
+  }
+
+  int compararPorNome(String a, String b) {
+    return a.toLowerCase().compareTo(b.toLowerCase());
+  }
+
+  List<String> jogosVisiveis() {
+    final String termo = busca.trim().toLowerCase();
+    final Map<String, GameUsageStats> usoPorJogo = calcularUsoPorJogo(
+      historicoPersistido,
+    );
+
+    final List<String> jogos = jogosDisponiveis.where((jogo) {
+      if (termo.isNotEmpty && !jogo.toLowerCase().contains(termo)) {
+        return false;
+      }
+
+      switch (filtroJogos) {
+        case 'Favoritos':
+          return jogosFavoritos.contains(jogo);
+        case 'Recentes':
+          return jogosRecentes.contains(jogo);
+        case 'Todos':
+        default:
+          return true;
+      }
+    }).toList();
+
+    jogos.sort((a, b) {
+      final GameUsageStats usoA = usoPorJogo[a] ?? const GameUsageStats();
+      final GameUsageStats usoB = usoPorJogo[b] ?? const GameUsageStats();
+
+      switch (ordenacaoJogos) {
+        case 'Mais jogados':
+          final int comparacao = usoB.partidas.compareTo(usoA.partidas);
+          return comparacao != 0 ? comparacao : compararPorNome(a, b);
+        case 'Menos jogados':
+          final int comparacao = usoA.partidas.compareTo(usoB.partidas);
+          return comparacao != 0 ? comparacao : compararPorNome(a, b);
+        case 'Mais recente':
+          final int indiceA = indiceRecenteJogo(a);
+          final int indiceB = indiceRecenteJogo(b);
+          if (indiceA != indiceB) return indiceA.compareTo(indiceB);
+
+          final DateTime? dataA = usoA.ultimaPartida;
+          final DateTime? dataB = usoB.ultimaPartida;
+          if (dataA != null && dataB != null) {
+            final int comparacao = dataB.compareTo(dataA);
+            return comparacao != 0 ? comparacao : compararPorNome(a, b);
+          }
+          if (dataA != null) return -1;
+          if (dataB != null) return 1;
+          return compararPorNome(a, b);
+        case 'A-Z':
+          return compararPorNome(a, b);
+        case 'Favoritos primeiro':
+        default:
+          final bool favoritoA = jogosFavoritos.contains(a);
+          final bool favoritoB = jogosFavoritos.contains(b);
+          if (favoritoA != favoritoB) return favoritoA ? -1 : 1;
+
+          final int indiceA = indiceRecenteJogo(a);
+          final int indiceB = indiceRecenteJogo(b);
+          if (indiceA != indiceB) return indiceA.compareTo(indiceB);
+
+          return compararPorNome(a, b);
+      }
+    });
+
+    return jogos;
+  }
+
+  Widget botaoOrdenacaoJogos() {
+    return PopupMenuButton<String>(
+      initialValue: ordenacaoJogos,
+      onSelected: (valor) {
+        setState(() {
+          ordenacaoJogos = valor;
+        });
+      },
+      itemBuilder: (context) {
+        return [
+          for (final ordenacao in ordenacoesJogos)
+            PopupMenuItem(value: ordenacao, child: Text(ordenacao)),
+        ];
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.sort, size: 18),
+            const SizedBox(width: 8),
+            Text(ordenacaoJogos),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_drop_down, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget controlesBiblioteca() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final filtro in filtrosJogos)
+          ChoiceChip(
+            label: Text(filtro),
+            selected: filtroJogos == filtro,
+            onSelected: (_) {
+              setState(() {
+                filtroJogos = filtro;
+              });
+            },
+          ),
+        botaoOrdenacaoJogos(),
+      ],
+    );
+  }
+
   Widget capaDoJogo(String jogo) {
     final String logo = logoDoJogo(jogo);
     final Color cor = corDoJogo(jogo);
     final String sigla = siglaDoJogo(jogo);
+    final bool fundoClaro = usaFundoClaroNaCapa(jogo);
 
     Widget fallback() {
       return Container(
@@ -529,24 +776,51 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
 
     if (logo.isEmpty) return fallback();
 
-    if (logo.startsWith('assets/')) {
+    Widget logoLayer(Widget child) {
       return Container(
-        color: BrandColors.pretoCarvao,
-        child: Image.asset(
-          logo,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => fallback(),
+        decoration: decoracaoCapaDoJogo(jogo),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned(
+              right: -12,
+              bottom: -16,
+              child: Text(
+                sigla,
+                style: TextStyle(
+                  color: (fundoClaro ? Colors.black : Colors.white).withValues(
+                    alpha: 0.055,
+                  ),
+                  fontSize: 76,
+                  fontWeight: FontWeight.w900,
+                  height: 0.9,
+                ),
+              ),
+            ),
+            Center(child: child),
+          ],
         ),
       );
     }
 
-    return Container(
-      color: BrandColors.pretoCarvao,
-      padding: const EdgeInsets.all(10),
-      child: Image.network(
+    if (logo.startsWith('assets/')) {
+      return logoLayer(
+        Image.asset(
+          logo,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+          errorBuilder: (_, _, _) => fallback(),
+        ),
+      );
+    }
+
+    return logoLayer(
+      Image.network(
         logo,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => fallback(),
+        filterQuality: FilterQuality.high,
+        errorBuilder: (_, _, _) => fallback(),
       ),
     );
   }
@@ -554,14 +828,22 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
   Widget cardJogo(String jogo) {
     final int totalPersonagens = rosterDoJogo(jogo).length;
     final Color cor = corDoJogo(jogo);
+    final bool ativo = jogoEstaAtivo(jogo);
+    final String categoria = categoriaDoJogo(jogo);
+    final String subtitulo = subtituloDoJogo(jogo);
+    final bool favorito = jogosFavoritos.contains(jogo);
+    final GameUsageStats uso =
+        calcularUsoPorJogo(historicoPersistido)[jogo] ?? const GameUsageStats();
 
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () {
-          abrirSelecaoPersonagem(context, jogo);
-        },
+        onTap: ativo
+            ? () {
+                abrirSelecaoPersonagem(context, jogo);
+              }
+            : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -569,7 +851,29 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  capaDoJogo(jogo),
+                  Opacity(opacity: ativo ? 1 : 0.38, child: capaDoJogo(jogo)),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Material(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        tooltip: favorito
+                            ? 'Remover dos favoritos'
+                            : 'Adicionar aos favoritos',
+                        icon: Icon(
+                          favorito ? Icons.star : Icons.star_border,
+                          color: favorito
+                              ? BrandColors.ambarDourado
+                              : Colors.white,
+                        ),
+                        onPressed: () {
+                          alternarFavoritoJogo(jogo);
+                        },
+                      ),
+                    ),
+                  ),
                   Positioned(
                     top: 10,
                     right: 10,
@@ -586,7 +890,7 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
                         ),
                       ),
                       child: Text(
-                        siglaDoJogo(jogo),
+                        ativo ? siglaDoJogo(jogo) : 'OFF',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -595,6 +899,30 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
                       ),
                     ),
                   ),
+                  if (!ativo)
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.72),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.18),
+                          ),
+                        ),
+                        child: const Text(
+                          'Desativado',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -613,6 +941,17 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
                       fontSize: 14,
                     ),
                   ),
+                  if (subtitulo.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitulo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: BrandColors.brancoSuave.withValues(alpha: 0.62),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -620,14 +959,20 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: cor,
+                          color: ativo
+                              ? cor
+                              : Colors.white.withValues(alpha: 0.28),
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 7),
                       Expanded(
                         child: Text(
-                          '$totalPersonagens personagens',
+                          ativo
+                              ? uso.temPartidas
+                                    ? '$categoria - $totalPersonagens personagens - ${uso.partidas} partidas'
+                                    : '$categoria - $totalPersonagens personagens'
+                              : 'slot reservado',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall,
@@ -646,10 +991,7 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
 
   @override
   Widget build(BuildContext context) {
-    final String termo = busca.trim().toLowerCase();
-    final List<String> jogosFiltrados = jogosDisponiveis
-        .where((jogo) => jogo.toLowerCase().contains(termo))
-        .toList();
+    final List<String> jogosFiltrados = jogosVisiveis();
 
     return Scaffold(
       appBar: AppBar(title: const LtLogo(scale: 0.85), centerTitle: true),
@@ -694,6 +1036,8 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
                         });
                       },
                     ),
+                    const SizedBox(height: 14),
+                    controlesBiblioteca(),
                     const SizedBox(height: 20),
                     Expanded(
                       child: jogosFiltrados.isEmpty

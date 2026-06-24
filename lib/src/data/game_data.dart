@@ -218,6 +218,135 @@ const List<Character> personagensInvincible = [
   Character(name: 'The Immortal', initial: 'IM', rank: 'New Blood IV', pdl: 0),
 ];
 
+const List<String> nomesPersonagensTekken8 = [
+  'Alisa Bosconovitch',
+  'Anna Williams',
+  'Armor King',
+  'Asuka Kazama',
+  'Azucena',
+  'Bryan Fury',
+  'Claudio Serafino',
+  'Clive Rosfield',
+  'Devil Jin',
+  'Eddy Gordo',
+  'Fahkumram',
+  'Feng Wei',
+  'Heihachi Mishima',
+  'Hwoarang',
+  'Jack-8',
+  'Jin Kazama',
+  'Jun Kazama',
+  'Kazuya Mishima',
+  'King',
+  'Kuma',
+  'Kunimitsu',
+  'Lars Alexandersson',
+  'Lee Chaolan',
+  'Leo Kliesen',
+  'Leroy Smith',
+  'Lidia Sobieska',
+  'Lili',
+  'Ling Xiaoyu',
+  'Marshall Law',
+  'Miary Zo',
+  'Nina Williams',
+  'Panda',
+  'Paul Phoenix',
+  'Raven',
+  'Reina',
+  'Sergei Dragunov',
+  'Shaheen',
+  'Steve Fox',
+  'Victor Chevalier',
+  'Yoshimitsu',
+  'Zafina',
+];
+
+const List<String> nomesPersonagens2XKO = [
+  'Ahri',
+  'Akali',
+  'Blitzcrank',
+  'Braum',
+  'Caitlyn',
+  'Darius',
+  'Ekko',
+  'Illaoi',
+  'Jinx',
+  'Teemo',
+  'Vi',
+  'Warwick',
+  'Yasuo',
+];
+
+const List<String> nomesPersonagensRivalsOfAether2 = [
+  'Absa',
+  'Clairen',
+  'Etalus',
+  'Fleet',
+  'Forsburn',
+  'Galvan',
+  'Kragg',
+  'La Reina',
+  'Loxodont',
+  'Maypul',
+  'Olympia',
+  'Orcane',
+  'Ranno',
+  'Slade',
+  'Wrastor',
+  'Zetterburn',
+];
+
+String iniciaisAutomaticas(String nome) {
+  final List<String> partes = nome
+      .replaceAll(RegExp(r'[^A-Za-z0-9\s-]'), '')
+      .split(RegExp(r'[\s-]+'))
+      .where((parte) => parte.trim().isNotEmpty)
+      .toList();
+
+  if (partes.isEmpty) return '?';
+  if (partes.length == 1) {
+    return partes.first
+        .substring(0, partes.first.length >= 2 ? 2 : 1)
+        .toUpperCase();
+  }
+
+  return partes.take(2).map((parte) => parte[0].toUpperCase()).join();
+}
+
+final List<Character> personagensTekken8 = List.unmodifiable(
+  nomesPersonagensTekken8.map(
+    (nome) => Character(
+      name: nome,
+      initial: iniciaisAutomaticas(nome),
+      rank: rankInicialDoJogo(jogoTekken8),
+      pdl: 0,
+    ),
+  ),
+);
+
+final List<Character> personagens2XKO = List.unmodifiable(
+  nomesPersonagens2XKO.map(
+    (nome) => Character(
+      name: nome,
+      initial: iniciaisAutomaticas(nome),
+      rank: rankInicialDoJogo(jogo2Xko),
+      pdl: 0,
+    ),
+  ),
+);
+
+final List<Character> personagensRivalsOfAether2 = List.unmodifiable(
+  nomesPersonagensRivalsOfAether2.map(
+    (nome) => Character(
+      name: nome,
+      initial: iniciaisAutomaticas(nome),
+      rank: rankInicialDoJogo(jogoRivalsOfAether2),
+      pdl: 0,
+    ),
+  ),
+);
+
 const List<Character> personagensStreetFighter6 = [
   Character(name: 'Ryu', initial: 'RY', rank: 'Starter V', pdl: 0),
   Character(name: 'Luke', initial: 'LU', rank: 'Starter V', pdl: 0),
@@ -614,6 +743,130 @@ const Map<String, String> imagensSmash = {
       'https://static.wikia.nocookie.net/ssb/images/7/79/Kazuya_Mishima.png/revision/latest/scale-to-width-down/189?cb=20250414213628',
   'Sora':
       'https://static.wikia.nocookie.net/ssb/images/4/42/Sora_KH3.png/revision/latest/scale-to-width-down/274?cb=20211005174002',
+};
+
+const List<String> personagensSmashComPreferenciaCapa = [
+  'Villager',
+  'Wii Fit Trainer',
+  'Robin',
+  'Corrin',
+  'Inkling',
+  'Pokémon Trainer',
+  'Byleth',
+  'Mii Brawler',
+  'Mii Swordfighter',
+  'Mii Gunner',
+];
+
+const List<String> personagensSmashMiiComPreferenciaCapa = [
+  'Mii Brawler',
+  'Mii Swordfighter',
+  'Mii Gunner',
+];
+
+const List<SmashCoverOption> opcoesCapaSmashGenero = [
+  SmashCoverOption(id: smashCoverMale, label: 'Masculino'),
+  SmashCoverOption(id: smashCoverFemale, label: 'Feminino'),
+];
+
+const List<SmashCoverOption> opcoesCapaSmashMii = [
+  SmashCoverOption(id: smashCoverMale, label: 'Masculino'),
+  SmashCoverOption(id: smashCoverFemale, label: 'Feminino'),
+  SmashCoverOption(id: smashCoverCustom, label: 'Custom'),
+];
+
+const Map<String, List<SmashCoverOption>> opcoesCapaSmashPorPersonagem = {
+  'Villager': [
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: ['https://ssb.wiki.gallery/images/b/b9/VillagerHeadSSBU.png'],
+    ),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/e/e3/VillagerHeadPinkSSBU.png',
+      ],
+    ),
+  ],
+  'Wii Fit Trainer': [
+    SmashCoverOption(id: smashCoverFemale, label: 'Feminino'),
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/9/9c/Wii_Fit_Trainer-Alt1_SSBU.png',
+      ],
+    ),
+  ],
+  'Robin': [
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: ['https://ssb.wiki.gallery/images/2/25/RobinHeadSSBU.png'],
+    ),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/2/21/RobinHeadFemaleSSBU.png',
+      ],
+    ),
+  ],
+  'Corrin': [
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: ['https://ssb.wiki.gallery/images/c/cf/CorrinHeadSSBU.png'],
+    ),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/a/a2/CorrinHeadFemaleSSBU.png',
+      ],
+    ),
+  ],
+  'Inkling': [
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: ['https://ssb.wiki.gallery/images/f/f1/InklingHeadSSBU.png'],
+    ),
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: ['https://ssb.wiki.gallery/images/5/56/Inkling-Alt1_SSBU.png'],
+    ),
+  ],
+  'Pokémon Trainer': [
+    SmashCoverOption(id: smashCoverMale, label: 'Masculino'),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/0/01/Pok%C3%A9mon_Trainer-Alt1_SSBU.png',
+      ],
+    ),
+  ],
+  'Byleth': [
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: ['https://ssb.wiki.gallery/images/a/a2/BylethHeadSSBU.png'],
+    ),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/8/8c/BylethHeadFemaleSSBU.png',
+      ],
+    ),
+  ],
+  'Mii Brawler': opcoesCapaSmashMii,
+  'Mii Swordfighter': opcoesCapaSmashMii,
+  'Mii Gunner': opcoesCapaSmashMii,
 };
 
 const Map<String, String> imagensDBFZ = {
@@ -1220,25 +1473,281 @@ const Map<String, List<String>> imagensAlternativasKofXV = {
   ],
 };
 
+const Map<String, GameRegisterType> tiposRegistroPorJogo = {
+  'Super Smash Bros. Ultimate': GameRegisterType.platformFighter,
+  jogoStreetFighter6: GameRegisterType.twoDFighter,
+  'Mortal Kombat 1': GameRegisterType.twoDFighter,
+  'Avatar Legends: The Fighting Game': GameRegisterType.twoDFighter,
+  'Guilty Gear -Strive-': GameRegisterType.twoDFighter,
+  'The King of Fighters XV': GameRegisterType.twoDFighter,
+  jogoInvincibleVs: GameRegisterType.teamFighter,
+  jogoTekken8: GameRegisterType.threeDFighter,
+  jogo2Xko: GameRegisterType.tagFighter,
+  jogoRivalsOfAether2: GameRegisterType.platformFighter,
+  'Fatal Fury': GameRegisterType.twoDFighter,
+  'Dragon Ball FighterZ': GameRegisterType.tagFighter,
+};
+
+const Map<GameRegisterType, String> categoriasRegistro = {
+  GameRegisterType.platformFighter: 'Platform Fighter',
+  GameRegisterType.twoDFighter: '2D Fighter',
+  GameRegisterType.threeDFighter: '3D Fighter',
+  GameRegisterType.tagFighter: 'Tag Fighter',
+  GameRegisterType.teamFighter: 'Team Fighter',
+};
+
+const Map<String, String> subtitulosJogos = {
+  jogoTekken8: 'Rounds, parede, Heat e whiff punish',
+  jogo2Xko: 'Time 2v2, assist e tag',
+  jogoRivalsOfAether2: 'Stocks, edgeguard e recovery',
+};
+
+const List<String> camposRegistroTekken8 = [
+  'Resultado',
+  'Personagem adversário',
+  'Nick adversário',
+  'Stage',
+  'Placar de rounds',
+  'Como venceu',
+  'Como perdeu',
+  'Wall pressure',
+  'Wall combo',
+  'Floor break / stage break',
+  'Heat',
+  'Rage Art',
+  'Whiff punish',
+  'Throw break',
+  'Perfect',
+  'Observações',
+];
+
+const List<String> opcoesComoVenceuTekken8 = [
+  'Punish',
+  'Whiff punish',
+  'Launcher',
+  'Wall combo',
+  'Heat',
+  'Rage Art',
+  'Throw',
+  'Low',
+  'Counter hit',
+  'Perfect',
+  'Outro',
+];
+
+const List<String> opcoesComoPerdeuTekken8 = [
+  'Whiff punish',
+  'Wall pressure',
+  'Throw break falhado',
+  'Low não defendido',
+  'Heat pressure',
+  'Rage Art',
+  'Counter hit',
+  'Panic button',
+  'Round final mal jogado',
+  'Outro',
+];
+
+const List<String> posicoesTime2XKO = ['Point/Main', 'Assist/Second'];
+
+const List<String> camposRegistro2XKO = [
+  'Resultado',
+  'Point/Main do usuário',
+  'Assist/Second do usuário',
+  'Time adversário',
+  'Nick adversário',
+  'Placar',
+  'Quem abriu hit',
+  'Quem fechou round/luta',
+  'Como venceu',
+  'Como perdeu',
+  'Comeback',
+  'Tag punish',
+  'Assist punish',
+  'Observações',
+];
+
+const List<String> opcoesComoVenceu2XKO = [
+  'Tag combo',
+  'Assist confirm',
+  'Punish',
+  'Whiff punish',
+  'Corner pressure',
+  'Throw',
+  'Super',
+  'Comeback',
+  'Point carregou',
+  'Assist fechou',
+  'Outro',
+];
+
+const List<String> opcoesComoPerdeu2XKO = [
+  'Point caiu cedo',
+  'Assist punido',
+  'Tag punish',
+  'Corner pressure',
+  'Throw',
+  'Whiff punish',
+  'Panic button',
+  'Comeback adversário',
+  'Defesa ruim',
+  'Outro',
+];
+
+const List<String> camposRegistroRivalsOfAether2 = [
+  'Resultado',
+  'Personagem adversário',
+  'Nick adversário',
+  'Stage',
+  'Stocks restantes',
+  'Porcentagem final',
+  'Como venceu / kill',
+  'Como perdeu / death',
+  'Recovery',
+  'Edgeguard',
+  'Ledge trap',
+  'Parry',
+  'Observações',
+];
+
+const List<String> opcoesComoVenceuRivalsOfAether2 = [
+  'Aerial',
+  'Strong attack',
+  'Special',
+  'Edgeguard',
+  'Recovery punish',
+  'Ledge trap',
+  'Parry punish',
+  'Read',
+  'Whiff punish',
+  'Gimp',
+  'Outro',
+];
+
+const List<String> opcoesComoPerdeuRivalsOfAether2 = [
+  'Edgeguard',
+  'Recovery ruim',
+  'Parry punish',
+  'Whiff punish',
+  'Read',
+  'Panic option',
+  'SD',
+  'Ledge trap',
+  'Gimp',
+  'Outro',
+];
+
+const Map<String, List<String>> camposRegistroFuturosPorJogo = {
+  jogoTekken8: camposRegistroTekken8,
+  jogo2Xko: camposRegistro2XKO,
+  jogoRivalsOfAether2: camposRegistroRivalsOfAether2,
+};
+
+const Map<String, List<String>> opcoesComoVenceuPorJogo = {
+  jogoTekken8: opcoesComoVenceuTekken8,
+  jogo2Xko: opcoesComoVenceu2XKO,
+  jogoRivalsOfAether2: opcoesComoVenceuRivalsOfAether2,
+};
+
+const Map<String, List<String>> opcoesComoPerdeuPorJogo = {
+  jogoTekken8: opcoesComoPerdeuTekken8,
+  jogo2Xko: opcoesComoPerdeu2XKO,
+  jogoRivalsOfAether2: opcoesComoPerdeuRivalsOfAether2,
+};
+
+List<String> camposRegistroFuturoDoJogo(String jogo) {
+  return camposRegistroFuturosPorJogo[jogo] ?? const [];
+}
+
+List<String> opcoesComoVenceuDoJogo(String jogo) {
+  return opcoesComoVenceuPorJogo[jogo] ?? const [];
+}
+
+List<String> opcoesComoPerdeuDoJogo(String jogo) {
+  return opcoesComoPerdeuPorJogo[jogo] ?? const [];
+}
+
+GameRegisterType tipoRegistroDoJogo(String jogo) {
+  return tiposRegistroPorJogo[jogo] ?? GameRegisterType.platformFighter;
+}
+
+String categoriaDoJogo(String jogo) {
+  return categoriasRegistro[tipoRegistroDoJogo(jogo)] ?? 'Fighting Game';
+}
+
+String subtituloDoJogo(String jogo) {
+  return subtitulosJogos[jogo] ?? '';
+}
+
+const Map<GameRegisterType, List<String>> camposRegistroRapidoPorTipo = {
+  GameRegisterType.platformFighter: [
+    'Resultado',
+    'Personagem adversario',
+    'Nick adversario',
+    'Stage',
+    'Stocks',
+    'Kill/death',
+  ],
+  GameRegisterType.twoDFighter: [
+    'Resultado',
+    'Personagem adversario',
+    'Nick adversario',
+    'Placar',
+    'Como venceu/perdeu',
+  ],
+  GameRegisterType.threeDFighter: [
+    'Resultado',
+    'Personagem adversario',
+    'Nick adversario',
+    'Stage',
+    'Placar de rounds',
+    'Heat/whiff punish',
+  ],
+  GameRegisterType.tagFighter: [
+    'Resultado',
+    'Time adversario',
+    'Nick adversario',
+    'Placar',
+    'Tag/assist',
+  ],
+  GameRegisterType.teamFighter: [
+    'Resultado',
+    'Time adversario',
+    'Nick adversario',
+    'Destaque',
+    'Como venceu/perdeu',
+  ],
+};
+
+List<String> camposRegistroRapidoDoJogo(String jogo) {
+  return camposRegistroRapidoPorTipo[tipoRegistroDoJogo(jogo)] ?? const [];
+}
+
 const Map<String, String> logosJogos = {
   'Super Smash Bros. Ultimate':
-      'https://static.wikia.nocookie.net/ssb/images/2/23/Super_Smash_Bros._Ultimate.png/revision/latest/scale-to-width-down/308?cb=20180823005835',
+      'https://images.seeklogo.com/logo-png/49/1/super-smash-bros-ultimate-logo-png_seeklogo-494837.png',
   'Street Fighter 6':
       'https://static.wikia.nocookie.net/streetfighter/images/4/47/Street_fighter_6_logo.png/revision/latest?cb=20220603151920',
   'Mortal Kombat 1':
-      'https://static.wikia.nocookie.net/mkwikia/images/4/41/MK1_%282023%29_Cover_Art.jpeg/revision/latest?cb=20230804010326',
+      'https://cdn-mk1.mortalkombat.com/static/mk1-de-logo-white.webp',
   'Avatar Legends: The Fighting Game':
-      'https://static.wikia.nocookie.net/avatar/images/b/bd/Avatar_Legends_The_Fighting_Game.png/revision/latest?cb=20260524062108',
+      'https://images.squarespace-cdn.com/content/v1/68dc1fc6ffae60161335117c/44a003fd-cf4c-467e-b2de-8f9e60e1721e/Untitled+design+%2812%29.png',
   'Guilty Gear -Strive-':
       'https://static.wikia.nocookie.net/guilty-gear/images/6/6a/GGStrive_Logo.png/revision/latest?cb=20211006180650',
   'The King of Fighters XV':
-      'https://static.wikia.nocookie.net/snk/images/0/07/KOFXV_Main_Promotional_Illustration.jpg/revision/latest?cb=20210826163620',
+      'https://www.snk-corp.co.jp/official/kof-xv/img/main/top_koflogo.png',
   'Dragon Ball FighterZ':
-      'https://static.wikia.nocookie.net/dragonballfighterz/images/9/92/Dragon_Ball_FighterZ_Cover.jpg/revision/latest/scale-to-width-down/455?cb=20180902175307',
+      'https://images.seeklogo.com/logo-png/36/1/dragon-ball-fighterz-logo-png_seeklogo-361235.png',
   'Fatal Fury':
-      'https://static.wikia.nocookie.net/snk/images/c/c9/Garou-city-of-the-wolves-18ymi.jpg/revision/latest/scale-to-width-down/375?cb=20260122142200',
+      'https://www.snk-corp.co.jp/cn/games/fatalfury-cotw/img/main/cotwlogo_nodot.png',
   'Invincible VS':
-      'https://static.wikia.nocookie.net/amazon-invincible/images/9/9e/Invincible_VS_Logo.png/revision/latest/scale-to-width-down/500?cb=20260107143744',
+      'https://assets.games.gg/1749598307666_invincible_vs_logo_6d6b1bf34b.png',
+  jogoTekken8:
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/vYBa4INyTGqJ3O2uYqPz',
+  jogo2Xko:
+      'https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/dcac73677a34fe6c5f164119f612b0f33d3a79f4-4000x1143.png?accountingTag=2XKO',
+  jogoRivalsOfAether2:
+      'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2217000/5cbab14c3692fda009572050520227927a222fc0/capsule_616x353.jpg?t=1780336617',
 };
 
 /// Roster de personagens conforme o jogo selecionado.
@@ -1254,6 +1763,12 @@ List<Character> rosterDoJogo(String jogo) {
       return personagensGuiltyGearStrive;
     case 'The King of Fighters XV':
       return personagensKofXV;
+    case jogoTekken8:
+      return personagensTekken8;
+    case jogo2Xko:
+      return personagens2XKO;
+    case jogoRivalsOfAether2:
+      return personagensRivalsOfAether2;
     case 'Dragon Ball FighterZ':
       return personagensDBFZ;
     case 'Fatal Fury':

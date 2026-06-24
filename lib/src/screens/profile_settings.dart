@@ -3,11 +3,18 @@ part of '../../main.dart';
 class PerfilJogadorPage extends StatefulWidget {
   final PlayerProfile perfil;
   final Character personagemAtual;
+  final String jogoAtual;
+  final Map<String, String> smashCoverPreferences;
+  final Future<void> Function(String personagem, String preferencia)
+  onSmashCoverPreferenceChanged;
 
   const PerfilJogadorPage({
     super.key,
     required this.perfil,
     required this.personagemAtual,
+    required this.jogoAtual,
+    required this.smashCoverPreferences,
+    required this.onSmashCoverPreferenceChanged,
   });
 
   @override
@@ -17,12 +24,18 @@ class PerfilJogadorPage extends StatefulWidget {
 class _PerfilJogadorPageState extends State<PerfilJogadorPage> {
   late TextEditingController nickController;
   late TextEditingController regiaoController;
+  late Map<String, String> smashCoverPreferences;
+  Map<String, List<String>> personagensFavoritosPorJogo = {};
+  Map<String, List<String>> personagensRecentesPorJogo = {};
+  List<PartidaRegistrada> historicoPersistido = [];
 
   @override
   void initState() {
     super.initState();
     nickController = TextEditingController(text: widget.perfil.nick);
     regiaoController = TextEditingController(text: widget.perfil.regiao);
+    smashCoverPreferences = {...widget.smashCoverPreferences};
+    carregarPerfilPorJogo();
   }
 
   @override
@@ -65,6 +78,181 @@ class _PerfilJogadorPageState extends State<PerfilJogadorPage> {
     );
 
     Navigator.pop(context, perfilEditado);
+  }
+
+  bool get mostrarPreferenciasCapaSmash {
+    return jogoEhSmash(widget.jogoAtual);
+  }
+
+  Future<void> carregarPerfilPorJogo() async {
+    final Map<String, List<String>> favoritos =
+        await carregarPersonagensFavoritosPorJogo();
+    final Map<String, List<String>> recentes =
+        await carregarPersonagensRecentesPorJogo();
+    final List<PartidaRegistrada> historico =
+        await carregarHistoricoPersistido();
+
+    if (!mounted) return;
+
+    setState(() {
+      personagensFavoritosPorJogo = favoritos;
+      personagensRecentesPorJogo = recentes;
+      historicoPersistido = historico;
+    });
+  }
+
+  Future<void> alterarCapaSmash(String personagem) async {
+    final String nome = normalizarPersonagemCapaSmash(personagem);
+    final List<SmashCoverOption> opcoes = opcoesCapaSmash(nome);
+    if (opcoes.isEmpty) return;
+
+    final String preferenciaAtual = smashCoverPreferences[nome] ?? '';
+
+    final String? preferenciaEscolhida = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        return ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
+            Text(
+              'Escolha a capa de $nome',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Icon(
+                preferenciaAtual.isEmpty
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+              ),
+              title: const Text('Padrão'),
+              onTap: () {
+                Navigator.pop(context, '');
+              },
+            ),
+            for (final opcao in opcoes)
+              ListTile(
+                leading: Icon(
+                  preferenciaAtual == opcao.id
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
+                title: Text(opcao.label),
+                onTap: () {
+                  Navigator.pop(context, opcao.id);
+                },
+              ),
+          ],
+        );
+      },
+    );
+
+    if (preferenciaEscolhida == null) return;
+
+    await widget.onSmashCoverPreferenceChanged(nome, preferenciaEscolhida);
+
+    if (!mounted) return;
+
+    setState(() {
+      final Map<String, String> novasPreferencias = {...smashCoverPreferences};
+
+      if (preferenciaEscolhida.isEmpty) {
+        novasPreferencias.remove(nome);
+      } else {
+        novasPreferencias[nome] = preferenciaEscolhida;
+      }
+
+      smashCoverPreferences = novasPreferencias;
+    });
+  }
+
+  Widget cardPreferenciasCapaSmash() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Aparência do personagem',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            const Text('Super Smash Bros. Ultimate'),
+            const SizedBox(height: 12),
+            for (final personagem in personagensSmashComPreferenciaCapa)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CharacterAvatar(
+                  personagem: personagem,
+                  jogo: jogoSmashUltimate,
+                  size: 44,
+                  smashCoverPreferences: smashCoverPreferences,
+                  usarPreferenciaVisualSmash: true,
+                ),
+                title: Text(personagem),
+                subtitle: Text(
+                  'Capa atual: ${rotuloPreferenciaCapaSmash(personagem, smashCoverPreferences)}',
+                ),
+                trailing: TextButton(
+                  onPressed: () {
+                    alterarCapaSmash(personagem);
+                  },
+                  child: const Text('Alterar capa'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget cardPerfilPorJogo() {
+    final Map<String, GameUsageStats> usoPorJogo = calcularUsoPorJogo(
+      historicoPersistido,
+    );
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Perfil por jogo',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            for (final jogo in jogosDisponiveis)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  jogo == widget.jogoAtual
+                      ? Icons.sports_esports
+                      : Icons.videogame_asset_outlined,
+                ),
+                title: Text(jogo, maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Text(
+                  [
+                    '${usoPorJogo[jogo]?.partidas ?? 0} partidas',
+                    if ((personagensRecentesPorJogo[jogo] ?? const [])
+                        .isNotEmpty)
+                      'Ultimo: ${(personagensRecentesPorJogo[jogo] ?? const []).first}',
+                    if ((personagensFavoritosPorJogo[jogo] ?? const [])
+                        .isNotEmpty)
+                      'Favoritos: ${(personagensFavoritosPorJogo[jogo] ?? const []).take(3).join(', ')}',
+                  ].join(' - '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -115,6 +303,12 @@ class _PerfilJogadorPageState extends State<PerfilJogadorPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                cardPerfilPorJogo(),
+                if (mostrarPreferenciasCapaSmash) ...[
+                  const SizedBox(height: 16),
+                  cardPreferenciasCapaSmash(),
+                ],
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,

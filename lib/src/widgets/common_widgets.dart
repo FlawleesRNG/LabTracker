@@ -158,6 +158,8 @@ class CharacterAvatar extends StatefulWidget {
   final String jogo;
   final double size;
   final String? initialOverride;
+  final Map<String, String> smashCoverPreferences;
+  final bool usarPreferenciaVisualSmash;
 
   const CharacterAvatar({
     super.key,
@@ -165,6 +167,8 @@ class CharacterAvatar extends StatefulWidget {
     required this.jogo,
     this.size = 52,
     this.initialOverride,
+    this.smashCoverPreferences = const {},
+    this.usarPreferenciaVisualSmash = false,
   });
 
   @override
@@ -178,7 +182,10 @@ class _CharacterAvatarState extends State<CharacterAvatar> {
   void didUpdateWidget(covariant CharacterAvatar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.personagem != widget.personagem ||
-        oldWidget.jogo != widget.jogo) {
+        oldWidget.jogo != widget.jogo ||
+        oldWidget.smashCoverPreferences != widget.smashCoverPreferences ||
+        oldWidget.usarPreferenciaVisualSmash !=
+            widget.usarPreferenciaVisualSmash) {
       indiceUrl = 0;
     }
   }
@@ -186,10 +193,13 @@ class _CharacterAvatarState extends State<CharacterAvatar> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final List<String> imageUrls = urlsImagemPersonagem(
-      widget.personagem,
-      widget.jogo,
-    );
+    final List<String> imageUrls = widget.usarPreferenciaVisualSmash
+        ? urlsImagemPersonagemComPreferenciaVisual(
+            widget.personagem,
+            widget.jogo,
+            widget.smashCoverPreferences,
+          )
+        : urlsImagemPersonagem(widget.personagem, widget.jogo);
     final String imageUrl = indiceUrl < imageUrls.length
         ? imageUrls[indiceUrl]
         : '';
@@ -344,6 +354,8 @@ class MatchupHeader extends StatelessWidget {
   final String adversario;
   final double avatarSize;
   final TextStyle? style;
+  final Map<String, String> smashCoverPreferences;
+  final bool usarPreferenciaVisualSmash;
 
   const MatchupHeader({
     super.key,
@@ -352,13 +364,21 @@ class MatchupHeader extends StatelessWidget {
     required this.adversario,
     this.avatarSize = 30,
     this.style,
+    this.smashCoverPreferences = const {},
+    this.usarPreferenciaVisualSmash = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        CharacterAvatar(personagem: personagem, jogo: jogo, size: avatarSize),
+        CharacterAvatar(
+          personagem: personagem,
+          jogo: jogo,
+          size: avatarSize,
+          smashCoverPreferences: smashCoverPreferences,
+          usarPreferenciaVisualSmash: usarPreferenciaVisualSmash,
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -449,7 +469,11 @@ class _SelecionarPersonagemPageState extends State<SelecionarPersonagemPage> {
                         jogo: widget.jogoAtual,
                         avatarSize: avatarSize,
                         isMobile: isMobile,
+                        favorito: false,
+                        stats: const CharacterUsageStats(),
+                        mostrarFavorito: false,
                         onTap: () => Navigator.pop(context, personagem),
+                        onToggleFavorite: () {},
                       );
                     },
                   ),
@@ -459,6 +483,61 @@ class _SelecionarPersonagemPageState extends State<SelecionarPersonagemPage> {
           );
         },
       ),
+    );
+  }
+}
+
+class DatePickerField extends StatelessWidget {
+  final String label;
+  final DateTime data;
+  final ValueChanged<DateTime> onChanged;
+
+  const DatePickerField({
+    super.key,
+    required this.label,
+    required this.data,
+    required this.onChanged,
+  });
+
+  Future<void> escolherData(BuildContext context) async {
+    final DateTime? dataEscolhida = await showDatePicker(
+      context: context,
+      initialDate: data,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+
+    if (dataEscolhida == null) return;
+
+    onChanged(
+      DateTime(
+        dataEscolhida.year,
+        dataEscolhida.month,
+        dataEscolhida.day,
+        data.hour,
+        data.minute,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.event_outlined),
+            title: Text(formatarDataCurta(data)),
+            trailing: OutlinedButton(
+              onPressed: () => escolherData(context),
+              child: const Text('Alterar'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

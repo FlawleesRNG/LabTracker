@@ -115,20 +115,118 @@ const PlayerProfile perfilPadrao = PlayerProfile(
   bio: '',
 );
 
+class SmashCoverOption {
+  final String id;
+  final String label;
+  final List<String> imageUrls;
+
+  const SmashCoverOption({
+    required this.id,
+    required this.label,
+    this.imageUrls = const [],
+  });
+}
+
+const String jogoSmashUltimate = 'Super Smash Bros. Ultimate';
 const String jogoStreetFighter6 = 'Street Fighter 6';
 const String jogoInvincibleVs = 'Invincible VS';
+const String jogoTekken8 = 'Tekken 8';
+const String jogo2Xko = '2XKO';
+const String jogoRivalsOfAether2 = 'Rivals of Aether II';
+
+const String prefsKeySmashCoverPreferences = 'smashCoverPreferences';
+const String prefsKeyFavoriteGames = 'favoriteGames';
+const String prefsKeyRecentGames = 'recentGames';
+const String prefsKeyFavoriteCharactersByGame = 'favoriteCharactersByGame';
+const String prefsKeyRecentCharactersByGame = 'recentCharactersByGame';
+const String smashCoverMale = 'male';
+const String smashCoverFemale = 'female';
+const String smashCoverCustom = 'custom';
+
+class CharacterUsageStats {
+  final int partidas;
+  final int vitorias;
+  final int pdl;
+  final DateTime? ultimaPartida;
+
+  const CharacterUsageStats({
+    this.partidas = 0,
+    this.vitorias = 0,
+    this.pdl = 0,
+    this.ultimaPartida,
+  });
+
+  bool get temPartidas => partidas > 0;
+
+  double get winrate {
+    if (partidas == 0) return 0;
+    return (vitorias / partidas) * 100;
+  }
+
+  CharacterUsageStats adicionar(PartidaRegistrada partida) {
+    final bool venceu = resultadoEhVitoria(partida.resultado);
+    final DateTime? dataMaisRecente =
+        ultimaPartida == null || partida.data.isAfter(ultimaPartida!)
+        ? partida.data
+        : ultimaPartida;
+
+    return CharacterUsageStats(
+      partidas: partidas + 1,
+      vitorias: vitorias + (venceu ? 1 : 0),
+      pdl: pdl + partida.pdlGerado,
+      ultimaPartida: dataMaisRecente,
+    );
+  }
+}
+
+class GameUsageStats {
+  final int partidas;
+  final DateTime? ultimaPartida;
+
+  const GameUsageStats({this.partidas = 0, this.ultimaPartida});
+
+  bool get temPartidas => partidas > 0;
+
+  GameUsageStats adicionar(PartidaRegistrada partida) {
+    final DateTime? dataMaisRecente =
+        ultimaPartida == null || partida.data.isAfter(ultimaPartida!)
+        ? partida.data
+        : ultimaPartida;
+
+    return GameUsageStats(
+      partidas: partidas + 1,
+      ultimaPartida: dataMaisRecente,
+    );
+  }
+}
+
+enum GameRegisterType {
+  platformFighter,
+  twoDFighter,
+  threeDFighter,
+  tagFighter,
+  teamFighter,
+}
 
 const List<String> jogosDisponiveis = [
-  'Super Smash Bros. Ultimate',
+  jogoSmashUltimate,
   jogoStreetFighter6,
   'Mortal Kombat 1',
   'Avatar Legends: The Fighting Game',
   'Guilty Gear -Strive-',
   'The King of Fighters XV',
   jogoInvincibleVs,
-  'Dragon Ball FighterZ',
+  jogoTekken8,
+  jogo2Xko,
+  jogoRivalsOfAether2,
   'Fatal Fury',
 ];
+
+const List<String> jogosArquivados = ['Dragon Ball FighterZ'];
+
+const List<String> jogosDesativados = [];
+
+bool jogoEstaAtivo(String jogo) => !jogosDesativados.contains(jogo);
 
 class PartidaRegistrada {
   final String jogo;
