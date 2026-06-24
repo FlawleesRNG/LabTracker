@@ -898,6 +898,25 @@ List<String> urlsImagemPersonagem(
         '${slug}_KOFXV.png',
       ]);
     case jogoTekken8:
+      return _urlsArquivosFandom('tekken.fandom.com', [
+        imagensTekken8[nomeLimpo] ?? '',
+        ...?imagensAlternativasTekken8[nomeLimpo],
+        '$nomeLimpo TK8.png',
+        '$nomeLimpo T8.png',
+        '$nomeLimpo Tekken 8.png',
+        '$nomeLimpo Tekken 8 Render.png',
+        '$nomeSemPontos TK8.png',
+        '$nomeSemPontos T8.png',
+        '$nomeSemPontos Tekken 8 Render.png',
+        '${slug}_TK8.png',
+        '${slug}_T8.png',
+        '${slug}_Tekken_8.png',
+        '${slug}_Tekken_8_Render.png',
+        'TK8_$slug.png',
+        'T8_$slug.png',
+        'Tekken_8_$slug.png',
+        'Tekken_8_${slug}_Render.png',
+      ]);
     case jogo2Xko:
     case jogoRivalsOfAether2:
       return const [];

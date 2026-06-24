@@ -1105,6 +1105,135 @@ const Map<String, List<String>> imagensAlternativasStreetFighter6 = {
   'A.K.I.': ['AKI SF6 Render.png', 'A.K.I SF6 Render.png', 'SF6 AKI.png'],
 };
 
+const Map<String, String> imagensTekken8 = {
+  'Alisa Bosconovitch':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/n1vLUNXRtGCcmIEOwRaj',
+  'Anna Williams':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/REbCLK9bRVSbSPcDyoDK',
+  'Armor King':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/cmd3mugtjcaqi07lg7y8gh9fl',
+  'Asuka Kazama':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/XyRGVvTQ9ukJ5Y95xqbO',
+  'Azucena':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/mBJkCIG0RVOxL8lmv3Mi',
+  'Bryan Fury':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/myEvBeMPQj6Tjz6jfJyK',
+  'Claudio Serafino':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/RoIFxOavSXCvSS4Di9dP',
+  'Clive Rosfield':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/FEZn49VIT2G81BVoUjhh',
+  'Devil Jin':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/GZjABzq6RtqGnDKJWArQ',
+  'Eddy Gordo':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/z01aoZ7RACKF80qOIDAw',
+  'Fahkumram':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/cmawx5yzfc8nd07lj92m0gcti',
+  'Feng Wei':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/dY0iy6kERPOAFTHDq86l',
+  'Heihachi Mishima':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/TCnrzEgiRJOjEzaLFE2y',
+  'Hwoarang':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/nzpfPA1RvyEccxtIKpPa',
+  'Jack-8':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/Rodg9YbSlmIO4CP1KeTg',
+  'Jin Kazama':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/kt0c29OnS1iid1N0bisb',
+  'Jun Kazama':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/XohzPbSkQ4W7dkQzG1wu',
+  'Kazuya Mishima':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/pV8nXDdUSoWz68S6bemw',
+  'King':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/iVK63XMTjK3K5T3e52lY',
+  'Kuma':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/DQZlHtATzmHkdvFH1kQT',
+  'Kunimitsu':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/cmo96cu5s8j4n07lhrffcln70',
+  'Lars Alexandersson':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/fTGf8rOTRCO3w8rFWhFV',
+  'Lee Chaolan':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/pjxhYoUYTeuY3HsNeKUv',
+  'Leo Kliesen':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/2BaYR8uCQvSithxYF5P0',
+  'Leroy Smith':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/bsJ99GF3SrKjxgJbuOZZ',
+  'Lidia Sobieska':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/3vEPjsH3R4u3DI4s20tA',
+  'Lili':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/jN9FfeNtTImrl6KCKVFP',
+  'Ling Xiaoyu':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/WxAijbDQ7KVDxNDBZpwL',
+  'Marshall Law':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/Mcg5oL77SCCLR3juLgPi',
+  'Miary Zo':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/cmg9xoson37gn07ljubup6hwa',
+  'Nina Williams':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/RUPIEe6S62DOZhL0HtZR',
+  'Panda':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/aAQZEaSWRSOkiWYOjkuu',
+  'Paul Phoenix':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/jFraU196QSKa0Hx15FuQ',
+  'Raven':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/mIWLNmS3Q2miKhM7PtFi',
+  'Reina':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/VkSV6lkgSqeDOm5L0msl',
+  'Sergei Dragunov':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/uhCgU9xASsGXdIa4Fs5v',
+  'Shaheen':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/hZD62RjSG2QuRblpVv2U',
+  'Steve Fox':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/QjPRi5AqScqdTtgiRir1',
+  'Victor Chevalier':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/7Gqj11TDRfifrtFKiQiw',
+  'Yoshimitsu':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/5BbhMGqJTpWd9X0iWlRM',
+  'Zafina':
+      'https://us-east-1-bandai.graphassets.com/AXzioIclSWilEjFtsMJPwz/OYb6gBOIQS1Siq7S3EXg',
+};
+
+const Map<String, List<String>> imagensAlternativasTekken8 = {
+  'Alisa Bosconovitch': ['Alisa Bosconovitch TK8.png'],
+  'Anna Williams': ['Anna Williams TK8.png', 'Anna Williams T8.png'],
+  'Armor King': ['Armor King TK8.png', 'Armor King T8.png'],
+  'Asuka Kazama': ['Asuka Kazama TK8.png'],
+  'Azucena': ['Azucena TK8.png', 'Azucena Milagros Ortiz Castillo TK8.png'],
+  'Bryan Fury': ['Bryan Fury TK8.png'],
+  'Claudio Serafino': ['Claudio Serafino TK8.png'],
+  'Clive Rosfield': ['Clive Rosfield TK8.png'],
+  'Devil Jin': ['Devil Jin TK8.png'],
+  'Eddy Gordo': ['Eddy Gordo TK8.png'],
+  'Fahkumram': ['Fahkumram TK8.png', 'Fahkumram T8.png'],
+  'Feng Wei': ['Feng Wei TK8.png'],
+  'Heihachi Mishima': ['Heihachi Mishima TK8.png'],
+  'Hwoarang': ['Hwoarang TK8.png'],
+  'Jack-8': ['Jack-8 TK8.png', 'Jack 8 TK8.png'],
+  'Jin Kazama': ['Jin Kazama TK8.png'],
+  'Jun Kazama': ['Jun Kazama TK8.png'],
+  'Kazuya Mishima': ['Kazuya Mishima TK8.png'],
+  'King': ['King TK8.png'],
+  'Kuma': ['Kuma TK8.png'],
+  'Kunimitsu': ['Kunimitsu TK8.png', 'Kunimitsu T8.png'],
+  'Lars Alexandersson': ['Lars Alexandersson TK8.png'],
+  'Lee Chaolan': ['Lee Chaolan TK8.png'],
+  'Leo Kliesen': ['Leo Kliesen TK8.png'],
+  'Leroy Smith': ['Leroy Smith TK8.png'],
+  'Lidia Sobieska': ['Lidia Sobieska TK8.png'],
+  'Lili': ['Lili TK8.png', 'Emilie De Rochefort TK8.png'],
+  'Ling Xiaoyu': ['Ling Xiaoyu TK8.png'],
+  'Marshall Law': ['Marshall Law TK8.png'],
+  'Miary Zo': ['Miary Zo TK8.png', 'Miary Zo T8.png'],
+  'Nina Williams': ['Nina Williams TK8.png'],
+  'Panda': ['Panda TK8.png'],
+  'Paul Phoenix': ['Paul Phoenix TK8.png'],
+  'Raven': ['Raven TK8.png'],
+  'Reina': ['Reina TK8.png'],
+  'Sergei Dragunov': ['Sergei Dragunov TK8.png', 'Dragunov TK8.png'],
+  'Shaheen': ['Shaheen TK8.png'],
+  'Steve Fox': ['Steve Fox TK8.png'],
+  'Victor Chevalier': ['Victor Chevalier TK8.png'],
+  'Yoshimitsu': ['Yoshimitsu TK8.png'],
+  'Zafina': ['Zafina TK8.png'],
+};
+
 const Map<String, String> imagensMortalKombat1 = {
   'Ashrah': 'https://www.mortalkombatwarehouse.com/mk12/renders/ashrah.png',
   'Baraka': 'https://www.mortalkombatwarehouse.com/mk12/renders/baraka.png',
