@@ -121,7 +121,11 @@ class ResumoTreinoPage extends StatelessWidget {
     final String sinalPdl = saldoPdl >= 0 ? '+' : '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Resumo do treino'), centerTitle: true),
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Resumo do treino'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: totalPartidas == 0
           ? SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -470,7 +474,11 @@ class EstatisticasPage extends StatelessWidget {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Estatísticas'), centerTitle: true),
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Estatísticas'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: totalPartidas == 0
           ? Center(
               child: Text(
@@ -909,8 +917,9 @@ class EstatisticasStreetFighterPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Estatísticas Street Fighter'),
+        title: const CompactAppBarTitle('Estatísticas Street Fighter'),
         centerTitle: true,
+        actions: const [HomeNavigationButton()],
       ),
       body: totalPartidas == 0
           ? Center(
@@ -1299,8 +1308,9 @@ class EstatisticasInvinciblePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Estatísticas de times'),
+        title: const CompactAppBarTitle('Estatísticas de times'),
         centerTitle: true,
+        actions: const [HomeNavigationButton()],
       ),
       body: totalPartidas == 0
           ? Center(

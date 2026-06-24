@@ -127,6 +127,15 @@ class SmashCoverOption {
   });
 }
 
+class AppImageSource {
+  final String remoteUrl;
+  final String localAsset;
+
+  const AppImageSource({this.remoteUrl = '', this.localAsset = ''});
+
+  bool get isEmpty => remoteUrl.trim().isEmpty && localAsset.trim().isEmpty;
+}
+
 const String jogoSmashUltimate = 'Super Smash Bros. Ultimate';
 const String jogoStreetFighter6 = 'Street Fighter 6';
 const String jogoInvincibleVs = 'Invincible VS';
@@ -141,7 +150,6 @@ const String prefsKeyFavoriteCharactersByGame = 'favoriteCharactersByGame';
 const String prefsKeyRecentCharactersByGame = 'recentCharactersByGame';
 const String smashCoverMale = 'male';
 const String smashCoverFemale = 'female';
-const String smashCoverCustom = 'custom';
 
 class CharacterUsageStats {
   final int partidas;

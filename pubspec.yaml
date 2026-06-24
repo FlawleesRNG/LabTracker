@@ -64,6 +64,20 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/characters/
+    - assets/offline_images/games/
+    - assets/offline_images/characters/smash/
+    - assets/offline_images/characters/street_fighter_6/
+    - assets/offline_images/characters/mortal_kombat_1/
+    - assets/offline_images/characters/dragon_ball_fighterz/
+    - assets/offline_images/characters/fatal_fury/
+    - assets/offline_images/characters/invincible_vs/
+    - assets/offline_images/characters/avatar_legends/
+    - assets/offline_images/characters/guilty_gear_strive/
+    - assets/offline_images/characters/kof_xv/
+    - assets/offline_images/characters/tekken_8/
+    - assets/offline_images/characters/rivals_of_aether_ii/
+    - assets/offline_images/characters/2xko/
+    - assets/offline_images/smash_covers/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

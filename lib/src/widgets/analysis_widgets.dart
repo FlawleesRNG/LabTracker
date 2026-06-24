@@ -734,7 +734,11 @@ class MatchupStatsPage extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Matchup Stats'), centerTitle: true),
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Matchup Stats'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: matchups.isEmpty
           ? Center(
               child: Text(

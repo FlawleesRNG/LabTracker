@@ -473,7 +473,7 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
       await registrarAcessoJogo(jogo);
       if (!context.mounted) return;
 
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) =>
@@ -732,7 +732,7 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
   }
 
   Widget capaDoJogo(String jogo) {
-    final String logo = logoDoJogo(jogo);
+    final List<AppImageSource> logoSources = fontesLogoDoJogo(jogo);
     final Color cor = corDoJogo(jogo);
     final String sigla = siglaDoJogo(jogo);
     final bool fundoClaro = usaFundoClaroNaCapa(jogo);
@@ -774,7 +774,20 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
       );
     }
 
-    if (logo.isEmpty) return fallback();
+    Widget fallbackNaMoldura() {
+      return Text(
+        sigla,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: fundoClaro ? Colors.black : Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.2,
+        ),
+      );
+    }
+
+    if (logoSources.isEmpty) return fallback();
 
     Widget logoLayer(Widget child) {
       return Container(
@@ -804,23 +817,12 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
       );
     }
 
-    if (logo.startsWith('assets/')) {
-      return logoLayer(
-        Image.asset(
-          logo,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-          errorBuilder: (_, _, _) => fallback(),
-        ),
-      );
-    }
-
     return logoLayer(
-      Image.network(
-        logo,
+      AppImageWithFallback(
+        imageSources: logoSources,
+        fallback: fallbackNaMoldura(),
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
-        errorBuilder: (_, _, _) => fallback(),
       ),
     );
   }

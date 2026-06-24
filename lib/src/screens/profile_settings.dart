@@ -258,7 +258,11 @@ class _PerfilJogadorPageState extends State<PerfilJogadorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Meu perfil'), centerTitle: true),
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Meu perfil'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -606,8 +610,9 @@ class ConfiguracoesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Backup e configurações'),
+        title: const CompactAppBarTitle('Backup e configurações'),
         centerTitle: true,
+        actions: const [HomeNavigationButton()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

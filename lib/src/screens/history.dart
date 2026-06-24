@@ -6,6 +6,7 @@ class HistoricoPage extends StatefulWidget {
   final String jogo;
   final TimePrincipalInvincible timePrincipalInvincible;
   final Map<String, String> smashCoverPreferences;
+  final Future<void> Function()? onHistoricoAlterado;
 
   const HistoricoPage({
     super.key,
@@ -14,6 +15,7 @@ class HistoricoPage extends StatefulWidget {
     this.jogo = 'Super Smash Bros. Ultimate',
     this.timePrincipalInvincible = timePrincipalInvincibleVazio,
     this.smashCoverPreferences = const {},
+    this.onHistoricoAlterado,
   });
 
   @override
@@ -361,6 +363,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
         widget.historico.remove(partida);
         houveAlteracao = true;
       });
+      await widget.onHistoricoAlterado?.call();
     }
 
     if (resultado.acao == 'editar' && resultado.partidaEditada != null) {
@@ -371,6 +374,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
           widget.historico[index] = resultado.partidaEditada!;
           houveAlteracao = true;
         });
+        await widget.onHistoricoAlterado?.call();
       }
     }
   }
@@ -380,15 +384,17 @@ class _HistoricoPageState extends State<HistoricoPage> {
     final partidas = historicoFiltrado;
     final String pontosLabel = labelPontosRank(widget.jogo);
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope<bool>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         Navigator.pop(context, houveAlteracao);
-        return false;
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Histórico de partidas'),
+          title: const CompactAppBarTitle('Histórico de partidas'),
           centerTitle: true,
+          actions: const [HomeNavigationButton()],
         ),
         body: historicoDoJogo.isEmpty
             ? const Center(
@@ -868,6 +874,8 @@ class DetalhesPartidaPage extends StatelessWidget {
       },
     );
 
+    if (!context.mounted) return;
+
     if (confirmar == true) {
       Navigator.pop(context, const ResultadoDetalhesPartida.apagar());
     }
@@ -905,6 +913,8 @@ class DetalhesPartidaPage extends StatelessWidget {
       ),
     );
 
+    if (!context.mounted) return;
+
     if (partidaEditada != null) {
       Navigator.pop(context, ResultadoDetalhesPartida.editar(partidaEditada));
     }
@@ -920,9 +930,10 @@ class DetalhesPartidaPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalhes da partida'),
+        title: const CompactAppBarTitle('Detalhes da partida'),
         centerTitle: true,
         actions: [
+          const HomeNavigationButton(),
           IconButton(
             onPressed: () {
               abrirEditar(context);
@@ -1058,9 +1069,10 @@ class DetalhesPartidaPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalhes da partida'),
+        title: const CompactAppBarTitle('Detalhes da partida'),
         centerTitle: true,
         actions: [
+          const HomeNavigationButton(),
           IconButton(
             onPressed: () {
               abrirEditar(context);
@@ -1210,9 +1222,10 @@ class DetalhesPartidaPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalhes da partida'),
+        title: const CompactAppBarTitle('Detalhes da partida'),
         centerTitle: true,
         actions: [
+          const HomeNavigationButton(),
           IconButton(
             onPressed: () {
               abrirEditar(context);
@@ -1610,7 +1623,11 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
     final String inicialAdversario = personagemAdversario?.initial ?? '?';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar partida'), centerTitle: true),
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Editar partida'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(

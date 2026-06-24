@@ -240,7 +240,7 @@ class _SelecionarPersonagemInicialPageState
 
     if (!context.mounted) return;
 
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => HomePage(
@@ -433,8 +433,9 @@ class _SelecionarPersonagemInicialPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Escolher personagem'),
+        title: const CompactAppBarTitle('Escolher personagem'),
         centerTitle: true,
+        actions: const [HomeNavigationButton()],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

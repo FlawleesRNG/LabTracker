@@ -16,6 +16,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+enum _HomePageMenuAction { perfil, configuracoes, resetar }
+
 class _HomePageState extends State<HomePage> {
   PlayerProfile perfil = perfilPadrao;
 
@@ -716,6 +718,13 @@ class _HomePageState extends State<HomePage> {
           jogo: widget.jogoAtual,
           timePrincipalInvincible: timePrincipalInvincible,
           smashCoverPreferences: smashCoverPreferences,
+          onHistoricoAlterado: () async {
+            if (!mounted) return;
+            setState(() {
+              recalcularPersonagensPeloHistorico();
+            });
+            await salvarDados();
+          },
         ),
       ),
     );
@@ -832,13 +841,84 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void voltarParaBibliotecaJogos() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SelecionarJogoInicialPage(),
+  void voltarTelaAnterior() {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+      return;
+    }
+
+    irParaSelecaoDeJogos(context);
+  }
+
+  void executarAcaoMenuHome(_HomePageMenuAction acao) {
+    switch (acao) {
+      case _HomePageMenuAction.perfil:
+        abrirPerfil();
+        break;
+      case _HomePageMenuAction.configuracoes:
+        abrirConfiguracoes();
+        break;
+      case _HomePageMenuAction.resetar:
+        resetarDados();
+        break;
+    }
+  }
+
+  List<Widget> construirAcoesAppBar(bool compacta) {
+    if (compacta) {
+      return [
+        const HomeNavigationButton(),
+        PopupMenuButton<_HomePageMenuAction>(
+          tooltip: 'Mais opções',
+          icon: const Icon(Icons.more_vert),
+          onSelected: executarAcaoMenuHome,
+          itemBuilder: (context) {
+            return const [
+              PopupMenuItem(
+                value: _HomePageMenuAction.perfil,
+                child: ListTile(
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Meu perfil'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _HomePageMenuAction.configuracoes,
+                child: ListTile(
+                  leading: Icon(Icons.settings_outlined),
+                  title: Text('Configurações'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _HomePageMenuAction.resetar,
+                child: ListTile(
+                  leading: Icon(Icons.delete_outline),
+                  title: Text('Resetar dados'),
+                ),
+              ),
+            ];
+          },
+        ),
+      ];
+    }
+
+    return [
+      const HomeNavigationButton(),
+      IconButton(
+        onPressed: abrirPerfil,
+        tooltip: 'Meu perfil',
+        icon: const Icon(Icons.person_outline),
       ),
-    );
+      IconButton(
+        onPressed: abrirConfiguracoes,
+        tooltip: 'Configurações e backup',
+        icon: const Icon(Icons.settings_outlined),
+      ),
+      IconButton(
+        onPressed: resetarDados,
+        tooltip: 'Resetar dados',
+        icon: const Icon(Icons.delete_outline),
+      ),
+    ];
   }
 
   int get totalPartidasDoJogo {
@@ -896,33 +976,24 @@ class _HomePageState extends State<HomePage> {
               ? timePrincipalInvincible.texto
               : 'Nenhum time principal definido')
         : personagem.name;
+    final bool appBarCompacta = MediaQuery.sizeOf(context).width < 480;
 
     return Scaffold(
       appBar: AppBar(
-        title: const LtLogo(scale: 0.8, showProgress: false),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: LtLogo(scale: 0.8, showProgress: false),
+        ),
         centerTitle: true,
         leading: IconButton(
-          onPressed: voltarParaBibliotecaJogos,
-          tooltip: 'Voltar para jogos',
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          padding: const EdgeInsets.all(12),
+          visualDensity: VisualDensity.standard,
+          onPressed: voltarTelaAnterior,
+          tooltip: 'Voltar',
           icon: const Icon(Icons.arrow_back),
         ),
-        actions: [
-          IconButton(
-            onPressed: abrirPerfil,
-            tooltip: 'Meu perfil',
-            icon: const Icon(Icons.person_outline),
-          ),
-          IconButton(
-            onPressed: abrirConfiguracoes,
-            tooltip: 'Configurações e backup',
-            icon: const Icon(Icons.settings_outlined),
-          ),
-          IconButton(
-            onPressed: resetarDados,
-            tooltip: 'Resetar dados',
-            icon: const Icon(Icons.delete_outline),
-          ),
-        ],
+        actions: construirAcoesAppBar(appBarCompacta),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

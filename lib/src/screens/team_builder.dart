@@ -161,7 +161,11 @@ class _MontarTimeInvinciblePageState extends State<MontarTimeInvinciblePage> {
     final TimePrincipalInvincible time = timeAtual;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Montar Time'), centerTitle: true),
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Montar Time'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isMobile = constraints.maxWidth < 680;

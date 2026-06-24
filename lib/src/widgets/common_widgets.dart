@@ -21,6 +21,47 @@ class InfoBox extends StatelessWidget {
   }
 }
 
+void irParaSelecaoDeJogos(BuildContext context) {
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute(builder: (context) => const SelecionarJogoInicialPage()),
+    (route) => false,
+  );
+}
+
+class HomeNavigationButton extends StatelessWidget {
+  const HomeNavigationButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      padding: const EdgeInsets.all(12),
+      visualDensity: VisualDensity.standard,
+      onPressed: () {
+        irParaSelecaoDeJogos(context);
+      },
+      tooltip: 'Ir para seleção de jogos',
+      icon: const Icon(Icons.home_outlined),
+    );
+  }
+}
+
+class CompactAppBarTitle extends StatelessWidget {
+  final String text;
+
+  const CompactAppBarTitle(this.text, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      softWrap: false,
+    );
+  }
+}
+
 class SearchableOptionField extends StatelessWidget {
   final String label;
   final String value;
@@ -103,7 +144,7 @@ class SearchableOptionField extends StatelessWidget {
                             )
                           : ListView.separated(
                               itemCount: filtradas.length,
-                              separatorBuilder: (_, __) =>
+                              separatorBuilder: (_, _) =>
                                   const Divider(height: 1),
                               itemBuilder: (context, index) {
                                 final String opcao = filtradas[index];
@@ -153,6 +194,125 @@ class SearchableOptionField extends StatelessWidget {
   }
 }
 
+class AppImageWithFallback extends StatefulWidget {
+  final List<AppImageSource> imageSources;
+  final Widget fallback;
+  final BoxFit fit;
+  final Alignment alignment;
+  final FilterQuality filterQuality;
+  final Color? color;
+  final double? width;
+  final double? height;
+
+  const AppImageWithFallback({
+    super.key,
+    required this.imageSources,
+    required this.fallback,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.filterQuality = FilterQuality.low,
+    this.color,
+    this.width,
+    this.height,
+  });
+
+  @override
+  State<AppImageWithFallback> createState() => _AppImageWithFallbackState();
+}
+
+class _AppImageWithFallbackState extends State<AppImageWithFallback> {
+  int sourceIndex = 0;
+  bool usingLocalAsset = false;
+
+  @override
+  void didUpdateWidget(covariant AppImageWithFallback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageSources != widget.imageSources) {
+      sourceIndex = 0;
+      usingLocalAsset = false;
+    }
+  }
+
+  void tryLocalOrNext(AppImageSource source) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final int totalSources = widget.imageSources
+          .where((imageSource) => !imageSource.isEmpty)
+          .length;
+      final bool canTryLocal =
+          !usingLocalAsset && source.localAsset.trim().isNotEmpty;
+      if (canTryLocal) {
+        setState(() => usingLocalAsset = true);
+        return;
+      }
+
+      if (sourceIndex + 1 < totalSources) {
+        setState(() {
+          sourceIndex += 1;
+          usingLocalAsset = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<AppImageSource> sources = widget.imageSources
+        .where((source) => !source.isEmpty)
+        .toList();
+
+    if (sources.isEmpty || sourceIndex >= sources.length) {
+      return widget.fallback;
+    }
+
+    final AppImageSource source = sources[sourceIndex];
+    final String remoteUrl = source.remoteUrl.trim();
+    final String localAsset = source.localAsset.trim();
+
+    Widget localImageOrFallback() {
+      if (localAsset.isEmpty) return widget.fallback;
+
+      return Image.asset(
+        localAsset,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        filterQuality: widget.filterQuality,
+        color: widget.color,
+        errorBuilder: (_, _, _) {
+          tryLocalOrNext(source);
+          return widget.fallback;
+        },
+      );
+    }
+
+    if (!usingLocalAsset && remoteUrl.isNotEmpty) {
+      return Image.network(
+        remoteUrl,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        filterQuality: widget.filterQuality,
+        color: widget.color,
+        errorBuilder: (_, _, _) {
+          tryLocalOrNext(source);
+          return localImageOrFallback();
+        },
+      );
+    }
+
+    if (localAsset.isNotEmpty) {
+      return localImageOrFallback();
+    }
+
+    tryLocalOrNext(source);
+    return widget.fallback;
+  }
+}
+
 class CharacterAvatar extends StatefulWidget {
   final String personagem;
   final String jogo;
@@ -176,33 +336,16 @@ class CharacterAvatar extends StatefulWidget {
 }
 
 class _CharacterAvatarState extends State<CharacterAvatar> {
-  int indiceUrl = 0;
-
-  @override
-  void didUpdateWidget(covariant CharacterAvatar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.personagem != widget.personagem ||
-        oldWidget.jogo != widget.jogo ||
-        oldWidget.smashCoverPreferences != widget.smashCoverPreferences ||
-        oldWidget.usarPreferenciaVisualSmash !=
-            widget.usarPreferenciaVisualSmash) {
-      indiceUrl = 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final List<String> imageUrls = widget.usarPreferenciaVisualSmash
-        ? urlsImagemPersonagemComPreferenciaVisual(
+    final List<AppImageSource> imageSources = widget.usarPreferenciaVisualSmash
+        ? getCharacterImageSourcesWithSmashPreference(
             widget.personagem,
             widget.jogo,
             widget.smashCoverPreferences,
           )
-        : urlsImagemPersonagem(widget.personagem, widget.jogo);
-    final String imageUrl = indiceUrl < imageUrls.length
-        ? imageUrls[indiceUrl]
-        : '';
+        : getCharacterImageSources(widget.jogo, widget.personagem);
     final String initial =
         widget.initialOverride ??
         (widget.personagem.isNotEmpty
@@ -226,25 +369,12 @@ class _CharacterAvatarState extends State<CharacterAvatar> {
         borderRadius: BorderRadius.circular(widget.size / 2),
         child: Container(
           color: scheme.surfaceContainerHighest,
-          child: imageUrl.isEmpty
-              ? fallback()
-              : Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  errorBuilder: (_, __, ___) {
-                    if (indiceUrl + 1 < imageUrls.length) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          setState(() => indiceUrl += 1);
-                        }
-                      });
-                      return fallback();
-                    }
-
-                    return fallback();
-                  },
-                ),
+          child: AppImageWithFallback(
+            imageSources: imageSources,
+            fallback: fallback(),
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+          ),
         ),
       ),
     );
@@ -257,38 +387,54 @@ class RankBadge extends StatelessWidget {
   const RankBadge({super.key, required this.rank});
 
   List<Color> get rankColors {
-    if (rank.contains('New Blood'))
+    if (rank.contains('New Blood')) {
       return [Colors.green.shade400, Colors.green.shade800];
-    if (rank.contains('Rookie'))
+    }
+    if (rank.contains('Rookie')) {
       return [Colors.lightGreen.shade300, Colors.green.shade700];
-    if (rank.contains('Bronze'))
+    }
+    if (rank.contains('Bronze')) {
       return [Colors.brown.shade300, Colors.brown.shade700];
-    if (rank.contains('Silver'))
+    }
+    if (rank.contains('Silver')) {
       return [Colors.blueGrey.shade200, Colors.blueGrey.shade600];
-    if (rank.contains('Gold'))
+    }
+    if (rank.contains('Gold')) {
       return [Colors.amber.shade300, Colors.orange.shade700];
-    if (rank.contains('Platinum'))
+    }
+    if (rank.contains('Platinum')) {
       return [Colors.cyan.shade200, Colors.teal.shade700];
-    if (rank.contains('Diamond'))
+    }
+    if (rank.contains('Diamond')) {
       return [Colors.lightBlueAccent.shade100, Colors.blue.shade700];
-    if (rank.contains('Superhero'))
+    }
+    if (rank.contains('Superhero')) {
       return [Colors.redAccent.shade200, Colors.red.shade800];
-    if (rank.contains('Guardian of the Globe'))
+    }
+    if (rank.contains('Guardian of the Globe')) {
       return [Colors.deepPurpleAccent.shade100, Colors.deepPurple.shade800];
-    if (rank.contains('Starter'))
+    }
+    if (rank.contains('Starter')) {
       return [Colors.brown.shade400, Colors.brown.shade700];
-    if (rank.contains('For Fun'))
+    }
+    if (rank.contains('For Fun')) {
       return [Colors.grey.shade400, Colors.grey.shade600];
-    if (rank.contains('Quick Play'))
+    }
+    if (rank.contains('Quick Play')) {
       return [Colors.amber.shade400, Colors.orange.shade700];
-    if (rank.contains('Brawl'))
+    }
+    if (rank.contains('Brawl')) {
       return [Colors.teal.shade300, Colors.blueGrey.shade600];
-    if (rank.contains('For Glory'))
+    }
+    if (rank.contains('For Glory')) {
       return [Colors.purple.shade400, Colors.deepPurple.shade800];
-    if (rank.contains('Melee'))
+    }
+    if (rank.contains('Melee')) {
       return [Colors.redAccent.shade400, Colors.red.shade900];
-    if (rank.contains('Elite'))
+    }
+    if (rank.contains('Elite')) {
       return [Colors.yellowAccent.shade400, Colors.deepOrange.shade600];
+    }
     return [Colors.blue, Colors.blue.shade800];
   }
 
@@ -305,10 +451,13 @@ class RankBadge extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.4),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: colors.last.withOpacity(0.6),
+            color: colors.last.withValues(alpha: 0.6),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -322,7 +471,7 @@ class RankBadge extends StatelessWidget {
             width: 14,
             height: 14,
             color: Colors.white,
-            errorBuilder: (_, __, ___) =>
+            errorBuilder: (_, _, _) =>
                 const Icon(Icons.star, size: 14, color: Colors.white),
           ),
           const SizedBox(width: 6),
@@ -427,7 +576,11 @@ class _SelecionarPersonagemPageState extends State<SelecionarPersonagemPage> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.titulo), centerTitle: true),
+      appBar: AppBar(
+        title: CompactAppBarTitle(widget.titulo),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isMobile = constraints.maxWidth < 600;

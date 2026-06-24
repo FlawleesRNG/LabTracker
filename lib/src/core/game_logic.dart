@@ -721,6 +721,161 @@ List<String> _urlsArquivosFandom(String wiki, Iterable<String> arquivos) {
       .toList();
 }
 
+String _nomeSeguroAsset(String valor) {
+  String texto = corrigirTextoLegado(valor).toLowerCase().trim();
+  final Map<String, String> substituicoes = {
+    'á': 'a',
+    'à': 'a',
+    'â': 'a',
+    'ã': 'a',
+    'ä': 'a',
+    'é': 'e',
+    'è': 'e',
+    'ê': 'e',
+    'ë': 'e',
+    'í': 'i',
+    'ì': 'i',
+    'î': 'i',
+    'ï': 'i',
+    'ó': 'o',
+    'ò': 'o',
+    'ô': 'o',
+    'õ': 'o',
+    'ö': 'o',
+    'ú': 'u',
+    'ù': 'u',
+    'û': 'u',
+    'ü': 'u',
+    'ç': 'c',
+    'ñ': 'n',
+    '&': ' and ',
+  };
+
+  substituicoes.forEach((origem, destino) {
+    texto = texto.replaceAll(origem, destino);
+  });
+
+  return texto
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'_+'), '_')
+      .replaceAll(RegExp(r'^_|_$'), '');
+}
+
+List<AppImageSource> _fontesComFallbackOffline(
+  Iterable<String> urls,
+  String localAsset,
+) {
+  final List<String> urlsValidas = urls
+      .map((url) => url.trim())
+      .where((url) => url.isNotEmpty)
+      .toSet()
+      .toList();
+  final String asset = localAsset.trim();
+
+  if (urlsValidas.isEmpty) {
+    return asset.isEmpty ? const [] : [AppImageSource(localAsset: asset)];
+  }
+
+  return [
+    for (int i = 0; i < urlsValidas.length; i++)
+      AppImageSource(
+        remoteUrl: urlsValidas[i],
+        localAsset: i == 0 ? asset : '',
+      ),
+  ];
+}
+
+String? getCharacterOfflineAsset(String gameName, String characterName) {
+  final String? pasta = pastasPersonagensOfflinePorJogo[gameName];
+  if (pasta == null) return null;
+
+  final String nomeSeguro = _nomeSeguroAsset(
+    normalizarNomePersonagem(characterName),
+  );
+  if (nomeSeguro.isEmpty) return null;
+
+  return 'assets/offline_images/characters/$pasta/$nomeSeguro.webp';
+}
+
+AppImageSource getGameLogoSource(String gameName) {
+  return AppImageSource(
+    remoteUrl: logoDoJogo(gameName),
+    localAsset: logosJogosOffline[gameName] ?? '',
+  );
+}
+
+List<AppImageSource> fontesLogoDoJogo(String gameName) {
+  final AppImageSource source = getGameLogoSource(gameName);
+  return source.isEmpty ? const [] : [source];
+}
+
+AppImageSource? getSmashCoverImageSource(
+  String characterName,
+  String preference,
+) {
+  final String personagem = normalizarPersonagemCapaSmash(characterName);
+  final SmashCoverOption? opcao = opcaoCapaSmashPorId(personagem, preference);
+  if (opcao == null) return null;
+
+  final String localAsset =
+      smashCoverAssetsOffline[personagem]?[opcao.id] ?? '';
+  final String remoteUrl = opcao.imageUrls.isNotEmpty
+      ? opcao.imageUrls.first
+      : '';
+
+  return AppImageSource(remoteUrl: remoteUrl, localAsset: localAsset);
+}
+
+List<AppImageSource> getSmashCoverImageSources(
+  String characterName,
+  String preference,
+) {
+  final String personagem = normalizarPersonagemCapaSmash(characterName);
+  final SmashCoverOption? opcao = opcaoCapaSmashPorId(personagem, preference);
+  if (opcao == null) return const [];
+
+  final String localAsset =
+      smashCoverAssetsOffline[personagem]?[opcao.id] ?? '';
+  return _fontesComFallbackOffline(opcao.imageUrls, localAsset);
+}
+
+List<AppImageSource> getCharacterImageSources(
+  String gameName,
+  String characterName,
+) {
+  final String personagem = normalizarNomePersonagem(characterName);
+  final String localAsset =
+      getCharacterOfflineAsset(gameName, personagem) ?? '';
+  return _fontesComFallbackOffline(
+    urlsImagemPersonagem(personagem, gameName),
+    localAsset,
+  );
+}
+
+List<AppImageSource> getCharacterImageSourcesWithSmashPreference(
+  String characterName,
+  String gameName,
+  Map<String, String> preferences,
+) {
+  if (!jogoEhSmash(gameName)) {
+    return getCharacterImageSources(gameName, characterName);
+  }
+
+  final String personagem = normalizarPersonagemCapaSmash(characterName);
+  final String? preference = preferences[personagem];
+  if (preference == null || preference.trim().isEmpty) {
+    return getCharacterImageSources(gameName, personagem);
+  }
+
+  final List<AppImageSource> preferredSources = getSmashCoverImageSources(
+    personagem,
+    preference,
+  );
+  if (preferredSources.isNotEmpty) return preferredSources;
+
+  return getCharacterImageSources(gameName, personagem);
+}
+
 bool jogoEhSmash(String jogo) {
   return jogo == jogoSmashUltimate;
 }
@@ -796,11 +951,11 @@ List<String> urlsImagemPersonagemComPreferenciaVisual(
       : opcaoCapaSmashPorId(personagem, preferencia);
   final List<String> urlsPadrao = urlsImagemPersonagem(personagem, jogo);
 
-  if (opcao == null || opcao.imageUrls.isEmpty) {
+  if (opcao == null) {
     return urlsPadrao;
   }
 
-  return [...opcao.imageUrls, ...urlsPadrao];
+  return opcao.imageUrls;
 }
 
 List<String> urlsImagemPersonagem(
@@ -918,8 +1073,27 @@ List<String> urlsImagemPersonagem(
         'Tekken_8_${slug}_Render.png',
       ]);
     case jogo2Xko:
-    case jogoRivalsOfAether2:
       return const [];
+    case jogoRivalsOfAether2:
+      return _urlsArquivosFandom('rivals-of-aether.fandom.com', [
+        imagensRivalsOfAether2[nomeLimpo] ?? '',
+        ...?imagensAlternativasRivalsOfAether2[nomeLimpo],
+        '$nomeLimpo Rivals 2.png',
+        '$nomeLimpo Rivals of Aether II.png',
+        '$nomeLimpo ROA2.png',
+        '$nomeLimpo Artwork.png',
+        '$nomeLimpo 3D Model.png',
+        '$nomeSemPontos Rivals 2.png',
+        '$nomeSemPontos Rivals of Aether II.png',
+        '$nomeSemPontos Artwork.png',
+        '${slug}_Rivals_2.png',
+        '${slug}_Rivals_of_Aether_II.png',
+        '${slug}_ROA2.png',
+        '${slug}_Artwork.png',
+        '${slug}_3D_Model.png',
+        'Rivals_2_$slug.png',
+        'Rivals_of_Aether_II_$slug.png',
+      ]);
     case 'Dragon Ball FighterZ':
       return [
         imagensDBFZ[nomeLimpo] ?? '',

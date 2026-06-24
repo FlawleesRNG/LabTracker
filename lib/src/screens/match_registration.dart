@@ -276,7 +276,7 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
                 Navigator.pop(context);
                 Navigator.pop(context, partida);
               },
-              child: const Text('Voltar para Home'),
+              child: const Text('Salvar e voltar'),
             ),
           ],
         );
@@ -297,7 +297,11 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
     final String inicialAdversario = personagemAdversario?.initial ?? '?';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar partida'), centerTitle: true),
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Registrar partida'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -962,7 +966,7 @@ class _RegistrarPartidaStreetFighterPageState
                 Navigator.pop(context);
                 Navigator.pop(context, partida);
               },
-              child: Text(editando ? 'Concluir edição' : 'Voltar para Home'),
+              child: Text(editando ? 'Concluir edição' : 'Salvar e voltar'),
             ),
           ],
         );
@@ -1018,8 +1022,11 @@ class _RegistrarPartidaStreetFighterPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(editando ? 'Editar partida' : 'Registrar Partida'),
+        title: CompactAppBarTitle(
+          editando ? 'Editar partida' : 'Registrar Partida',
+        ),
         centerTitle: true,
+        actions: const [HomeNavigationButton()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -1580,7 +1587,7 @@ class _RegistrarPartidaInvinciblePageState
                 Navigator.pop(context);
                 Navigator.pop(context, partida);
               },
-              child: Text(editando ? 'Concluir edição' : 'Voltar para Home'),
+              child: Text(editando ? 'Concluir edição' : 'Salvar e voltar'),
             ),
           ],
         );
@@ -1681,8 +1688,11 @@ class _RegistrarPartidaInvinciblePageState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(editando ? 'Editar partida 3v3' : 'Registrar partida 3v3'),
+        title: CompactAppBarTitle(
+          editando ? 'Editar partida 3v3' : 'Registrar partida 3v3',
+        ),
         centerTitle: true,
+        actions: const [HomeNavigationButton()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

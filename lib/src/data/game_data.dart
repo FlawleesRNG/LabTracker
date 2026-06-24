@@ -772,7 +772,6 @@ const List<SmashCoverOption> opcoesCapaSmashGenero = [
 const List<SmashCoverOption> opcoesCapaSmashMii = [
   SmashCoverOption(id: smashCoverMale, label: 'Masculino'),
   SmashCoverOption(id: smashCoverFemale, label: 'Feminino'),
-  SmashCoverOption(id: smashCoverCustom, label: 'Custom'),
 ];
 
 const Map<String, List<SmashCoverOption>> opcoesCapaSmashPorPersonagem = {
@@ -780,18 +779,24 @@ const Map<String, List<SmashCoverOption>> opcoesCapaSmashPorPersonagem = {
     SmashCoverOption(
       id: smashCoverMale,
       label: 'Masculino',
-      imageUrls: ['https://ssb.wiki.gallery/images/b/b9/VillagerHeadSSBU.png'],
+      imageUrls: ['https://ssb.wiki.gallery/images/a/ac/Villager_SSBU.png'],
     ),
     SmashCoverOption(
       id: smashCoverFemale,
       label: 'Feminino',
       imageUrls: [
-        'https://ssb.wiki.gallery/images/e/e3/VillagerHeadPinkSSBU.png',
+        'https://ssb.wiki.gallery/images/c/c7/VillagerAltTrophyWiiU.png',
       ],
     ),
   ],
   'Wii Fit Trainer': [
-    SmashCoverOption(id: smashCoverFemale, label: 'Feminino'),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/f/ff/Wii_Fit_Trainer_SSBU.png',
+      ],
+    ),
     SmashCoverOption(
       id: smashCoverMale,
       label: 'Masculino',
@@ -804,35 +809,31 @@ const Map<String, List<SmashCoverOption>> opcoesCapaSmashPorPersonagem = {
     SmashCoverOption(
       id: smashCoverMale,
       label: 'Masculino',
-      imageUrls: ['https://ssb.wiki.gallery/images/2/25/RobinHeadSSBU.png'],
+      imageUrls: ['https://ssb.wiki.gallery/images/8/82/Robin_SSBU.png'],
     ),
     SmashCoverOption(
       id: smashCoverFemale,
       label: 'Feminino',
-      imageUrls: [
-        'https://ssb.wiki.gallery/images/2/21/RobinHeadFemaleSSBU.png',
-      ],
+      imageUrls: ['https://ssb.wiki.gallery/images/0/03/Robin-Alt1_SSBU.png'],
     ),
   ],
   'Corrin': [
     SmashCoverOption(
       id: smashCoverMale,
       label: 'Masculino',
-      imageUrls: ['https://ssb.wiki.gallery/images/c/cf/CorrinHeadSSBU.png'],
+      imageUrls: ['https://ssb.wiki.gallery/images/c/c4/Corrin_SSBU.png'],
     ),
     SmashCoverOption(
       id: smashCoverFemale,
       label: 'Feminino',
-      imageUrls: [
-        'https://ssb.wiki.gallery/images/a/a2/CorrinHeadFemaleSSBU.png',
-      ],
+      imageUrls: ['https://ssb.wiki.gallery/images/b/b5/Corrin-Alt1_SSBU.png'],
     ),
   ],
   'Inkling': [
     SmashCoverOption(
       id: smashCoverFemale,
       label: 'Feminino',
-      imageUrls: ['https://ssb.wiki.gallery/images/f/f1/InklingHeadSSBU.png'],
+      imageUrls: ['https://ssb.wiki.gallery/images/2/2e/Inkling_SSBU.png'],
     ),
     SmashCoverOption(
       id: smashCoverMale,
@@ -841,12 +842,18 @@ const Map<String, List<SmashCoverOption>> opcoesCapaSmashPorPersonagem = {
     ),
   ],
   'Pokémon Trainer': [
-    SmashCoverOption(id: smashCoverMale, label: 'Masculino'),
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: [
+        'https://ssb.wiki.gallery/images/2/28/Pok%C3%A9mon_Trainer_%28solo%29_SSBU.png',
+      ],
+    ),
     SmashCoverOption(
       id: smashCoverFemale,
       label: 'Feminino',
       imageUrls: [
-        'https://ssb.wiki.gallery/images/0/01/Pok%C3%A9mon_Trainer-Alt1_SSBU.png',
+        'https://ssb.wiki.gallery/images/6/6c/Pok%C3%A9mon_Trainer_%28solo%29-Alt1_SSBU.png',
       ],
     ),
   ],
@@ -854,19 +861,113 @@ const Map<String, List<SmashCoverOption>> opcoesCapaSmashPorPersonagem = {
     SmashCoverOption(
       id: smashCoverMale,
       label: 'Masculino',
-      imageUrls: ['https://ssb.wiki.gallery/images/a/a2/BylethHeadSSBU.png'],
+      imageUrls: ['https://ssb.wiki.gallery/images/3/3d/Byleth_SSBU.png'],
+    ),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: ['https://ssb.wiki.gallery/images/c/cc/Byleth-Alt1_SSBU.png'],
+    ),
+  ],
+  'Mii Brawler': [
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: [
+        'https://static.wikia.nocookie.net/ssb/images/e/e8/Mii_Brawler_-_Super_Smash_Bros._for_Nintendo_3DS_and_Wii_U.png/revision/latest?cb=20150902080957',
+      ],
     ),
     SmashCoverOption(
       id: smashCoverFemale,
       label: 'Feminino',
       imageUrls: [
-        'https://ssb.wiki.gallery/images/8/8c/BylethHeadFemaleSSBU.png',
+        'https://static.wikia.nocookie.net/ssb/images/b/b4/Mii_Brawler_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180705150043',
       ],
     ),
   ],
-  'Mii Brawler': opcoesCapaSmashMii,
-  'Mii Swordfighter': opcoesCapaSmashMii,
-  'Mii Gunner': opcoesCapaSmashMii,
+  'Mii Swordfighter': [
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: [
+        'https://static.wikia.nocookie.net/ssb/images/2/25/Mii_Swordfighter_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20180705145938',
+      ],
+    ),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://static.wikia.nocookie.net/ssb/images/9/90/Mii_Swordfighter.png/revision/latest?cb=20140908212918',
+      ],
+    ),
+  ],
+  'Mii Gunner': [
+    SmashCoverOption(
+      id: smashCoverMale,
+      label: 'Masculino',
+      imageUrls: [
+        'https://static.wikia.nocookie.net/ssb/images/6/6f/Mii_Gunner_-_Super_Smash_Bros._for_Nintendo_3DS_and_Wii_U.png/revision/latest?cb=20150902081004',
+      ],
+    ),
+    SmashCoverOption(
+      id: smashCoverFemale,
+      label: 'Feminino',
+      imageUrls: [
+        'https://static.wikia.nocookie.net/ssb/images/e/ea/Mii_Gunner_-_Super_Smash_Bros._Ultimate.png/revision/latest?cb=20240401031836',
+      ],
+    ),
+  ],
+};
+
+const Map<String, Map<String, String>> smashCoverAssetsOffline = {
+  'Villager': {
+    smashCoverMale: 'assets/offline_images/smash_covers/villager_male.webp',
+    smashCoverFemale: 'assets/offline_images/smash_covers/villager_female.webp',
+  },
+  'Wii Fit Trainer': {
+    smashCoverMale:
+        'assets/offline_images/smash_covers/wii_fit_trainer_male.webp',
+    smashCoverFemale:
+        'assets/offline_images/smash_covers/wii_fit_trainer_female.webp',
+  },
+  'Robin': {
+    smashCoverMale: 'assets/offline_images/smash_covers/robin_male.webp',
+    smashCoverFemale: 'assets/offline_images/smash_covers/robin_female.webp',
+  },
+  'Corrin': {
+    smashCoverMale: 'assets/offline_images/smash_covers/corrin_male.webp',
+    smashCoverFemale: 'assets/offline_images/smash_covers/corrin_female.webp',
+  },
+  'Inkling': {
+    smashCoverMale: 'assets/offline_images/smash_covers/inkling_male.webp',
+    smashCoverFemale: 'assets/offline_images/smash_covers/inkling_female.webp',
+  },
+  'Pokémon Trainer': {
+    smashCoverMale:
+        'assets/offline_images/smash_covers/pokemon_trainer_male.webp',
+    smashCoverFemale:
+        'assets/offline_images/smash_covers/pokemon_trainer_female.webp',
+  },
+  'Byleth': {
+    smashCoverMale: 'assets/offline_images/smash_covers/byleth_male.webp',
+    smashCoverFemale: 'assets/offline_images/smash_covers/byleth_female.webp',
+  },
+  'Mii Brawler': {
+    smashCoverMale: 'assets/offline_images/smash_covers/mii_brawler_male.webp',
+    smashCoverFemale:
+        'assets/offline_images/smash_covers/mii_brawler_female.webp',
+  },
+  'Mii Swordfighter': {
+    smashCoverMale:
+        'assets/offline_images/smash_covers/mii_swordfighter_male.webp',
+    smashCoverFemale:
+        'assets/offline_images/smash_covers/mii_swordfighter_female.webp',
+  },
+  'Mii Gunner': {
+    smashCoverMale: 'assets/offline_images/smash_covers/mii_gunner_male.webp',
+    smashCoverFemale:
+        'assets/offline_images/smash_covers/mii_gunner_female.webp',
+  },
 };
 
 const Map<String, String> imagensDBFZ = {
@@ -1232,6 +1333,120 @@ const Map<String, List<String>> imagensAlternativasTekken8 = {
   'Victor Chevalier': ['Victor Chevalier TK8.png'],
   'Yoshimitsu': ['Yoshimitsu TK8.png'],
   'Zafina': ['Zafina TK8.png'],
+};
+
+const Map<String, String> imagensRivalsOfAether2 = {
+  'Absa':
+      'https://clan.akamai.steamstatic.com/images/43889344/30090ac7ba9b2ad306dc2560233dd0ad4fe8a38d.png',
+  'Clairen':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/3/34/Clairen_new.png/revision/latest?format=original',
+  'Etalus':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/b/b5/Etalus_new.png/revision/latest?format=original',
+  'Fleet': 'https://rivals2.com/img/presskit/Fleet-lg.png',
+  'Forsburn':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/0/02/Forsburn_new.png/revision/latest?format=original',
+  'Galvan':
+      'https://cdn.dashfight.com/a7a4707cf584bf260b76c6234871942e35e753a2_607.jpg',
+  'Kragg': 'https://rivals2.com/img/presskit/Kragg-lg.png',
+  'La Reina':
+      'https://clan.fastly.steamstatic.com/images/43889344/73751e8d8fe16396b353f11f5c35b2c7a8fd60d6.png',
+  'Loxodont':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/f/f4/Loxodont.png/revision/latest?format=original',
+  'Maypul':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/1/1f/Maypul_new.png/revision/latest?format=original',
+  'Olympia':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/8/85/OLYMPIA.png/revision/latest?format=original',
+  'Orcane':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/0/08/Orcane_new.png/revision/latest?format=original',
+  'Ranno': 'https://rivals2.com/img/presskit/Ranno.png',
+  'Slade':
+      'https://static.wikia.nocookie.net/rivals-of-aether/images/2/2b/SladeConceptArt3.jpg/revision/latest?format=original',
+  'Wrastor': 'https://rivals2.com/img/presskit/Wrastor-lg.png',
+  'Zetterburn': 'https://rivals2.com/img/presskit/Zetterburn-lg.png',
+};
+
+const Map<String, List<String>> imagensAlternativasRivalsOfAether2 = {
+  'Absa': [
+    'https://clan.akamai.steamstatic.com/images/43889344/26fb75ebfcca635b7637d2fbf0ddec7e57fcaf69.png',
+    'https://static.wikia.nocookie.net/rivals-of-aether/images/d/d7/Absa_new.png/revision/latest?format=original',
+    'Absa new.png',
+    'Absa 1.PNG',
+  ],
+  'Clairen': [
+    'https://clan.akamai.steamstatic.com/images/43889344/80071214314eb0f5d582a31bebfef1823b2efedf.png',
+    'Clairen new.png',
+    'Clairen1.png',
+  ],
+  'Etalus': [
+    'https://clan.akamai.steamstatic.com/images/43889344/52adfc60212a20bdfb8ae15863b63498fc85bc17.jpg',
+    'Etalus new.png',
+    'Etalus 1.PNG',
+  ],
+  'Fleet': [
+    'https://clan.akamai.steamstatic.com/images/43889344/75dae4161d00c91e0abc8d6daa9fce66ac839b0c.png',
+    'Fleet Artwork.png',
+    'Fleet 3D Model.png',
+  ],
+  'Forsburn': [
+    'https://clan.akamai.steamstatic.com/images/43889344/23dc9abcf3c0ec54b2a05561690db80b97d24479.png',
+    'Forsburn new.png',
+    'Character-definitive-forsburn.png',
+  ],
+  'Galvan': ['Galvan.png', 'Galvan Artwork.png', 'Galvan 3D Model.png'],
+  'Kragg': [
+    'https://clan.akamai.steamstatic.com/images/43889344/b7dd14ccb8acd3afd8f6b31257553bb3d9213766.png',
+    'Kragg new.png',
+    'Kragg 1.PNG',
+  ],
+  'La Reina': [
+    'https://clan.fastly.steamstatic.com/images/43889344/b38cd94edd99b4f6ce1134f012416df730604004.png',
+    'La Reina.png',
+    'La Reina Artwork.png',
+    'La_Reina.png',
+  ],
+  'Loxodont': [
+    'https://clan.akamai.steamstatic.com/images/43889344/d9d26451786f5c56a31f634b4925dfb3551403a3.png',
+    'Loxodont Artwork.png',
+    'Loxodont 3D Model.png',
+  ],
+  'Maypul': [
+    'https://clan.akamai.steamstatic.com/images/43889344/6ca77c1db1b870ae3d6ae4c094c4735d510fbcd1.png',
+    'Maypul new.png',
+    'Maypul 1.PNG',
+  ],
+  'Olympia': [
+    'https://clan.akamai.steamstatic.com/images/43889344/b7fb1c812dce9b653b7cb646654ecf8a1832c310.png',
+    'OLYMPIA.png',
+    'Olympia Artwork.png',
+  ],
+  'Orcane': [
+    'https://clan.akamai.steamstatic.com/images/43889344/9f39c5bd5061caa1c4e3f06e0739027a7e68dba7.png',
+    'https://clan.akamai.steamstatic.com/images/43889344/79db7a348b8389d3cb15de2d36e823fe1aa72ae8.png',
+    'Orcane new.png',
+    'Orcane 1.PNG',
+  ],
+  'Ranno': [
+    'https://clan.akamai.steamstatic.com/images/43889344/32bd068213acedac4908c13fd97b375b6740b0c7.png',
+    'Ranno new.png',
+    'Ranno 1.png',
+  ],
+  'Slade': [
+    'https://static.wikia.nocookie.net/rivals-of-aether/images/3/3c/SladeConceptArt2.jpg/revision/latest?format=original',
+    'https://static.wikia.nocookie.net/rivals-of-aether/images/9/9f/E5Owv3PXwAIhlUi.jpg/revision/latest?format=original',
+    'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2217000/5cbab14c3692fda009572050520227927a222fc0/capsule_616x353.jpg?t=1780336617',
+    'SladeConceptArt3.jpg',
+    'SladeConceptArt2.jpg',
+  ],
+  'Wrastor': [
+    'https://clan.akamai.steamstatic.com/images/43889344/0d3c62f8c7d9f5d3289603c61f20645fe6ffe841.png',
+    'Wrastor new.png',
+    'Wrastor 1.PNG',
+  ],
+  'Zetterburn': [
+    'https://clan.akamai.steamstatic.com/images/43889344/bf59dd6daa97eb4e6f6e1ade8bd25c780cbea319.png',
+    'Zetterburn new.png',
+    'Zetterburn skin base.png',
+  ],
 };
 
 const Map<String, String> imagensMortalKombat1 = {
@@ -1876,7 +2091,41 @@ const Map<String, String> logosJogos = {
   jogo2Xko:
       'https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/dcac73677a34fe6c5f164119f612b0f33d3a79f4-4000x1143.png?accountingTag=2XKO',
   jogoRivalsOfAether2:
-      'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2217000/5cbab14c3692fda009572050520227927a222fc0/capsule_616x353.jpg?t=1780336617',
+      'https://upload.wikimedia.org/wikipedia/fr/9/94/Rivals_of_Aether_II_Logo.png',
+};
+
+const Map<String, String> logosJogosOffline = {
+  'Super Smash Bros. Ultimate':
+      'assets/offline_images/games/super_smash_bros_ultimate.webp',
+  'Street Fighter 6': 'assets/offline_images/games/street_fighter_6.webp',
+  'Mortal Kombat 1': 'assets/offline_images/games/mortal_kombat_1.webp',
+  'Dragon Ball FighterZ':
+      'assets/offline_images/games/dragon_ball_fighterz.webp',
+  'Fatal Fury': 'assets/offline_images/games/fatal_fury.webp',
+  'Invincible VS': 'assets/offline_images/games/invincible_vs.webp',
+  'Avatar Legends: The Fighting Game':
+      'assets/offline_images/games/avatar_legends_the_fighting_game.webp',
+  'Guilty Gear -Strive-': 'assets/offline_images/games/guilty_gear_strive.webp',
+  'The King of Fighters XV':
+      'assets/offline_images/games/the_king_of_fighters_xv.webp',
+  jogoTekken8: 'assets/offline_images/games/tekken_8.webp',
+  jogoRivalsOfAether2: 'assets/offline_images/games/rivals_of_aether_ii.webp',
+  jogo2Xko: 'assets/offline_images/games/2xko.webp',
+};
+
+const Map<String, String> pastasPersonagensOfflinePorJogo = {
+  jogoSmashUltimate: 'smash',
+  jogoStreetFighter6: 'street_fighter_6',
+  'Mortal Kombat 1': 'mortal_kombat_1',
+  'Dragon Ball FighterZ': 'dragon_ball_fighterz',
+  'Fatal Fury': 'fatal_fury',
+  jogoInvincibleVs: 'invincible_vs',
+  'Avatar Legends: The Fighting Game': 'avatar_legends',
+  'Guilty Gear -Strive-': 'guilty_gear_strive',
+  'The King of Fighters XV': 'kof_xv',
+  jogoTekken8: 'tekken_8',
+  jogoRivalsOfAether2: 'rivals_of_aether_ii',
+  jogo2Xko: '2xko',
 };
 
 /// Roster de personagens conforme o jogo selecionado.
