@@ -98,18 +98,136 @@ class _MontarTimeInvinciblePageState extends State<MontarTimeInvinciblePage> {
   }
 
   void selecionarPersonagem(Character personagem) {
+    selecionarPersonagemNoSlot(slotAtivo, personagem);
+  }
+
+  void selecionarPersonagemNoSlot(int index, Character personagem) {
     setState(() {
       final int indexExistente = slots.indexWhere(
         (selecionado) => selecionado?.name == personagem.name,
       );
 
-      if (indexExistente >= 0 && indexExistente != slotAtivo) {
+      if (indexExistente >= 0 && indexExistente != index) {
         definirSlot(indexExistente, null);
       }
 
-      definirSlot(slotAtivo, personagem);
-      slotAtivo = proximoSlotDepois(slotAtivo);
+      definirSlot(index, personagem);
+      slotAtivo = proximoSlotDepois(index);
     });
+  }
+
+  Future<void> abrirSeletorSlotMobile(int index) async {
+    setState(() {
+      slotAtivo = index;
+    });
+
+    final Character? escolhido = await showModalBottomSheet<Character>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        String busca = '';
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final String termo = busca.trim().toLowerCase();
+            final List<Character> personagensFiltrados = roster.where((
+              personagem,
+            ) {
+              if (termo.isEmpty) return true;
+
+              return personagem.name.toLowerCase().contains(termo) ||
+                  personagem.initial.toLowerCase().contains(termo);
+            }).toList();
+
+            return FractionallySizedBox(
+              heightFactor: 0.88,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  0,
+                  20,
+                  MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Slot ${index + 1}',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          tooltip: 'Fechar',
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Pesquisar personagem',
+                        hintText: 'Ex: Invincible, Atom Eve, Omni-Man...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (valor) {
+                        setModalState(() {
+                          busca = valor;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Expanded(
+                      child: personagensFiltrados.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum personagem encontrado.'),
+                            )
+                          : GridView.builder(
+                              itemCount: personagensFiltrados.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 360,
+                                    mainAxisSpacing: 12,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: 2.25,
+                                  ),
+                              itemBuilder: (context, itemIndex) {
+                                final Character personagem =
+                                    personagensFiltrados[itemIndex];
+                                final bool selecionado = slots.any(
+                                  (slot) => slot?.name == personagem.name,
+                                );
+
+                                return _InvincibleTeamCharacterCard(
+                                  personagem: personagem,
+                                  selecionado: selecionado,
+                                  onTap: () {
+                                    Navigator.pop(context, personagem);
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (escolhido == null) return;
+
+    selecionarPersonagemNoSlot(index, escolhido);
   }
 
   void removerSlot(int index) {
@@ -183,6 +301,80 @@ class _MontarTimeInvinciblePageState extends State<MontarTimeInvinciblePage> {
               ? contentWidth
               : (contentWidth - 24) / 3;
 
+          Widget mobileLayout() {
+            return SafeArea(
+              top: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      18,
+                      horizontalPadding,
+                      12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ListView(
+                            children: [
+                              Text(
+                                'Meu Time Principal',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                time.completo
+                                    ? time.texto
+                                    : 'Nenhum time definido',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              const SizedBox(height: 16),
+                              for (
+                                int index = 0;
+                                index < slots.length;
+                                index++
+                              ) ...[
+                                _InvincibleTeamSlotCard(
+                                  label: 'Slot ${index + 1}',
+                                  personagem: slots[index],
+                                  jogo: jogoInvincibleVs,
+                                  ativo: slotAtivo == index,
+                                  compacto: true,
+                                  onTap: () => abrirSeletorSlotMobile(index),
+                                  onRemove: slots[index] == null
+                                      ? null
+                                      : () => removerSlot(index),
+                                ),
+                                if (index < slots.length - 1)
+                                  const SizedBox(height: 12),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: salvarTime,
+                            icon: const Icon(Icons.save_outlined),
+                            label: const Text('Salvar Time'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          if (isMobile) return mobileLayout();
+
           return Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1120),
@@ -218,6 +410,7 @@ class _MontarTimeInvinciblePageState extends State<MontarTimeInvinciblePage> {
                               personagem: slots[index],
                               jogo: jogoInvincibleVs,
                               ativo: slotAtivo == index,
+                              compacto: false,
                               onTap: () {
                                 setState(() {
                                   slotAtivo = index;
@@ -300,6 +493,7 @@ class _InvincibleTeamSlotCard extends StatelessWidget {
   final Character? personagem;
   final String jogo;
   final bool ativo;
+  final bool compacto;
   final VoidCallback onTap;
   final VoidCallback? onRemove;
 
@@ -308,6 +502,7 @@ class _InvincibleTeamSlotCard extends StatelessWidget {
     required this.personagem,
     required this.jogo,
     required this.ativo,
+    this.compacto = false,
     required this.onTap,
     this.onRemove,
   });
@@ -316,6 +511,69 @@ class _InvincibleTeamSlotCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Character? selecionado = personagem;
+
+    if (compacto) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 86),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: ativo
+                ? BrandColors.ambarDourado.withValues(alpha: 0.10)
+                : scheme.surfaceContainerHighest.withValues(alpha: 0.28),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: ativo
+                  ? BrandColors.ambarDourado
+                  : scheme.outline.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Row(
+            children: [
+              if (selecionado == null)
+                CircleAvatar(
+                  radius: 25,
+                  child: Text(label.replaceAll('Slot ', '')),
+                )
+              else
+                CharacterAvatar(
+                  personagem: selecionado.name,
+                  jogo: jogo,
+                  size: 50,
+                  initialOverride: selecionado.initial,
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 4),
+                    Text(
+                      selecionado?.name ?? 'Escolher personagem',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              if (selecionado != null)
+                IconButton(
+                  onPressed: onRemove,
+                  tooltip: 'Remover',
+                  icon: const Icon(Icons.close),
+                )
+              else
+                const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      );
+    }
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
