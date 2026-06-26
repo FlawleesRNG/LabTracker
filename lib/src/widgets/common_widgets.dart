@@ -547,12 +547,16 @@ class SelecionarPersonagemPage extends StatefulWidget {
   final String titulo;
   final List<Character> personagens;
   final String jogoAtual;
+  final Map<String, String> smashCoverPreferences;
+  final bool usarPreferenciaVisualSmash;
 
   const SelecionarPersonagemPage({
     super.key,
     required this.titulo,
     this.personagens = personagensSmash,
     this.jogoAtual = 'Super Smash Bros. Ultimate',
+    this.smashCoverPreferences = const {},
+    this.usarPreferenciaVisualSmash = false,
   });
 
   @override
@@ -562,6 +566,39 @@ class SelecionarPersonagemPage extends StatefulWidget {
 
 class _SelecionarPersonagemPageState extends State<SelecionarPersonagemPage> {
   String termoBusca = '';
+  Map<String, String> smashCoverPreferences = {};
+
+  @override
+  void initState() {
+    super.initState();
+    smashCoverPreferences = {...widget.smashCoverPreferences};
+    carregarPreferenciasVisuaisSmash();
+  }
+
+  @override
+  void didUpdateWidget(covariant SelecionarPersonagemPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.smashCoverPreferences != widget.smashCoverPreferences) {
+      smashCoverPreferences = {...widget.smashCoverPreferences};
+    }
+  }
+
+  Future<void> carregarPreferenciasVisuaisSmash() async {
+    if (!widget.usarPreferenciaVisualSmash ||
+        !jogoEhSmash(widget.jogoAtual) ||
+        smashCoverPreferences.isNotEmpty) {
+      return;
+    }
+
+    final Map<String, String> preferencias =
+        await carregarPreferenciasCapaSmashPrefs();
+
+    if (!mounted) return;
+
+    setState(() {
+      smashCoverPreferences = preferencias;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -625,6 +662,10 @@ class _SelecionarPersonagemPageState extends State<SelecionarPersonagemPage> {
                         favorito: false,
                         stats: const CharacterUsageStats(),
                         mostrarFavorito: false,
+                        smashCoverPreferences: smashCoverPreferences,
+                        usarPreferenciaVisualSmash:
+                            widget.usarPreferenciaVisualSmash &&
+                            jogoEhSmash(widget.jogoAtual),
                         onTap: () => Navigator.pop(context, personagem),
                         onToggleFavorite: () {},
                       );

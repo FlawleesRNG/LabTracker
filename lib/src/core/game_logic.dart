@@ -922,6 +922,21 @@ Map<String, String> normalizarPreferenciasCapaSmash(dynamic raw) {
   return preferencias;
 }
 
+Future<Map<String, String>> carregarPreferenciasCapaSmashPrefs() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? preferenciasRaw = prefs.getString(
+    prefsKeySmashCoverPreferences,
+  );
+
+  if (preferenciasRaw == null) return {};
+
+  try {
+    return normalizarPreferenciasCapaSmash(jsonDecode(preferenciasRaw));
+  } catch (_) {
+    return {};
+  }
+}
+
 String rotuloPreferenciaCapaSmash(
   String personagem,
   Map<String, String> preferencias,
@@ -1073,7 +1088,9 @@ List<String> urlsImagemPersonagem(
         'Tekken_8_${slug}_Render.png',
       ]);
     case jogo2Xko:
-      return const [];
+      return [
+        imagens2XKO[nomeLimpo] ?? '',
+      ].where((url) => url.isNotEmpty).toList();
     case jogoRivalsOfAether2:
       return _urlsArquivosFandom('rivals-of-aether.fandom.com', [
         imagensRivalsOfAether2[nomeLimpo] ?? '',

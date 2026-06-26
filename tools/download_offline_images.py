@@ -91,6 +91,11 @@ CHARACTER_CONFIGS = [
         "maps": ["imagensInvincible"],
     },
     {
+        "game": "2XKO",
+        "folder": "2xko",
+        "maps": ["imagens2XKO"],
+    },
+    {
         "game": "Avatar Legends: The Fighting Game",
         "folder": "avatar_legends",
         "maps": ["imagensAvatarLegends"],

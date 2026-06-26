@@ -1498,6 +1498,8 @@ class _EditarPartidaPageState extends State<EditarPartidaPage> {
           titulo: 'Editar seu personagem',
           personagens: rosterDoJogo(widget.jogo),
           jogoAtual: widget.jogo,
+          smashCoverPreferences: widget.smashCoverPreferences,
+          usarPreferenciaVisualSmash: jogoEhSmash(widget.jogo),
         ),
       ),
     );

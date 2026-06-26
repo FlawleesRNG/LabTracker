@@ -169,21 +169,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<Map<String, String>> carregarPreferenciasCapaSmashPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? preferenciasRaw = prefs.getString(
-      prefsKeySmashCoverPreferences,
-    );
-
-    if (preferenciasRaw == null) return {};
-
-    try {
-      return normalizarPreferenciasCapaSmash(jsonDecode(preferenciasRaw));
-    } catch (_) {
-      return {};
-    }
-  }
-
   Future<void> carregarDados() async {
     bool carregouArquivo = false;
     final Map<String, dynamic>? dadosArquivo = await _lerDadosArquivo();
@@ -571,6 +556,8 @@ class _HomePageState extends State<HomePage> {
           titulo: 'Escolher seu personagem',
           personagens: personagens.values.toList(),
           jogoAtual: widget.jogoAtual,
+          smashCoverPreferences: smashCoverPreferences,
+          usarPreferenciaVisualSmash: jogoEhSmash(widget.jogoAtual),
         ),
       ),
     );

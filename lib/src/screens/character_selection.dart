@@ -8,6 +8,8 @@ class _CharacterSelectionCard extends StatelessWidget {
   final bool favorito;
   final CharacterUsageStats stats;
   final bool mostrarFavorito;
+  final Map<String, String> smashCoverPreferences;
+  final bool usarPreferenciaVisualSmash;
   final VoidCallback onTap;
   final VoidCallback onToggleFavorite;
 
@@ -19,6 +21,8 @@ class _CharacterSelectionCard extends StatelessWidget {
     required this.favorito,
     required this.stats,
     this.mostrarFavorito = true,
+    this.smashCoverPreferences = const {},
+    this.usarPreferenciaVisualSmash = false,
     required this.onTap,
     required this.onToggleFavorite,
   });
@@ -46,6 +50,8 @@ class _CharacterSelectionCard extends StatelessWidget {
                 jogo: jogo,
                 size: avatarSize,
                 initialOverride: personagem.initial,
+                smashCoverPreferences: smashCoverPreferences,
+                usarPreferenciaVisualSmash: usarPreferenciaVisualSmash,
               ),
               SizedBox(width: isMobile ? 10 : 12),
               Expanded(
@@ -137,6 +143,7 @@ class _SelecionarPersonagemInicialPageState
   Map<String, List<String>> personagensFavoritosPorJogo = {};
   Map<String, List<String>> personagensRecentesPorJogo = {};
   List<PartidaRegistrada> historicoPersistido = [];
+  Map<String, String> smashCoverPreferences = {};
   String filtroPersonagens = 'Todos';
   String ordenacaoPersonagens = 'Favoritos primeiro';
 
@@ -174,6 +181,10 @@ class _SelecionarPersonagemInicialPageState
         await carregarPersonagensRecentesPorJogo();
     final List<PartidaRegistrada> historico =
         await carregarHistoricoPersistido();
+    final Map<String, String> preferenciasCapaSmash =
+        jogoEhSmash(widget.jogoSelecionado)
+        ? await carregarPreferenciasCapaSmashPrefs()
+        : {};
 
     if (!mounted) return;
 
@@ -181,6 +192,7 @@ class _SelecionarPersonagemInicialPageState
       personagensFavoritosPorJogo = favoritos;
       personagensRecentesPorJogo = recentes;
       historicoPersistido = historico;
+      smashCoverPreferences = preferenciasCapaSmash;
     });
   }
 
@@ -240,7 +252,7 @@ class _SelecionarPersonagemInicialPageState
 
     if (!context.mounted) return;
 
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => HomePage(
@@ -249,6 +261,17 @@ class _SelecionarPersonagemInicialPageState
         ),
       ),
     );
+
+    if (!mounted || !jogoEhSmash(widget.jogoSelecionado)) return;
+
+    final Map<String, String> preferenciasAtualizadas =
+        await carregarPreferenciasCapaSmashPrefs();
+
+    if (!mounted) return;
+
+    setState(() {
+      smashCoverPreferences = preferenciasAtualizadas;
+    });
   }
 
   int compararPorNome(Character a, Character b) {
@@ -502,6 +525,10 @@ class _SelecionarPersonagemInicialPageState
                               stats:
                                   statsPorPersonagem[personagem.name] ??
                                   const CharacterUsageStats(),
+                              smashCoverPreferences: smashCoverPreferences,
+                              usarPreferenciaVisualSmash: jogoEhSmash(
+                                widget.jogoSelecionado,
+                              ),
                               onTap: () => entrarNoTracker(context, personagem),
                               onToggleFavorite: () {
                                 alternarFavoritoPersonagem(personagem.name);
