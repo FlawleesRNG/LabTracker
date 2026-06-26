@@ -138,6 +138,7 @@ class AppImageSource {
 
 const String jogoSmashUltimate = 'Super Smash Bros. Ultimate';
 const String jogoStreetFighter6 = 'Street Fighter 6';
+const String jogoGuiltyGearStrive = 'Guilty Gear -Strive-';
 const String jogoInvincibleVs = 'Invincible VS';
 const String jogoTekken8 = 'Tekken 8';
 const String jogo2Xko = '2XKO';
@@ -211,6 +212,7 @@ class GameUsageStats {
 enum GameRegisterType {
   platformFighter,
   twoDFighter,
+  animeFighter,
   threeDFighter,
   tagFighter,
   teamFighter,
@@ -221,7 +223,7 @@ const List<String> jogosDisponiveis = [
   jogoStreetFighter6,
   'Mortal Kombat 1',
   'Avatar Legends: The Fighting Game',
-  'Guilty Gear -Strive-',
+  jogoGuiltyGearStrive,
   'The King of Fighters XV',
   jogoInvincibleVs,
   jogoTekken8,
@@ -324,6 +326,14 @@ class PartidaRegistrada {
         round1Resultado.trim().isNotEmpty ||
         round2Resultado.trim().isNotEmpty ||
         round3Resultado.trim().isNotEmpty;
+  }
+
+  bool get isGuiltyGear {
+    return jogo == jogoGuiltyGearStrive;
+  }
+
+  bool get isRivalsOfAether2 {
+    return jogo == jogoRivalsOfAether2;
   }
 
   List<String> get roundsStreetFighter {

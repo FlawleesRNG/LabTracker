@@ -108,6 +108,14 @@ bool usaRankStreetFighter(String jogo) {
   return jogo == jogoStreetFighter6;
 }
 
+bool usaRankGuiltyGear(String jogo) {
+  return jogo == jogoGuiltyGearStrive;
+}
+
+bool usaRankRivals(String jogo) {
+  return jogo == jogoRivalsOfAether2;
+}
+
 String labelPontosRank(String jogo) {
   return usaLp(jogo) ? 'LP' : 'PDL';
 }
@@ -115,6 +123,8 @@ String labelPontosRank(String jogo) {
 String rankInicialDoJogo(String jogo) {
   if (usaLp(jogo)) return 'New Blood IV';
   if (usaRankStreetFighter(jogo)) return 'Rookie I';
+  if (usaRankGuiltyGear(jogo)) return 'Backyard V';
+  if (usaRankRivals(jogo)) return 'Spark V';
   return 'Starter V';
 }
 
@@ -169,9 +179,57 @@ String calcularRankStreetFighter(int pdl) {
   return '$rank $divisao';
 }
 
+String calcularRankGuiltyGear(int pdl) {
+  const List<String> ranks = [
+    'Backyard',
+    'Duelist',
+    'Roman Cancel',
+    'Wall Break',
+    'Overdrive',
+  ];
+  const List<String> divisoes = ['V', 'IV', 'III', 'II', 'I'];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length * divisoes.length) {
+    return 'Celestial';
+  }
+
+  final String rank = ranks[indiceDivisao ~/ divisoes.length];
+  final String divisao = divisoes[indiceDivisao % divisoes.length];
+
+  return '$rank $divisao';
+}
+
+String calcularRankRivals(int pdl) {
+  const List<String> ranks = [
+    'Spark',
+    'Elemental',
+    'Rival',
+    'Aether',
+    'Champion of Aether',
+  ];
+  const List<String> divisoes = ['V', 'IV', 'III', 'II', 'I'];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length * divisoes.length) {
+    return 'Legend of Aether';
+  }
+
+  final String rank = ranks[indiceDivisao ~/ divisoes.length];
+  final String divisao = divisoes[indiceDivisao % divisoes.length];
+
+  return '$rank $divisao';
+}
+
 String calcularRankDoJogo(String jogo, int pontos) {
   if (usaLp(jogo)) return calcularRankInvincible(pontos);
   if (usaRankStreetFighter(jogo)) return calcularRankStreetFighter(pontos);
+  if (usaRankGuiltyGear(jogo)) return calcularRankGuiltyGear(pontos);
+  if (usaRankRivals(jogo)) return calcularRankRivals(pontos);
   return calcularRank(pontos);
 }
 
@@ -190,6 +248,10 @@ bool partidaPertenceAoJogo(PartidaRegistrada partida, String jogo) {
 
   if (partida.isStreetFighter) {
     return false;
+  }
+
+  if (jogo == jogoGuiltyGearStrive) {
+    return partida.isGuiltyGear;
   }
 
   if (partida.jogo.isEmpty) {
@@ -1395,6 +1457,171 @@ int calcularPdlStreetFighter({
 
   if (chegouAoRound3) {
     pdl += venceuRound3 ? 5 : -5;
+  }
+
+  return pdl;
+}
+
+int calcularPdlGuiltyGear({
+  required String resultado,
+  required String placar,
+  required String condicaoVitoria,
+  required String motivoDerrota,
+}) {
+  final String placarLimpo = placar.trim();
+
+  if (resultadoEhVitoria(resultado)) {
+    int pdl = placarLimpo == '2-0' ? 28 : 20;
+
+    switch (corrigirTextoLegado(condicaoVitoria)) {
+      case 'Burst punish':
+        pdl += 4;
+        break;
+      case 'Roman Cancel':
+      case 'Overdrive':
+      case 'Wall break':
+      case 'Whiff punish':
+      case 'Read':
+        pdl += 3;
+        break;
+      case 'Corner pressure':
+      case 'Anti-air':
+      case 'Mix-up':
+        pdl += 2;
+        break;
+      case 'Throw':
+        pdl += 1;
+        break;
+    }
+
+    return pdl;
+  }
+
+  int pdl = placarLimpo == '0-2' ? -26 : -16;
+
+  switch (corrigirTextoLegado(motivoDerrota)) {
+    case 'Burst punido':
+    case 'Defesa ruim':
+    case 'Panic button':
+      pdl -= 4;
+      break;
+    case 'Corner pressure':
+    case 'Roman Cancel mal usado':
+    case 'Overdrive punido':
+    case 'Whiff punish':
+    case 'Wall break':
+      pdl -= 3;
+      break;
+    case 'Anti-air falhado':
+    case 'Throw':
+    case 'Mix-up':
+      pdl -= 2;
+      break;
+  }
+
+  return pdl;
+}
+
+int calcularPdlRivals({
+  required String resultado,
+  required int stocks,
+  required int porcentagem,
+  required String comoVenceu,
+  required String comoPerdeu,
+}) {
+  final int stocksCorrigidos = stocks.clamp(0, 3).toInt();
+
+  if (resultadoEhVitoria(resultado)) {
+    int pdl = 18;
+
+    switch (stocksCorrigidos) {
+      case 3:
+        pdl += 14;
+        break;
+      case 2:
+        pdl += 9;
+        break;
+      case 1:
+        pdl += 4;
+        break;
+      case 0:
+        pdl += 1;
+        break;
+    }
+
+    if (porcentagem > 0 && porcentagem <= 60) {
+      pdl += 4;
+    } else if (porcentagem >= 140) {
+      pdl -= 2;
+    }
+
+    switch (corrigirTextoLegado(comoVenceu)) {
+      case 'Edgeguard':
+      case 'Recovery punish':
+      case 'Parry punish':
+      case 'Gimp':
+        pdl += 4;
+        break;
+      case 'Shield punish':
+      case 'Grab confirm':
+      case 'Whiff punish':
+      case 'Read':
+        pdl += 3;
+        break;
+      case 'Aerial':
+      case 'Strong attack':
+      case 'Special':
+      case 'Ledge trap':
+        pdl += 2;
+        break;
+    }
+
+    return pdl;
+  }
+
+  int pdl = -16;
+
+  switch (stocksCorrigidos) {
+    case 3:
+      pdl -= 14;
+      break;
+    case 2:
+      pdl -= 8;
+      break;
+    case 1:
+      pdl -= 3;
+      break;
+    case 0:
+      pdl += 3;
+      break;
+  }
+
+  if (porcentagem >= 130) {
+    pdl += 4;
+  } else if (porcentagem > 0 && porcentagem <= 50) {
+    pdl -= 3;
+  }
+
+  switch (corrigirTextoLegado(comoPerdeu)) {
+    case 'SD':
+    case 'Recovery ruim':
+      pdl -= 5;
+      break;
+    case 'Edgeguard':
+    case 'Gimp':
+      pdl -= 4;
+      break;
+    case 'Parry punish':
+    case 'Shield pressure':
+    case 'Whiff punish':
+    case 'Panic option':
+      pdl -= 3;
+      break;
+    case 'Ledge trap':
+    case 'Grab/throw':
+    case 'Read':
+      pdl -= 2;
+      break;
   }
 
   return pdl;

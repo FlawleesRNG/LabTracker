@@ -51,6 +51,14 @@ class _HistoricoPageState extends State<HistoricoPage> {
     return widget.jogo == jogoStreetFighter6;
   }
 
+  bool get isGuiltyGear {
+    return widget.jogo == jogoGuiltyGearStrive;
+  }
+
+  bool get isRivals {
+    return widget.jogo == jogoRivalsOfAether2;
+  }
+
   List<PartidaRegistrada> get historicoDoJogo {
     return filtrarHistoricoPorContextoAtual(
       widget.historico,
@@ -234,17 +242,17 @@ class _HistoricoPageState extends State<HistoricoPage> {
           partida.personagemInimigoProblema == filtroInimigoProblema;
 
       final bool passaCondicaoVitoria =
-          !isInvincible ||
+          !(isInvincible || isGuiltyGear) ||
           filtroCondicaoVitoria == 'Todos' ||
           partida.condicaoVitoria == filtroCondicaoVitoria;
 
       final bool passaMotivoDerrota =
-          !isInvincible ||
+          !(isInvincible || isGuiltyGear) ||
           filtroMotivoDerrota == 'Todos' ||
           partida.motivoDerrota == filtroMotivoDerrota;
 
       final bool passaPlacarStreetFighter =
-          !isStreetFighter ||
+          !(isStreetFighter || isGuiltyGear) ||
           filtroPlacarStreetFighter == 'Todos' ||
           partida.placarStreetFighter == filtroPlacarStreetFighter;
 
@@ -272,6 +280,18 @@ class _HistoricoPageState extends State<HistoricoPage> {
               partida.round1Resultado,
               partida.round2Resultado,
               partida.round3Resultado,
+              partida.observacoes,
+            ].join(' ')
+          : isGuiltyGear
+          ? [
+              partida.nickAdversario,
+              partida.personagemAdversario,
+              partida.personagemJogador,
+              partida.stage,
+              partida.resultado,
+              partida.placarStreetFighter,
+              partida.condicaoVitoria,
+              partida.motivoDerrota,
               partida.observacoes,
             ].join(' ')
           : [
@@ -470,6 +490,8 @@ class _HistoricoPageState extends State<HistoricoPage> {
                                   ? 'Filtros específicos ativos'
                                   : isInvincible
                                   ? 'Player, times, personagens e análise'
+                                  : isGuiltyGear
+                                  ? 'Player, personagem, placar e análise'
                                   : isStreetFighter
                                   ? 'Player, personagem adversário e placar'
                                   : 'Player, personagem, stage, kill e morte',
@@ -610,6 +632,61 @@ class _HistoricoPageState extends State<HistoricoPage> {
                                   onChanged: (valor) {
                                     setState(() {
                                       filtroPlacarStreetFighter = valor;
+                                    });
+                                  },
+                                ),
+                              ] else if (isGuiltyGear) ...[
+                                construirDropdownFiltro(
+                                  label: 'Personagem adversário',
+                                  valor: filtroPersonagemAdversario,
+                                  opcoes: opcoesPersonagensAdversarios,
+                                  onChanged: (valor) {
+                                    setState(() {
+                                      filtroPersonagemAdversario = valor;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                construirDropdownFiltro(
+                                  label: 'Stage',
+                                  valor: filtroStage,
+                                  opcoes: opcoesStages,
+                                  onChanged: (valor) {
+                                    setState(() {
+                                      filtroStage = valor;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                construirDropdownFiltro(
+                                  label: 'Placar',
+                                  valor: filtroPlacarStreetFighter,
+                                  opcoes: opcoesPlacaresStreetFighter,
+                                  onChanged: (valor) {
+                                    setState(() {
+                                      filtroPlacarStreetFighter = valor;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                construirDropdownFiltro(
+                                  label: 'Como venceu',
+                                  valor: filtroCondicaoVitoria,
+                                  opcoes: opcoesCondicoesVitoria,
+                                  onChanged: (valor) {
+                                    setState(() {
+                                      filtroCondicaoVitoria = valor;
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                construirDropdownFiltro(
+                                  label: 'Como perdeu',
+                                  valor: filtroMotivoDerrota,
+                                  opcoes: opcoesMotivosDerrota,
+                                  onChanged: (valor) {
+                                    setState(() {
+                                      filtroMotivoDerrota = valor;
                                     });
                                   },
                                 ),
@@ -781,6 +858,98 @@ class _HistoricoPageState extends State<HistoricoPage> {
                               );
                             }
 
+                            if (isGuiltyGear || partida.isGuiltyGear) {
+                              final String analiseLabel = venceu
+                                  ? 'Como venceu'
+                                  : 'Como perdeu';
+                              final String stageTexto =
+                                  partida.stage.trim().isEmpty
+                                  ? 'Stage não informado'
+                                  : 'Stage: ${partida.stage}';
+
+                              return Card(
+                                child: ListTile(
+                                  onTap: () {
+                                    abrirDetalhes(partida);
+                                  },
+                                  leading: CircleAvatar(
+                                    child: Icon(
+                                      venceu
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    '${partida.personagemJogador} vs ${partida.personagemAdversario}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    'Resultado: ${partida.resultado} ${partida.placarStreetFighter}\n'
+                                    'Jogador: ${partida.nickAdversario} • $stageTexto\n'
+                                    '$analiseLabel: ${partida.analiseResultado}',
+                                  ),
+                                  trailing: Text(
+                                    '$sinalPontos${partida.pdlGerado} $pontosLabel',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (isRivals || partida.isRivalsOfAether2) {
+                              final String analiseLabel = venceu
+                                  ? 'Como venceu'
+                                  : 'Como perdeu';
+                              final String stageTexto =
+                                  partida.stage.trim().isEmpty
+                                  ? 'Stage não informado'
+                                  : 'Stage: ${partida.stage}';
+                              final String labelStocksHistorico = venceu
+                                  ? 'Suas stocks'
+                                  : 'Stocks do adversário';
+                              final String labelDanoHistorico = venceu
+                                  ? 'Seu dano'
+                                  : 'Dano do adversário';
+
+                              return Card(
+                                child: ListTile(
+                                  onTap: () {
+                                    abrirDetalhes(partida);
+                                  },
+                                  leading: CircleAvatar(
+                                    child: Icon(
+                                      venceu
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    '${partida.personagemJogador} vs ${partida.personagemAdversario}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${partida.resultado} • $stageTexto\n'
+                                    'Nick: ${partida.nickAdversario} • $labelStocksHistorico: ${partida.stocks} • $labelDanoHistorico: ${partida.porcentagem}%\n'
+                                    '$analiseLabel: ${partida.analiseResultado}',
+                                  ),
+                                  trailing: Text(
+                                    '$sinalPontos${partida.pdlGerado} $pontosLabel',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
                             final String labelStocksHistorico = venceu
                                 ? 'Suas stocks'
                                 : 'Stocks do adversário';
@@ -899,6 +1068,25 @@ class DetalhesPartidaPage extends StatelessWidget {
               personagemAtual: personagemPorNome(partida.personagemJogador),
               jogo: jogoStreetFighter6,
               sugestoesPlayers: sugestoesPlayers,
+              partidaInicial: partida,
+            );
+          }
+
+          if (partida.isGuiltyGear || jogo == jogoGuiltyGearStrive) {
+            return RegistrarPartidaGuiltyGearPage(
+              personagemAtual: personagemPorNome(partida.personagemJogador),
+              jogo: jogoGuiltyGearStrive,
+              sugestoesPlayers: sugestoesPlayers,
+              partidaInicial: partida,
+            );
+          }
+
+          if (partida.isRivalsOfAether2 || jogo == jogoRivalsOfAether2) {
+            return RegistrarPartidaRivalsPage(
+              personagemAtual: personagemPorNome(partida.personagemJogador),
+              jogo: jogoRivalsOfAether2,
+              sugestoesPlayers: sugestoesPlayers,
+              sugestoesStages: const [],
               partidaInicial: partida,
             );
           }
@@ -1195,6 +1383,299 @@ class DetalhesPartidaPage extends StatelessWidget {
     );
   }
 
+  Widget construirDetalhesGuiltyGear(BuildContext context) {
+    final bool venceu = resultadoEhVitoria(partida.resultado);
+    final String sinalPdl = partida.pdlGerado >= 0 ? '+' : '';
+    final String textoStage = partida.stage.trim().isEmpty
+        ? 'Não informado'
+        : partida.stage;
+    final String textoObservacoes = partida.observacoes.trim().isEmpty
+        ? 'Sem observações'
+        : partida.observacoes;
+    final String analiseLabel = venceu ? 'Como venceu' : 'Como perdeu';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Detalhes da partida'),
+        centerTitle: true,
+        actions: [
+          const HomeNavigationButton(),
+          IconButton(
+            onPressed: () {
+              abrirEditar(context);
+            },
+            tooltip: 'Editar partida',
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            onPressed: () {
+              confirmarApagar(context);
+            },
+            tooltip: 'Apagar partida',
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${partida.personagemJogador} vs ${partida.personagemAdversario}',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Contra ${partida.nickAdversario}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        LinhaEstatistica(
+                          titulo: 'Resultado',
+                          valor:
+                              '${partida.resultado} ${partida.placarStreetFighter}',
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'PDL gerado',
+                          valor: '$sinalPdl${partida.pdlGerado}',
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Meu personagem',
+                          valor: partida.personagemJogador,
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Personagem adversário',
+                          valor: partida.personagemAdversario,
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Jogador adversário',
+                          valor: partida.nickAdversario,
+                        ),
+                        LinhaEstatistica(titulo: 'Stage', valor: textoStage),
+                        LinhaEstatistica(
+                          titulo: analiseLabel,
+                          valor: partida.analiseResultado,
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Data',
+                          valor: formatarData(partida.data),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Observações',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(textoObservacoes),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      abrirEditar(context);
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Editar partida'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      confirmarApagar(context);
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Apagar partida'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget construirDetalhesRivals(BuildContext context) {
+    final bool venceu = resultadoEhVitoria(partida.resultado);
+    final String sinalPdl = partida.pdlGerado >= 0 ? '+' : '';
+    final String textoStage = partida.stage.trim().isEmpty
+        ? 'Não informado'
+        : partida.stage;
+    final String textoObservacoes = partida.observacoes.trim().isEmpty
+        ? 'Sem observações'
+        : partida.observacoes;
+    final String analiseLabel = venceu ? 'Como venceu' : 'Como perdeu';
+    final String labelStocks = venceu
+        ? 'Suas stocks restantes'
+        : 'Stocks restantes do adversário';
+    final String labelDano = venceu
+        ? 'Seu dano final'
+        : 'Dano final do adversário';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Detalhes da partida'),
+        centerTitle: true,
+        actions: [
+          const HomeNavigationButton(),
+          IconButton(
+            onPressed: () {
+              abrirEditar(context);
+            },
+            tooltip: 'Editar partida',
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            onPressed: () {
+              confirmarApagar(context);
+            },
+            tooltip: 'Apagar partida',
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${partida.personagemJogador} vs ${partida.personagemAdversario}',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Contra ${partida.nickAdversario}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        LinhaEstatistica(
+                          titulo: 'Resultado',
+                          valor: partida.resultado,
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'PDL gerado',
+                          valor: '$sinalPdl${partida.pdlGerado}',
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Meu personagem',
+                          valor: partida.personagemJogador,
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Personagem adversário',
+                          valor: partida.personagemAdversario,
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Jogador adversário',
+                          valor: partida.nickAdversario,
+                        ),
+                        LinhaEstatistica(titulo: 'Stage', valor: textoStage),
+                        LinhaEstatistica(
+                          titulo: labelStocks,
+                          valor: '${partida.stocks}',
+                        ),
+                        LinhaEstatistica(
+                          titulo: labelDano,
+                          valor: '${partida.porcentagem}%',
+                        ),
+                        LinhaEstatistica(
+                          titulo: analiseLabel,
+                          valor: partida.analiseResultado,
+                        ),
+                        LinhaEstatistica(
+                          titulo: 'Data',
+                          valor: formatarData(partida.data),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Observações',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(textoObservacoes),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      abrirEditar(context);
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Editar partida'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      confirmarApagar(context);
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Apagar partida'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (partida.isInvincible || jogo == jogoInvincibleVs) {
@@ -1203,6 +1684,14 @@ class DetalhesPartidaPage extends StatelessWidget {
 
     if (partida.isStreetFighter || jogo == jogoStreetFighter6) {
       return construirDetalhesStreetFighter(context);
+    }
+
+    if (partida.isGuiltyGear || jogo == jogoGuiltyGearStrive) {
+      return construirDetalhesGuiltyGear(context);
+    }
+
+    if (partida.isRivalsOfAether2 || jogo == jogoRivalsOfAether2) {
+      return construirDetalhesRivals(context);
     }
 
     final bool venceu = partida.resultado == 'Vitória';

@@ -663,6 +663,660 @@ class _RegistrarPartidaPageState extends State<RegistrarPartidaPage> {
   }
 }
 
+class RegistrarPartidaRivalsPage extends StatefulWidget {
+  final Character personagemAtual;
+  final String jogo;
+  final List<String> sugestoesPlayers;
+  final List<String> sugestoesStages;
+  final PartidaRegistrada? partidaInicial;
+  final bool repetirUltima;
+
+  const RegistrarPartidaRivalsPage({
+    super.key,
+    required this.personagemAtual,
+    this.jogo = jogoRivalsOfAether2,
+    this.sugestoesPlayers = const [],
+    this.sugestoesStages = const [],
+    this.partidaInicial,
+    this.repetirUltima = false,
+  });
+
+  @override
+  State<RegistrarPartidaRivalsPage> createState() =>
+      _RegistrarPartidaRivalsPageState();
+}
+
+class _RegistrarPartidaRivalsPageState
+    extends State<RegistrarPartidaRivalsPage> {
+  Character? personagemAdversario;
+  String resultado = 'Vitória';
+  String nickAdversario = '';
+  String stage = '';
+  int stocks = 1;
+  int porcentagem = 0;
+  String comoVenceu = opcoesComoVenceuRivalsOfAether2[0];
+  String comoPerdeu = opcoesComoPerdeuRivalsOfAether2[0];
+  String observacoes = '';
+  DateTime dataPartida = DateTime.now();
+  int pdlCalculado = 0;
+
+  late TextEditingController porcentagemController;
+  late TextEditingController observacoesController;
+
+  bool get editando {
+    return widget.partidaInicial != null && !widget.repetirUltima;
+  }
+
+  bool get venceu {
+    return resultadoEhVitoria(resultado);
+  }
+
+  String get labelStocks {
+    return venceu ? 'Suas stocks restantes' : 'Stocks restantes do adversário';
+  }
+
+  String get labelDano {
+    return venceu ? 'Seu dano final' : 'Dano final do adversário';
+  }
+
+  String get analiseSelecionada {
+    return venceu ? comoVenceu : comoPerdeu;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final PartidaRegistrada? partida = widget.partidaInicial;
+    if (partida != null) {
+      personagemAdversario = encontrarPersonagem(partida.personagemAdversario);
+      resultado = partida.resultado.trim().isEmpty
+          ? resultado
+          : partida.resultado;
+      nickAdversario = partida.nickAdversario == 'Sem nick'
+          ? ''
+          : partida.nickAdversario;
+      stage = partida.stage;
+      stocks = partida.stocks.clamp(0, 3).toInt();
+      porcentagem = partida.porcentagem < 0 ? 0 : partida.porcentagem;
+
+      final String vitoriaSalva = partida.condicaoVitoria.trim().isNotEmpty
+          ? partida.condicaoVitoria
+          : partida.formaDeKill;
+      if (opcoesComoVenceuRivalsOfAether2.contains(vitoriaSalva)) {
+        comoVenceu = vitoriaSalva;
+      }
+
+      final String derrotaSalva = partida.motivoDerrota.trim().isNotEmpty
+          ? partida.motivoDerrota
+          : partida.formaDeMorte;
+      if (opcoesComoPerdeuRivalsOfAether2.contains(derrotaSalva)) {
+        comoPerdeu = derrotaSalva;
+      }
+
+      if (!widget.repetirUltima) {
+        observacoes = partida.observacoes;
+        dataPartida = partida.data;
+      }
+    }
+
+    pdlCalculado = gerarPdl();
+    porcentagemController = TextEditingController(
+      text: porcentagem == 0 ? '' : porcentagem.toString(),
+    );
+    observacoesController = TextEditingController(text: observacoes);
+  }
+
+  @override
+  void dispose() {
+    porcentagemController.dispose();
+    observacoesController.dispose();
+    super.dispose();
+  }
+
+  Character? encontrarPersonagem(String nome) {
+    if (nome.trim().isEmpty) return null;
+
+    final String nomeNormalizado = normalizarNomePersonagem(nome);
+    for (final personagem in rosterDoJogo(widget.jogo)) {
+      if (personagem.name == nomeNormalizado) {
+        return personagem;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> escolherAdversario() async {
+    final Character? adversarioEscolhido = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelecionarPersonagemPage(
+          titulo: 'Personagem adversário',
+          personagens: rosterDoJogo(widget.jogo),
+          jogoAtual: widget.jogo,
+        ),
+      ),
+    );
+
+    if (adversarioEscolhido != null) {
+      setState(() {
+        personagemAdversario = adversarioEscolhido;
+      });
+    }
+  }
+
+  int gerarPdl() {
+    return calcularPdlRivals(
+      resultado: resultado,
+      stocks: stocks,
+      porcentagem: porcentagem,
+      comoVenceu: comoVenceu,
+      comoPerdeu: comoPerdeu,
+    );
+  }
+
+  void recalcularPdl() {
+    setState(() {
+      pdlCalculado = gerarPdl();
+    });
+  }
+
+  void mostrarAviso(String titulo, String mensagem) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(mensagem),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Ok'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void salvarPartida() {
+    if (personagemAdversario == null) {
+      mostrarAviso(
+        'Personagem adversário não escolhido',
+        'Escolha o personagem adversário antes de salvar a partida.',
+      );
+      return;
+    }
+
+    final int pdlFinal = gerarPdl();
+    final String nickFinal = nickAdversario.trim().isEmpty
+        ? 'Desconhecido'
+        : nickAdversario.trim();
+    final String stageFinal = stage.trim();
+    final String observacoesFinais = observacoesController.text.trim();
+
+    setState(() {
+      pdlCalculado = pdlFinal;
+    });
+
+    final PartidaRegistrada partida = PartidaRegistrada(
+      jogo: widget.jogo,
+      personagemJogador: widget.personagemAtual.name,
+      nickAdversario: nickFinal,
+      personagemAdversario: personagemAdversario!.name,
+      stage: stageFinal,
+      resultado: resultado,
+      stocks: stocks,
+      porcentagem: porcentagem,
+      formaDeKill: venceu ? comoVenceu : 'Não aplicável',
+      formaDeMorte: venceu ? 'Não aplicável' : comoPerdeu,
+      observacoes: observacoesFinais,
+      pdlGerado: pdlFinal,
+      data: dataPartida,
+      condicaoVitoria: venceu ? comoVenceu : '',
+      motivoDerrota: venceu ? '' : comoPerdeu,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final String sinal = partida.pdlGerado >= 0 ? '+' : '';
+        final String textoStage = partida.stage.trim().isEmpty
+            ? 'Não informado'
+            : partida.stage;
+        final String textoObservacoes = partida.observacoes.isEmpty
+            ? 'Sem observações'
+            : partida.observacoes;
+        final String analiseLabel = venceu ? 'Como venceu' : 'Como perdeu';
+
+        return AlertDialog(
+          title: Text(editando ? 'Partida atualizada' : 'Partida registrada'),
+          content: Text(
+            'Meu personagem: ${partida.personagemJogador}\n'
+            'Personagem adversário: ${partida.personagemAdversario}\n'
+            'Jogador adversário: ${partida.nickAdversario}\n'
+            'Stage: $textoStage\n'
+            'Resultado: ${partida.resultado}\n'
+            '$labelStocks: ${partida.stocks}\n'
+            '$labelDano: ${partida.porcentagem}%\n'
+            '$analiseLabel: ${partida.analiseResultado}\n'
+            'Observações: $textoObservacoes\n'
+            'PDL gerado: $sinal${partida.pdlGerado}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context, partida);
+              },
+              child: Text(editando ? 'Concluir edição' : 'Salvar e voltar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget construirAutocompletePlayer() {
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: nickAdversario),
+      optionsBuilder: (textEditingValue) {
+        final String busca = textEditingValue.text.trim().toLowerCase();
+        final List<String> sugestoes = [
+          'Desconhecido',
+          ...widget.sugestoesPlayers,
+        ].where((nick) => nick.trim().isNotEmpty).toSet().toList();
+
+        if (busca.isEmpty) {
+          return sugestoes.take(8);
+        }
+
+        return sugestoes.where((nick) => nick.toLowerCase().contains(busca));
+      },
+      onSelected: (valor) {
+        setState(() {
+          nickAdversario = valor;
+        });
+      },
+      fieldViewBuilder:
+          (context, textEditingController, focusNode, onFieldSubmitted) {
+            return TextField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              decoration: const InputDecoration(
+                labelText: 'Jogador adversário',
+                border: OutlineInputBorder(),
+                hintText: 'Digite ou escolha um player já enfrentado',
+                prefixIcon: Icon(Icons.person_search_outlined),
+              ),
+              onChanged: (valor) {
+                nickAdversario = valor;
+              },
+            );
+          },
+    );
+  }
+
+  Widget construirAutocompleteStage() {
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: stage),
+      optionsBuilder: (textEditingValue) {
+        final String busca = textEditingValue.text.trim().toLowerCase();
+        final List<String> sugestoes = widget.sugestoesStages
+            .where((item) => item.trim().isNotEmpty)
+            .toSet()
+            .toList();
+
+        if (busca.isEmpty) {
+          return sugestoes.take(8);
+        }
+
+        return sugestoes.where((item) => item.toLowerCase().contains(busca));
+      },
+      onSelected: (valor) {
+        setState(() {
+          stage = valor;
+        });
+      },
+      fieldViewBuilder:
+          (context, textEditingController, focusNode, onFieldSubmitted) {
+            return TextField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              decoration: const InputDecoration(
+                labelText: 'Stage opcional',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.map_outlined),
+              ),
+              onChanged: (valor) {
+                stage = valor;
+              },
+            );
+          },
+    );
+  }
+
+  Widget construirSeletorStocks() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [0, 1, 2, 3].map((valor) {
+        return ChoiceChip(
+          label: Text('$valor'),
+          selected: stocks == valor,
+          onSelected: (_) {
+            setState(() {
+              stocks = valor;
+              pdlCalculado = gerarPdl();
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String nomeAdversario =
+        personagemAdversario?.name ?? 'Nenhum personagem definido';
+    final String sinalPdl = pdlCalculado >= 0 ? '+' : '';
+    final String analiseLabel = venceu ? 'Como venceu' : 'Como perdeu';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: CompactAppBarTitle(
+          editando ? 'Editar partida' : 'Registrar partida',
+        ),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${widget.personagemAtual.name} vs $nomeAdversario',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Rivals of Aether II • Platform Fighter',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          CharacterAvatar(
+                            personagem: widget.personagemAtual.name,
+                            jogo: widget.jogo,
+                            size: 56,
+                            initialOverride: widget.personagemAtual.initial,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Meu personagem'),
+                                Text(
+                                  widget.personagemAtual.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Personagem adversário',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final Widget avatar = personagemAdversario == null
+                              ? const CircleAvatar(
+                                  radius: 28,
+                                  child: Icon(Icons.person_search_outlined),
+                                )
+                              : CharacterAvatar(
+                                  personagem: personagemAdversario!.name,
+                                  jogo: widget.jogo,
+                                  size: 56,
+                                  initialOverride:
+                                      personagemAdversario!.initial,
+                                );
+                          final Widget texto = Text(
+                            nomeAdversario,
+                            style: const TextStyle(fontSize: 18),
+                          );
+                          final Widget botao = OutlinedButton(
+                            onPressed: escolherAdversario,
+                            child: const Text('Selecionar'),
+                          );
+
+                          if (constraints.maxWidth < 420) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    avatar,
+                                    const SizedBox(width: 16),
+                                    Expanded(child: texto),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(width: double.infinity, child: botao),
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            children: [
+                              avatar,
+                              const SizedBox(width: 16),
+                              Expanded(child: texto),
+                              botao,
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Jogador adversário',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  construirAutocompletePlayer(),
+                  const SizedBox(height: 24),
+                  DatePickerField(
+                    label: 'Data da partida',
+                    data: dataPartida,
+                    onChanged: (valor) {
+                      setState(() {
+                        dataPartida = valor;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  construirAutocompleteStage(),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Resultado',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'Vitória', label: Text('Vitória')),
+                      ButtonSegment(value: 'Derrota', label: Text('Derrota')),
+                    ],
+                    selected: {resultado},
+                    onSelectionChanged: (valor) {
+                      setState(() {
+                        resultado = valor.first;
+                        pdlCalculado = gerarPdl();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    labelStocks,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  construirSeletorStocks(),
+                  const SizedBox(height: 24),
+                  Text(
+                    labelDano,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: porcentagemController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: labelDano,
+                      border: const OutlineInputBorder(),
+                      hintText: 'Ex: 87',
+                      suffixText: '%',
+                    ),
+                    onChanged: (valor) {
+                      setState(() {
+                        porcentagem = int.tryParse(valor) ?? 0;
+                        pdlCalculado = gerarPdl();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    analiseLabel,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  SearchableOptionField(
+                    label: venceu ? 'Como venceu' : 'Como perdeu',
+                    value: analiseSelecionada,
+                    options: venceu
+                        ? opcoesComoVenceuRivalsOfAether2
+                        : opcoesComoPerdeuRivalsOfAether2,
+                    icon: venceu
+                        ? Icons.trending_up_outlined
+                        : Icons.warning_amber_outlined,
+                    onChanged: (valor) {
+                      setState(() {
+                        if (venceu) {
+                          comoVenceu = valor;
+                        } else {
+                          comoPerdeu = valor;
+                        }
+                        pdlCalculado = gerarPdl();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(
+                        venceu ? Icons.arrow_upward : Icons.arrow_downward,
+                      ),
+                      title: const Text('Resumo da partida'),
+                      subtitle: Text(
+                        '$resultado • $labelStocks: $stocks • $analiseSelecionada',
+                      ),
+                      trailing: Text(
+                        '$sinalPdl$pdlCalculado PDL',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Observações da partida',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: observacoesController,
+                    minLines: 3,
+                    maxLines: 6,
+                    decoration: const InputDecoration(
+                      labelText: 'Observações',
+                      border: OutlineInputBorder(),
+                      hintText:
+                          'Ex: recovery previsível, bom edgeguard, parry punido...',
+                    ),
+                    onChanged: (valor) {
+                      observacoes = valor;
+                    },
+                  ),
+                  const SizedBox(height: 28),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final Widget calcular = OutlinedButton(
+                        onPressed: recalcularPdl,
+                        child: const Text('Calcular PDL'),
+                      );
+                      final Widget salvar = ElevatedButton(
+                        onPressed: salvarPartida,
+                        child: Text(
+                          editando ? 'Salvar edição' : 'Salvar partida',
+                        ),
+                      );
+
+                      if (constraints.maxWidth < 520) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            calcular,
+                            const SizedBox(height: 12),
+                            salvar,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          Expanded(child: calcular),
+                          const SizedBox(width: 16),
+                          Expanded(child: salvar),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class RegistrarPartidaStreetFighterPage extends StatefulWidget {
   final Character personagemAtual;
   final String jogo;
@@ -1250,6 +1904,603 @@ class _StreetRoundSelector extends StatelessWidget {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class RegistrarPartidaGuiltyGearPage extends StatefulWidget {
+  final Character personagemAtual;
+  final String jogo;
+  final List<String> sugestoesPlayers;
+  final PartidaRegistrada? partidaInicial;
+  final bool repetirUltima;
+
+  const RegistrarPartidaGuiltyGearPage({
+    super.key,
+    required this.personagemAtual,
+    this.jogo = jogoGuiltyGearStrive,
+    this.sugestoesPlayers = const [],
+    this.partidaInicial,
+    this.repetirUltima = false,
+  });
+
+  @override
+  State<RegistrarPartidaGuiltyGearPage> createState() =>
+      _RegistrarPartidaGuiltyGearPageState();
+}
+
+class _RegistrarPartidaGuiltyGearPageState
+    extends State<RegistrarPartidaGuiltyGearPage> {
+  Character? personagemAdversario;
+  String resultado = 'Vitória';
+  String nickAdversario = '';
+  String stage = '';
+  String placar = placaresVitoriaGuiltyGearStrive[0];
+  String comoVenceu = opcoesComoVenceuGuiltyGearStrive[0];
+  String comoPerdeu = opcoesComoPerdeuGuiltyGearStrive[0];
+  String observacoes = '';
+  DateTime dataPartida = DateTime.now();
+  int pdlCalculado = 0;
+
+  late TextEditingController stageController;
+  late TextEditingController observacoesController;
+
+  bool get editando {
+    return widget.partidaInicial != null && !widget.repetirUltima;
+  }
+
+  bool get venceu {
+    return resultadoEhVitoria(resultado);
+  }
+
+  List<String> get placaresDisponiveis {
+    return venceu
+        ? placaresVitoriaGuiltyGearStrive
+        : placaresDerrotaGuiltyGearStrive;
+  }
+
+  String get analiseSelecionada {
+    return venceu ? comoVenceu : comoPerdeu;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final PartidaRegistrada? partida = widget.partidaInicial;
+    if (partida != null) {
+      personagemAdversario = encontrarPersonagem(partida.personagemAdversario);
+      resultado = partida.resultado.trim().isEmpty
+          ? resultado
+          : partida.resultado;
+      nickAdversario = partida.nickAdversario == 'Sem nick'
+          ? ''
+          : partida.nickAdversario;
+      stage = partida.stage;
+
+      final String placarSalvo = partida.placarRounds.trim().isNotEmpty
+          ? partida.placarRounds
+          : partida.placarStreetFighter;
+      if (placaresGuiltyGearStrive.contains(placarSalvo)) {
+        placar = placarSalvo;
+      }
+
+      if (opcoesComoVenceuGuiltyGearStrive.contains(partida.condicaoVitoria)) {
+        comoVenceu = partida.condicaoVitoria;
+      }
+
+      if (opcoesComoPerdeuGuiltyGearStrive.contains(partida.motivoDerrota)) {
+        comoPerdeu = partida.motivoDerrota;
+      }
+
+      if (!widget.repetirUltima) {
+        observacoes = partida.observacoes;
+        dataPartida = partida.data;
+      }
+    }
+
+    ajustarPlacarAoResultado();
+    pdlCalculado = gerarPdl();
+    stageController = TextEditingController(text: stage);
+    observacoesController = TextEditingController(text: observacoes);
+  }
+
+  @override
+  void dispose() {
+    stageController.dispose();
+    observacoesController.dispose();
+    super.dispose();
+  }
+
+  Character? encontrarPersonagem(String nome) {
+    if (nome.trim().isEmpty) return null;
+
+    final String nomeNormalizado = normalizarNomePersonagem(nome);
+    for (final personagem in rosterDoJogo(widget.jogo)) {
+      if (personagem.name == nomeNormalizado) {
+        return personagem;
+      }
+    }
+
+    return null;
+  }
+
+  void ajustarPlacarAoResultado() {
+    if (!placaresDisponiveis.contains(placar)) {
+      placar = placaresDisponiveis.first;
+    }
+  }
+
+  void atualizarResultado(String valor) {
+    setState(() {
+      resultado = valor;
+      ajustarPlacarAoResultado();
+      pdlCalculado = gerarPdl();
+    });
+  }
+
+  void atualizarPlacar(String valor) {
+    setState(() {
+      placar = valor;
+      pdlCalculado = gerarPdl();
+    });
+  }
+
+  Future<void> escolherAdversario() async {
+    final Character? adversarioEscolhido = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelecionarPersonagemPage(
+          titulo: 'Personagem adversário',
+          personagens: rosterDoJogo(widget.jogo),
+          jogoAtual: widget.jogo,
+        ),
+      ),
+    );
+
+    if (adversarioEscolhido != null) {
+      setState(() {
+        personagemAdversario = adversarioEscolhido;
+      });
+    }
+  }
+
+  int gerarPdl() {
+    return calcularPdlGuiltyGear(
+      resultado: resultado,
+      placar: placar,
+      condicaoVitoria: comoVenceu,
+      motivoDerrota: comoPerdeu,
+    );
+  }
+
+  void recalcularPdl() {
+    setState(() {
+      pdlCalculado = gerarPdl();
+    });
+  }
+
+  void mostrarAviso(String titulo, String mensagem) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(mensagem),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Ok'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void salvarPartida() {
+    if (personagemAdversario == null) {
+      mostrarAviso(
+        'Personagem adversário não escolhido',
+        'Escolha o personagem adversário antes de salvar a partida.',
+      );
+      return;
+    }
+
+    final int pdlFinal = gerarPdl();
+    final String nickFinal = nickAdversario.trim().isEmpty
+        ? 'Desconhecido'
+        : nickAdversario.trim();
+    final String stageFinal = stageController.text.trim();
+
+    setState(() {
+      pdlCalculado = pdlFinal;
+    });
+
+    final PartidaRegistrada partida = PartidaRegistrada(
+      jogo: widget.jogo,
+      personagemJogador: widget.personagemAtual.name,
+      nickAdversario: nickFinal,
+      personagemAdversario: personagemAdversario!.name,
+      stage: stageFinal,
+      resultado: resultado,
+      stocks: venceu ? 2 : 0,
+      porcentagem: 0,
+      formaDeKill: venceu ? comoVenceu : 'Não aplicável',
+      formaDeMorte: venceu ? 'Não aplicável' : comoPerdeu,
+      observacoes: observacoes.trim(),
+      pdlGerado: pdlFinal,
+      data: dataPartida,
+      condicaoVitoria: venceu ? comoVenceu : '',
+      motivoDerrota: venceu ? '' : comoPerdeu,
+      placarRounds: placar,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final String sinal = partida.pdlGerado >= 0 ? '+' : '';
+        final String textoStage = partida.stage.trim().isEmpty
+            ? 'Não informado'
+            : partida.stage;
+        final String textoObservacoes = partida.observacoes.isEmpty
+            ? 'Sem observações'
+            : partida.observacoes;
+        final String analiseLabel = venceu ? 'Como venceu' : 'Como perdeu';
+
+        return AlertDialog(
+          title: Text(editando ? 'Partida atualizada' : 'Partida registrada'),
+          content: Text(
+            'Meu personagem: ${partida.personagemJogador}\n'
+            'Personagem adversário: ${partida.personagemAdversario}\n'
+            'Jogador adversário: ${partida.nickAdversario}\n'
+            'Stage: $textoStage\n'
+            'Resultado: ${partida.resultado} ${partida.placarStreetFighter}\n'
+            '$analiseLabel: ${partida.analiseResultado}\n'
+            'Observações: $textoObservacoes\n'
+            'PDL gerado: $sinal${partida.pdlGerado}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context, partida);
+              },
+              child: Text(editando ? 'Concluir edição' : 'Salvar e voltar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget construirAutocompletePlayer() {
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: nickAdversario),
+      optionsBuilder: (textEditingValue) {
+        final String busca = textEditingValue.text.trim().toLowerCase();
+        final List<String> sugestoes = [
+          'Desconhecido',
+          ...widget.sugestoesPlayers,
+        ].where((nick) => nick.trim().isNotEmpty).toSet().toList();
+
+        if (busca.isEmpty) {
+          return sugestoes.take(8);
+        }
+
+        return sugestoes.where((nick) => nick.toLowerCase().contains(busca));
+      },
+      onSelected: (valor) {
+        setState(() {
+          nickAdversario = valor;
+        });
+      },
+      fieldViewBuilder:
+          (context, textEditingController, focusNode, onFieldSubmitted) {
+            return TextField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              decoration: const InputDecoration(
+                labelText: 'Jogador adversário',
+                border: OutlineInputBorder(),
+                hintText: 'Digite ou escolha um player já enfrentado',
+                prefixIcon: Icon(Icons.person_search_outlined),
+              ),
+              onChanged: (valor) {
+                nickAdversario = valor;
+              },
+            );
+          },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String nomeAdversario =
+        personagemAdversario?.name ?? 'Nenhum personagem definido';
+    final String sinalPdl = pdlCalculado >= 0 ? '+' : '';
+    final String analiseLabel = venceu ? 'Como venceu' : 'Como perdeu';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: CompactAppBarTitle(
+          editando ? 'Editar partida' : 'Registrar partida',
+        ),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 820),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${widget.personagemAtual.name} vs $nomeAdversario',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Guilty Gear -Strive- • melhor de 3 rounds',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        CharacterAvatar(
+                          personagem: widget.personagemAtual.name,
+                          jogo: widget.jogo,
+                          size: 56,
+                          initialOverride: widget.personagemAtual.initial,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Meu personagem'),
+                              Text(
+                                widget.personagemAtual.name,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Personagem adversário',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final Widget avatar = personagemAdversario == null
+                            ? const CircleAvatar(
+                                radius: 28,
+                                child: Icon(Icons.person_search_outlined),
+                              )
+                            : CharacterAvatar(
+                                personagem: personagemAdversario!.name,
+                                jogo: widget.jogo,
+                                size: 56,
+                                initialOverride: personagemAdversario!.initial,
+                              );
+                        final Widget texto = Text(
+                          nomeAdversario,
+                          style: const TextStyle(fontSize: 18),
+                        );
+                        final Widget botao = OutlinedButton(
+                          onPressed: escolherAdversario,
+                          child: const Text('Selecionar'),
+                        );
+
+                        if (constraints.maxWidth < 420) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  avatar,
+                                  const SizedBox(width: 16),
+                                  Expanded(child: texto),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(width: double.infinity, child: botao),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            avatar,
+                            const SizedBox(width: 16),
+                            Expanded(child: texto),
+                            botao,
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Jogador adversário',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                construirAutocompletePlayer(),
+                const SizedBox(height: 24),
+                DatePickerField(
+                  label: 'Data da partida',
+                  data: dataPartida,
+                  onChanged: (valor) {
+                    setState(() {
+                      dataPartida = valor;
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: stageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Stage opcional',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.map_outlined),
+                  ),
+                  onChanged: (valor) {
+                    stage = valor;
+                  },
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Resultado',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'Vitória', label: Text('Vitória')),
+                    ButtonSegment(value: 'Derrota', label: Text('Derrota')),
+                  ],
+                  selected: {resultado},
+                  onSelectionChanged: (valor) {
+                    atualizarResultado(valor.first);
+                  },
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Placar',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: placaresDisponiveis
+                      .map(
+                        (item) => ButtonSegment(value: item, label: Text(item)),
+                      )
+                      .toList(),
+                  selected: {placar},
+                  onSelectionChanged: (valor) {
+                    atualizarPlacar(valor.first);
+                  },
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  analiseLabel,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                SearchableOptionField(
+                  label: venceu ? 'Como venceu' : 'Como perdeu',
+                  value: analiseSelecionada,
+                  options: venceu
+                      ? opcoesComoVenceuGuiltyGearStrive
+                      : opcoesComoPerdeuGuiltyGearStrive,
+                  icon: venceu
+                      ? Icons.trending_up_outlined
+                      : Icons.warning_amber_outlined,
+                  onChanged: (valor) {
+                    setState(() {
+                      if (venceu) {
+                        comoVenceu = valor;
+                      } else {
+                        comoPerdeu = valor;
+                      }
+                      pdlCalculado = gerarPdl();
+                    });
+                  },
+                ),
+                const SizedBox(height: 18),
+                Card(
+                  child: ListTile(
+                    leading: Icon(
+                      venceu ? Icons.arrow_upward : Icons.arrow_downward,
+                    ),
+                    title: const Text('Resultado final'),
+                    subtitle: Text('$resultado $placar • $analiseSelecionada'),
+                    trailing: Text(
+                      '$sinalPdl$pdlCalculado PDL',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Observações da partida',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: observacoesController,
+                  minLines: 3,
+                  maxLines: 6,
+                  decoration: const InputDecoration(
+                    labelText: 'Observações',
+                    border: OutlineInputBorder(),
+                    hintText:
+                        'Ex: preso no canto, burst mal usado, bom Roman Cancel...',
+                  ),
+                  onChanged: (valor) {
+                    observacoes = valor;
+                  },
+                ),
+                const SizedBox(height: 28),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final Widget calcular = OutlinedButton(
+                      onPressed: recalcularPdl,
+                      child: const Text('Calcular PDL'),
+                    );
+                    final Widget salvar = ElevatedButton(
+                      onPressed: salvarPartida,
+                      child: Text(
+                        editando ? 'Salvar edição' : 'Salvar partida',
+                      ),
+                    );
+
+                    if (constraints.maxWidth < 520) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          calcular,
+                          const SizedBox(height: 12),
+                          salvar,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: calcular),
+                        const SizedBox(width: 16),
+                        Expanded(child: salvar),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

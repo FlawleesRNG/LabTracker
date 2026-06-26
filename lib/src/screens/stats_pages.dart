@@ -1162,6 +1162,871 @@ class EstatisticasStreetFighterPage extends StatelessWidget {
   }
 }
 
+class EstatisticasRivalsPage extends StatelessWidget {
+  final Character personagemAtual;
+  final List<PartidaRegistrada> historico;
+  final String jogoAtual;
+
+  const EstatisticasRivalsPage({
+    super.key,
+    required this.personagemAtual,
+    required this.historico,
+    required this.jogoAtual,
+  });
+
+  int sequenciaAtual(List<PartidaRegistrada> partidas) {
+    if (partidas.isEmpty) return 0;
+
+    final bool sequenciaDeVitoria = resultadoEhVitoria(
+      partidas.first.resultado,
+    );
+    int sequencia = 0;
+
+    for (final partida in partidas) {
+      if (resultadoEhVitoria(partida.resultado) == sequenciaDeVitoria) {
+        sequencia++;
+      } else {
+        break;
+      }
+    }
+
+    return sequenciaDeVitoria ? sequencia : -sequencia;
+  }
+
+  String textoSequencia(int sequencia) {
+    if (sequencia > 0) return '$sequencia vitória(s)';
+    if (sequencia < 0) return '${sequencia.abs()} derrota(s)';
+    return 'Sem dados';
+  }
+
+  AnaliseComparativaItem? melhorPorWinrate(List<AnaliseComparativaItem> itens) {
+    if (itens.isEmpty) return null;
+
+    final List<AnaliseComparativaItem> ordenados = [...itens];
+    ordenados.sort((a, b) {
+      final int winrate = b.winrate.compareTo(a.winrate);
+      if (winrate != 0) return winrate;
+
+      final int saldo = b.saldoPdl.compareTo(a.saldoPdl);
+      if (saldo != 0) return saldo;
+
+      return b.total.compareTo(a.total);
+    });
+
+    return ordenados.first;
+  }
+
+  AnaliseComparativaItem? piorPorWinrate(List<AnaliseComparativaItem> itens) {
+    if (itens.isEmpty) return null;
+
+    final List<AnaliseComparativaItem> ordenados = [...itens];
+    ordenados.sort((a, b) {
+      final int winrate = a.winrate.compareTo(b.winrate);
+      if (winrate != 0) return winrate;
+
+      final int saldo = a.saldoPdl.compareTo(b.saldoPdl);
+      if (saldo != 0) return saldo;
+
+      return b.total.compareTo(a.total);
+    });
+
+    return ordenados.first;
+  }
+
+  String gerarDicaRivals({
+    required String motivoMaisComum,
+    required String condicaoMaisComum,
+    required String piorMatchup,
+    required double winrate,
+  }) {
+    switch (motivoMaisComum) {
+      case 'Recovery ruim':
+        return 'Você está perdendo muitas partidas na volta para o stage. Treine rotas de recovery e varie o timing para não ficar previsível.';
+      case 'Edgeguard':
+        return 'Você está sendo punido fora do stage com frequência. Tente gastar recursos de volta em momentos diferentes e evite sempre voltar pelo mesmo caminho.';
+      case 'Parry punish':
+        return 'Seu timing ofensivo está ficando previsível. Varie pressão, delay e opções seguras.';
+      case 'SD':
+        return 'Você está entregando stocks sem interação direta. Priorize consistência de movimentação e recovery antes de buscar jogadas arriscadas.';
+      case 'Panic option':
+        return 'Foco: reduzir resposta automática em disadvantage e escolher saídas mais calmas.';
+      case 'Shield pressure':
+        return 'Foco: revisar defesa em shield, opções fora do shield e quando aceitar resetar neutral.';
+      case 'Grab/throw':
+        return 'Foco: variar defesa parada e pulo defensivo para não deixar grab virar resposta fácil do adversário.';
+      case 'Whiff punish':
+        return 'Foco: diminuir botão no vazio e jogar melhor por alcance antes de tentar abrir vantagem.';
+    }
+
+    if (condicaoMaisComum == 'Edgeguard') {
+      return 'Seu edgeguard está funcionando bem. Continue usando essa vantagem, mas cuidado para não se colocar em risco desnecessário.';
+    }
+
+    if (winrate < 50 && piorMatchup != 'Sem dados') {
+      return 'Foco: revisar o matchup contra $piorMatchup e anotar quais situações levam você para fora do stage.';
+    }
+
+    if (condicaoMaisComum != 'Sem dados') {
+      return 'Ponto forte: você vence bastante por $condicaoMaisComum. Transforme isso em plano principal sem abandonar neutral seguro.';
+    }
+
+    return 'Foco: registrar mais partidas com stage, stocks e causa para o LabTracker encontrar padrões mais fortes.';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<PartidaRegistrada> partidas = historico
+        .where(
+          (partida) => partidaPertenceAoContextoAtual(
+            partida,
+            jogo: jogoAtual,
+            personagemAtual: personagemAtual.name,
+          ),
+        )
+        .toList();
+
+    final int totalPartidas = partidas.length;
+    final int vitorias = partidas.where((partida) {
+      return resultadoEhVitoria(partida.resultado);
+    }).length;
+    final int derrotas = partidas.where((partida) {
+      return resultadoEhDerrota(partida.resultado);
+    }).length;
+    final double winrate = totalPartidas == 0
+        ? 0
+        : (vitorias / totalPartidas) * 100;
+    final int saldoPdl = partidas.fold(
+      0,
+      (soma, partida) => soma + partida.pdlGerado,
+    );
+    final double mediaPdl = totalPartidas == 0 ? 0 : saldoPdl / totalPartidas;
+    final double mediaStocks = totalPartidas == 0
+        ? 0
+        : partidas.fold<int>(0, (soma, partida) => soma + partida.stocks) /
+              totalPartidas;
+    final int derrotasRecoveryEdgeSd = partidas.where((partida) {
+      if (!resultadoEhDerrota(partida.resultado)) return false;
+      final String motivo = partida.motivoDerrota.trim().isNotEmpty
+          ? partida.motivoDerrota
+          : partida.formaDeMorte;
+      return const [
+        'Recovery ruim',
+        'Edgeguard',
+        'SD',
+        'Gimp',
+      ].contains(motivo);
+    }).length;
+    final int sequencia = sequenciaAtual(partidas);
+
+    final List<PlayerResumo> rankingPlayers = gerarRankingPlayers(partidas);
+    final List<MatchupResumo> rankingMatchups = gerarRankingMatchups(partidas);
+    final MatchupResumo? melhorMatchup = melhorMatchupPorWinrate(
+      rankingMatchups,
+    );
+    final MatchupResumo? piorMatchup = piorMatchupPorWinrate(rankingMatchups);
+    final String nomePiorMatchup =
+        piorMatchup?.personagemAdversario ?? 'Sem dados';
+
+    final List<AnaliseComparativaItem> porMatchup = gerarComparativoPorCampo(
+      partidas,
+      (partida) => partida.personagemAdversario,
+    );
+    final List<AnaliseComparativaItem> porStage = gerarComparativoPorCampo(
+      partidas,
+      (partida) =>
+          partida.stage.trim().isEmpty ? 'Stage não informado' : partida.stage,
+    );
+    final AnaliseComparativaItem? melhorStage = melhorPorWinrate(porStage);
+    final AnaliseComparativaItem? piorStage = piorPorWinrate(porStage);
+    final List<EvolucaoPdlPonto> evolucaoPdl = gerarEvolucaoPdl(partidas);
+
+    final List<String> vitoriasPor = partidas
+        .map((partida) {
+          return partida.condicaoVitoria.trim().isNotEmpty
+              ? partida.condicaoVitoria
+              : partida.formaDeKill;
+        })
+        .where((valor) => valor.trim().isNotEmpty && valor != 'Não aplicável')
+        .toList();
+    final List<String> derrotasPor = partidas
+        .map((partida) {
+          return partida.motivoDerrota.trim().isNotEmpty
+              ? partida.motivoDerrota
+              : partida.formaDeMorte;
+        })
+        .where((valor) => valor.trim().isNotEmpty && valor != 'Não aplicável')
+        .toList();
+    final List<FrequenciaItem> comoVenceu = gerarRankingFrequencia(vitoriasPor);
+    final List<FrequenciaItem> comoPerdeu = gerarRankingFrequencia(derrotasPor);
+    final List<FrequenciaItem> stages = gerarRankingFrequencia(
+      partidas.map((partida) => partida.stage).toList(),
+    );
+    final String condicaoMaisComum = comoVenceu.isEmpty
+        ? 'Sem dados'
+        : comoVenceu.first.nome;
+    final String motivoMaisComum = comoPerdeu.isEmpty
+        ? 'Sem dados'
+        : comoPerdeu.first.nome;
+    final String dica = gerarDicaRivals(
+      motivoMaisComum: motivoMaisComum,
+      condicaoMaisComum: condicaoMaisComum,
+      piorMatchup: nomePiorMatchup,
+      winrate: winrate,
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Estatísticas Rivals II'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
+      body: totalPartidas == 0
+          ? Center(
+              child: Text(
+                'Ainda não existem partidas registradas com ${personagemAtual.name}.',
+                style: const TextStyle(fontSize: 18),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 980),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Rivals of Aether II • ${personagemAtual.name}',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          RankBadge(rank: personagemAtual.rank),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${personagemAtual.pdl} PDL',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InfoBox(
+                                  titulo: 'Partidas',
+                                  valor: '$totalPartidas',
+                                ),
+                              ),
+                              Expanded(
+                                child: InfoBox(
+                                  titulo: 'Vitórias',
+                                  valor: '$vitorias',
+                                ),
+                              ),
+                              Expanded(
+                                child: InfoBox(
+                                  titulo: 'Derrotas',
+                                  valor: '$derrotas',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Desempenho geral',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              LinhaEstatistica(
+                                titulo: 'Winrate',
+                                valor: '${winrate.toStringAsFixed(1)}%',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Saldo de PDL',
+                                valor: formatarSaldo(saldoPdl),
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Média de PDL por partida',
+                                valor: mediaPdl >= 0
+                                    ? '+${mediaPdl.toStringAsFixed(1)}'
+                                    : mediaPdl.toStringAsFixed(1),
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Sequência atual',
+                                valor: textoSequencia(sequencia),
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Média de stocks restantes',
+                                valor: mediaStocks.toStringAsFixed(2),
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Derrotas por recovery/edgeguard/SD',
+                                valor: '$derrotasRecoveryEdgeSd',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Leitura de matchup e stage',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              LinhaEstatistica(
+                                titulo: 'Melhor matchup',
+                                valor: melhorMatchup == null
+                                    ? 'Sem dados'
+                                    : '${melhorMatchup.personagemAdversario} • ${melhorMatchup.winrate.toStringAsFixed(1)}% WR',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Matchup problema',
+                                valor: piorMatchup == null
+                                    ? 'Sem dados'
+                                    : '${piorMatchup.personagemAdversario} • ${piorMatchup.winrate.toStringAsFixed(1)}% WR',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Stage mais jogado',
+                                valor: stages.isEmpty
+                                    ? 'Sem dados'
+                                    : stages.first.nome,
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Melhor stage',
+                                valor: melhorStage == null
+                                    ? 'Sem dados'
+                                    : '${melhorStage.nome} • ${melhorStage.winrate.toStringAsFixed(1)}% WR',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Pior stage',
+                                valor: piorStage == null
+                                    ? 'Sem dados'
+                                    : '${piorStage.nome} • ${piorStage.winrate.toStringAsFixed(1)}% WR',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Jogador mais enfrentado',
+                                valor: rankingPlayers.isEmpty
+                                    ? 'Sem dados'
+                                    : rankingPlayers.first.nick,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Coach rápido',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(dica),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (evolucaoPdl.length > 1)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Evolução de PDL',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  height: 220,
+                                  child: PdlLineChart(pontos: evolucaoPdl),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (evolucaoPdl.length > 1) const SizedBox(height: 16),
+                      ComparativoCard(
+                        titulo: 'Winrate por matchup',
+                        subtitulo: 'Personagens adversários mais enfrentados.',
+                        itens: porMatchup.take(8).toList(),
+                        pontosLabel: 'PDL',
+                      ),
+                      const SizedBox(height: 16),
+                      ComparativoCard(
+                        titulo: 'Winrate por stage',
+                        subtitulo:
+                            'Stages com mais dados registrados para esse personagem.',
+                        itens: porStage.take(8).toList(),
+                        pontosLabel: 'PDL',
+                      ),
+                      const SizedBox(height: 16),
+                      FrequenciaCard(
+                        titulo: 'Como venceu',
+                        subtitulo: 'Condições de vitória mais registradas.',
+                        itens: comoVenceu.take(8).toList(),
+                        icon: Icons.trending_up_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      FrequenciaCard(
+                        titulo: 'Como perdeu',
+                        subtitulo: 'Motivos de derrota mais registrados.',
+                        itens: comoPerdeu.take(8).toList(),
+                        icon: Icons.warning_amber_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      FrequenciaCard(
+                        titulo: 'Stages mais jogados',
+                        subtitulo:
+                            'Distribuição dos stages informados no registro.',
+                        itens: stages.take(8).toList(),
+                        icon: Icons.map_outlined,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class EstatisticasGuiltyGearPage extends StatelessWidget {
+  final Character personagemAtual;
+  final List<PartidaRegistrada> historico;
+  final String jogoAtual;
+
+  const EstatisticasGuiltyGearPage({
+    super.key,
+    required this.personagemAtual,
+    required this.historico,
+    required this.jogoAtual,
+  });
+
+  int sequenciaAtual(List<PartidaRegistrada> partidas) {
+    if (partidas.isEmpty) return 0;
+
+    final bool sequenciaDeVitoria = resultadoEhVitoria(
+      partidas.first.resultado,
+    );
+    int sequencia = 0;
+
+    for (final partida in partidas) {
+      if (resultadoEhVitoria(partida.resultado) == sequenciaDeVitoria) {
+        sequencia++;
+      } else {
+        break;
+      }
+    }
+
+    return sequenciaDeVitoria ? sequencia : -sequencia;
+  }
+
+  String textoSequencia(int sequencia) {
+    if (sequencia > 0) return '$sequencia vitória(s)';
+    if (sequencia < 0) return '${sequencia.abs()} derrota(s)';
+    return 'Sem dados';
+  }
+
+  String gerarDicaGuiltyGear({
+    required String motivoMaisComum,
+    required String condicaoMaisComum,
+    required String piorMatchup,
+    required double winrate,
+  }) {
+    switch (motivoMaisComum) {
+      case 'Corner pressure':
+        return 'Foco: treinar defesa no canto, usar FD com calma e achar o momento certo de pular, throw tech ou contestar.';
+      case 'Burst punido':
+        return 'Foco: variar Burst e guardar ele para situações em que o adversário esteja menos pronto para punir.';
+      case 'Roman Cancel mal usado':
+        return 'Foco: revisar onde o Roman Cancel está gastando recurso sem virar pressão, punish ou segurança real.';
+      case 'Overdrive punido':
+        return 'Foco: usar Overdrive mais como confirmação, reversão lida ou checkmate, evitando soltar no desespero.';
+      case 'Anti-air falhado':
+        return 'Foco: separar treino de anti-air. Anote quais pulos você deixou passar e qual botão cobre melhor cada alcance.';
+      case 'Whiff punish':
+        return 'Foco: diminuir botão no vazio e jogar mais por alcance. Guilty pune muito hábito repetido no neutral.';
+      case 'Defesa ruim':
+        return 'Foco: treinar defesa em bloco curto, FD, fuzzy e saída de pressão antes de tentar roubar turno.';
+      case 'Panic button':
+        return 'Foco: respirar no blockstring e escolher menos resposta automática. O objetivo é perder menos turno de graça.';
+      case 'Wall break':
+        return 'Foco: reconhecer quando você está perto da parede e gastar recurso para sair antes do wall break.';
+    }
+
+    if (winrate < 50 && piorMatchup != 'Sem dados') {
+      return 'Foco: revisar o matchup contra $piorMatchup, principalmente as situações que levam ao canto.';
+    }
+
+    if (condicaoMaisComum != 'Sem dados') {
+      return 'Ponto forte: você vence bastante por $condicaoMaisComum. Tente entender qual setup leva a isso e repetir com intenção.';
+    }
+
+    return 'Foco: registrar mais partidas com placar e causa para o LabTracker encontrar padrões melhores.';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<PartidaRegistrada> partidas = historico
+        .where(
+          (partida) => partidaPertenceAoContextoAtual(
+            partida,
+            jogo: jogoAtual,
+            personagemAtual: personagemAtual.name,
+          ),
+        )
+        .toList();
+
+    final int totalPartidas = partidas.length;
+    final int vitorias = partidas.where((partida) {
+      return resultadoEhVitoria(partida.resultado);
+    }).length;
+    final int derrotas = partidas.where((partida) {
+      return resultadoEhDerrota(partida.resultado);
+    }).length;
+    final double winrate = totalPartidas == 0
+        ? 0
+        : (vitorias / totalPartidas) * 100;
+
+    int contarPlacar(String placar) {
+      return partidas.where((partida) {
+        return partida.placarStreetFighter == placar;
+      }).length;
+    }
+
+    final int vitorias20 = contarPlacar('2-0');
+    final int vitorias21 = contarPlacar('2-1');
+    final int derrotas12 = contarPlacar('1-2');
+    final int derrotas02 = contarPlacar('0-2');
+    final int saldoPdl = partidas.fold(
+      0,
+      (soma, partida) => soma + partida.pdlGerado,
+    );
+    final double mediaPdl = totalPartidas == 0 ? 0 : saldoPdl / totalPartidas;
+    final int sequencia = sequenciaAtual(partidas);
+
+    final List<PlayerResumo> rankingPlayers = gerarRankingPlayers(partidas);
+    final List<MatchupResumo> rankingMatchups = gerarRankingMatchups(partidas);
+    final List<EvolucaoPdlPonto> evolucaoPdl = gerarEvolucaoPdl(partidas);
+    final List<AnaliseComparativaItem> porMatchup = gerarComparativoPorCampo(
+      partidas,
+      (partida) => partida.personagemAdversario,
+    );
+    final List<AnaliseComparativaItem> porPlayer = gerarComparativoPorCampo(
+      partidas,
+      (partida) => partida.nickAdversario,
+    );
+    final List<FrequenciaItem> placares = gerarRankingFrequencia(
+      partidas.map((partida) {
+        return '${partida.resultado} ${partida.placarStreetFighter}';
+      }).toList(),
+    );
+    final List<FrequenciaItem> comoVenceu = gerarRankingFrequencia(
+      partidas.map((partida) => partida.condicaoVitoria).toList(),
+    );
+    final List<FrequenciaItem> comoPerdeu = gerarRankingFrequencia(
+      partidas.map((partida) => partida.motivoDerrota).toList(),
+    );
+    final String condicaoMaisComum = comoVenceu.isEmpty
+        ? 'Sem dados'
+        : comoVenceu.first.nome;
+    final String motivoMaisComum = comoPerdeu.isEmpty
+        ? 'Sem dados'
+        : comoPerdeu.first.nome;
+
+    final MatchupResumo? melhorMatchup = melhorMatchupPorWinrate(
+      rankingMatchups,
+    );
+    final MatchupResumo? piorMatchup = piorMatchupPorWinrate(rankingMatchups);
+    final String nomePiorMatchup =
+        piorMatchup?.personagemAdversario ?? 'Sem dados';
+    final String dica = gerarDicaGuiltyGear(
+      motivoMaisComum: motivoMaisComum,
+      condicaoMaisComum: condicaoMaisComum,
+      piorMatchup: nomePiorMatchup,
+      winrate: winrate,
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Estatísticas Guilty Gear'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
+      body: totalPartidas == 0
+          ? Center(
+              child: Text(
+                'Ainda não existem partidas registradas com ${personagemAtual.name}.',
+                style: const TextStyle(fontSize: 18),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 980),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Guilty Gear -Strive- • ${personagemAtual.name}',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          RankBadge(rank: personagemAtual.rank),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${personagemAtual.pdl} PDL',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InfoBox(
+                                  titulo: 'Partidas',
+                                  valor: '$totalPartidas',
+                                ),
+                              ),
+                              Expanded(
+                                child: InfoBox(
+                                  titulo: 'Vitórias',
+                                  valor: '$vitorias',
+                                ),
+                              ),
+                              Expanded(
+                                child: InfoBox(
+                                  titulo: 'Derrotas',
+                                  valor: '$derrotas',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Desempenho geral',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              LinhaEstatistica(
+                                titulo: 'Win rate de partidas',
+                                valor: '${winrate.toStringAsFixed(1)}%',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Saldo de PDL',
+                                valor: formatarSaldo(saldoPdl),
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Média de PDL por partida',
+                                valor: mediaPdl >= 0
+                                    ? '+${mediaPdl.toStringAsFixed(1)}'
+                                    : mediaPdl.toStringAsFixed(1),
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Sequência atual',
+                                valor: textoSequencia(sequencia),
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Melhor matchup',
+                                valor: melhorMatchup == null
+                                    ? 'Sem dados'
+                                    : '${melhorMatchup.personagemAdversario} • ${melhorMatchup.winrate.toStringAsFixed(1)}% WR',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Matchup problema',
+                                valor: piorMatchup == null
+                                    ? 'Sem dados'
+                                    : '${piorMatchup.personagemAdversario} • ${piorMatchup.winrate.toStringAsFixed(1)}% WR',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Jogador mais enfrentado',
+                                valor: rankingPlayers.isEmpty
+                                    ? 'Sem dados'
+                                    : rankingPlayers.first.nick,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Placares',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              LinhaEstatistica(
+                                titulo: 'Vitória 2-0',
+                                valor: '$vitorias20',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Vitória 2-1',
+                                valor: '$vitorias21',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Derrota 1-2',
+                                valor: '$derrotas12',
+                              ),
+                              LinhaEstatistica(
+                                titulo: 'Derrota 0-2',
+                                valor: '$derrotas02',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Coach rápido',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(dica),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (evolucaoPdl.length > 1)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Evolução de PDL',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  height: 220,
+                                  child: PdlLineChart(pontos: evolucaoPdl),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (evolucaoPdl.length > 1) const SizedBox(height: 16),
+                      ComparativoCard(
+                        titulo: 'Win rate por matchup',
+                        subtitulo: 'Personagens adversários mais enfrentados.',
+                        itens: porMatchup.take(8).toList(),
+                        pontosLabel: 'PDL',
+                      ),
+                      const SizedBox(height: 16),
+                      ComparativoCard(
+                        titulo: 'Contra jogadores',
+                        subtitulo: 'Taxa de vitória por player enfrentado.',
+                        itens: porPlayer.take(8).toList(),
+                        pontosLabel: 'PDL',
+                      ),
+                      const SizedBox(height: 16),
+                      FrequenciaCard(
+                        titulo: 'Placares mais comuns',
+                        subtitulo: 'Distribuição geral dos resultados salvos.',
+                        itens: placares.take(8).toList(),
+                        icon: Icons.scoreboard_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      FrequenciaCard(
+                        titulo: 'Como venceu',
+                        subtitulo: 'Condições de vitória mais registradas.',
+                        itens: comoVenceu.take(8).toList(),
+                        icon: Icons.trending_up_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      FrequenciaCard(
+                        titulo: 'Como perdeu',
+                        subtitulo: 'Motivos de derrota mais registrados.',
+                        itens: comoPerdeu.take(8).toList(),
+                        icon: Icons.warning_amber_outlined,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
 class EstatisticasInvinciblePage extends StatelessWidget {
   final List<PartidaRegistrada> historico;
   final String jogoAtual;

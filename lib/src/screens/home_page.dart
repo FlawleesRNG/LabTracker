@@ -645,6 +645,29 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
+          if (widget.jogoAtual == jogoGuiltyGearStrive) {
+            return RegistrarPartidaGuiltyGearPage(
+              personagemAtual: personagemAtual,
+              jogo: widget.jogoAtual,
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
+            );
+          }
+
+          if (widget.jogoAtual == jogoRivalsOfAether2) {
+            return RegistrarPartidaRivalsPage(
+              personagemAtual: personagemAtual,
+              jogo: widget.jogoAtual,
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              sugestoesStages: sugestoesFrequentes(
+                partidasDoContexto.map((partida) => partida.stage),
+              ),
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
+            );
+          }
+
           return RegistrarPartidaPage(
             personagemAtual: personagemAtual,
             jogo: widget.jogoAtual,
@@ -746,6 +769,22 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
+          if (widget.jogoAtual == jogoGuiltyGearStrive) {
+            return EstatisticasGuiltyGearPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
+          if (widget.jogoAtual == jogoRivalsOfAether2) {
+            return EstatisticasRivalsPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
           return EstatisticasPage(
             personagemAtual: personagemAtual,
             historico: historico,
@@ -772,6 +811,22 @@ class _HomePageState extends State<HomePage> {
 
           if (widget.jogoAtual == jogoStreetFighter6) {
             return EstatisticasStreetFighterPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
+          if (widget.jogoAtual == jogoGuiltyGearStrive) {
+            return EstatisticasGuiltyGearPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
+          if (widget.jogoAtual == jogoRivalsOfAether2) {
+            return EstatisticasRivalsPage(
               personagemAtual: personagemAtual,
               historico: historico,
               jogoAtual: widget.jogoAtual,

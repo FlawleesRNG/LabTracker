@@ -1851,7 +1851,7 @@ const Map<String, GameRegisterType> tiposRegistroPorJogo = {
   jogoStreetFighter6: GameRegisterType.twoDFighter,
   'Mortal Kombat 1': GameRegisterType.twoDFighter,
   'Avatar Legends: The Fighting Game': GameRegisterType.twoDFighter,
-  'Guilty Gear -Strive-': GameRegisterType.twoDFighter,
+  jogoGuiltyGearStrive: GameRegisterType.animeFighter,
   'The King of Fighters XV': GameRegisterType.twoDFighter,
   jogoInvincibleVs: GameRegisterType.teamFighter,
   jogoTekken8: GameRegisterType.threeDFighter,
@@ -1864,6 +1864,7 @@ const Map<String, GameRegisterType> tiposRegistroPorJogo = {
 const Map<GameRegisterType, String> categoriasRegistro = {
   GameRegisterType.platformFighter: 'Platform Fighter',
   GameRegisterType.twoDFighter: '2D Fighter',
+  GameRegisterType.animeFighter: '2D Fighter / Anime Fighter',
   GameRegisterType.threeDFighter: '3D Fighter',
   GameRegisterType.tagFighter: 'Tag Fighter',
   GameRegisterType.teamFighter: 'Team Fighter',
@@ -1969,17 +1970,18 @@ const List<String> opcoesComoPerdeu2XKO = [
 
 const List<String> camposRegistroRivalsOfAether2 = [
   'Resultado',
-  'Personagem adversário',
   'Nick adversário',
+  'Personagem adversário',
   'Stage',
   'Stocks restantes',
-  'Porcentagem final',
-  'Como venceu / kill',
-  'Como perdeu / death',
+  'Dano final',
+  'Como venceu',
+  'Como perdeu',
   'Recovery',
   'Edgeguard',
   'Ledge trap',
   'Parry',
+  'Shield/grab',
   'Observações',
 ];
 
@@ -1991,6 +1993,8 @@ const List<String> opcoesComoVenceuRivalsOfAether2 = [
   'Recovery punish',
   'Ledge trap',
   'Parry punish',
+  'Shield punish',
+  'Grab confirm',
   'Read',
   'Whiff punish',
   'Gimp',
@@ -2001,6 +2005,8 @@ const List<String> opcoesComoPerdeuRivalsOfAether2 = [
   'Edgeguard',
   'Recovery ruim',
   'Parry punish',
+  'Shield pressure',
+  'Grab/throw',
   'Whiff punish',
   'Read',
   'Panic option',
@@ -2010,22 +2016,74 @@ const List<String> opcoesComoPerdeuRivalsOfAether2 = [
   'Outro',
 ];
 
+const List<String> camposRegistroGuiltyGearStrive = [
+  'Resultado',
+  'Nick adversario',
+  'Personagem adversario',
+  'Stage',
+  'Placar',
+  'Como venceu',
+  'Como perdeu',
+  'Observacoes',
+];
+
+const List<String> placaresVitoriaGuiltyGearStrive = ['2-0', '2-1'];
+
+const List<String> placaresDerrotaGuiltyGearStrive = ['1-2', '0-2'];
+
+const List<String> placaresGuiltyGearStrive = [
+  ...placaresVitoriaGuiltyGearStrive,
+  ...placaresDerrotaGuiltyGearStrive,
+];
+
+const List<String> opcoesComoVenceuGuiltyGearStrive = [
+  'Corner pressure',
+  'Roman Cancel',
+  'Overdrive',
+  'Burst punish',
+  'Wall break',
+  'Anti-air',
+  'Throw',
+  'Whiff punish',
+  'Mix-up',
+  'Read',
+  'Outro',
+];
+
+const List<String> opcoesComoPerdeuGuiltyGearStrive = [
+  'Corner pressure',
+  'Burst punido',
+  'Roman Cancel mal usado',
+  'Overdrive punido',
+  'Anti-air falhado',
+  'Throw',
+  'Mix-up',
+  'Whiff punish',
+  'Defesa ruim',
+  'Panic button',
+  'Wall break',
+  'Outro',
+];
+
 const Map<String, List<String>> camposRegistroFuturosPorJogo = {
   jogoTekken8: camposRegistroTekken8,
   jogo2Xko: camposRegistro2XKO,
   jogoRivalsOfAether2: camposRegistroRivalsOfAether2,
+  jogoGuiltyGearStrive: camposRegistroGuiltyGearStrive,
 };
 
 const Map<String, List<String>> opcoesComoVenceuPorJogo = {
   jogoTekken8: opcoesComoVenceuTekken8,
   jogo2Xko: opcoesComoVenceu2XKO,
   jogoRivalsOfAether2: opcoesComoVenceuRivalsOfAether2,
+  jogoGuiltyGearStrive: opcoesComoVenceuGuiltyGearStrive,
 };
 
 const Map<String, List<String>> opcoesComoPerdeuPorJogo = {
   jogoTekken8: opcoesComoPerdeuTekken8,
   jogo2Xko: opcoesComoPerdeu2XKO,
   jogoRivalsOfAether2: opcoesComoPerdeuRivalsOfAether2,
+  jogoGuiltyGearStrive: opcoesComoPerdeuGuiltyGearStrive,
 };
 
 List<String> camposRegistroFuturoDoJogo(String jogo) {
@@ -2068,6 +2126,13 @@ const Map<GameRegisterType, List<String>> camposRegistroRapidoPorTipo = {
     'Placar',
     'Como venceu/perdeu',
   ],
+  GameRegisterType.animeFighter: [
+    'Resultado',
+    'Personagem adversario',
+    'Nick adversario',
+    'Placar',
+    'Corner/Roman/Burst',
+  ],
   GameRegisterType.threeDFighter: [
     'Resultado',
     'Personagem adversario',
@@ -2092,7 +2157,20 @@ const Map<GameRegisterType, List<String>> camposRegistroRapidoPorTipo = {
   ],
 };
 
+const Map<String, List<String>> camposRegistroRapidoPorJogo = {
+  jogoRivalsOfAether2: [
+    'Resultado',
+    'Personagem adversario',
+    'Stage',
+    'Stocks restantes',
+    'Salvar',
+  ],
+};
+
 List<String> camposRegistroRapidoDoJogo(String jogo) {
+  final List<String>? camposDoJogo = camposRegistroRapidoPorJogo[jogo];
+  if (camposDoJogo != null) return camposDoJogo;
+
   return camposRegistroRapidoPorTipo[tipoRegistroDoJogo(jogo)] ?? const [];
 }
 
@@ -2105,7 +2183,7 @@ const Map<String, String> logosJogos = {
       'https://cdn-mk1.mortalkombat.com/static/mk1-de-logo-white.webp',
   'Avatar Legends: The Fighting Game':
       'https://images.squarespace-cdn.com/content/v1/68dc1fc6ffae60161335117c/44a003fd-cf4c-467e-b2de-8f9e60e1721e/Untitled+design+%2812%29.png',
-  'Guilty Gear -Strive-':
+  jogoGuiltyGearStrive:
       'https://static.wikia.nocookie.net/guilty-gear/images/6/6a/GGStrive_Logo.png/revision/latest?cb=20211006180650',
   'The King of Fighters XV':
       'https://www.snk-corp.co.jp/official/kof-xv/img/main/top_koflogo.png',
@@ -2134,7 +2212,7 @@ const Map<String, String> logosJogosOffline = {
   'Invincible VS': 'assets/offline_images/games/invincible_vs.webp',
   'Avatar Legends: The Fighting Game':
       'assets/offline_images/games/avatar_legends_the_fighting_game.webp',
-  'Guilty Gear -Strive-': 'assets/offline_images/games/guilty_gear_strive.webp',
+  jogoGuiltyGearStrive: 'assets/offline_images/games/guilty_gear_strive.webp',
   'The King of Fighters XV':
       'assets/offline_images/games/the_king_of_fighters_xv.webp',
   jogoTekken8: 'assets/offline_images/games/tekken_8.webp',
@@ -2150,7 +2228,7 @@ const Map<String, String> pastasPersonagensOfflinePorJogo = {
   'Fatal Fury': 'fatal_fury',
   jogoInvincibleVs: 'invincible_vs',
   'Avatar Legends: The Fighting Game': 'avatar_legends',
-  'Guilty Gear -Strive-': 'guilty_gear_strive',
+  jogoGuiltyGearStrive: 'guilty_gear_strive',
   'The King of Fighters XV': 'kof_xv',
   jogoTekken8: 'tekken_8',
   jogoRivalsOfAether2: 'rivals_of_aether_ii',
@@ -2166,7 +2244,7 @@ List<Character> rosterDoJogo(String jogo) {
       return personagensMortalKombat1;
     case 'Avatar Legends: The Fighting Game':
       return personagensAvatarLegends;
-    case 'Guilty Gear -Strive-':
+    case jogoGuiltyGearStrive:
       return personagensGuiltyGearStrive;
     case 'The King of Fighters XV':
       return personagensKofXV;
