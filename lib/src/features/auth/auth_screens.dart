@@ -237,6 +237,7 @@ class AccountSyncPage extends StatefulWidget {
   final DateTime? lastSyncAt;
   final int pendingSyncCount;
   final int syncErrorCount;
+  final ValueListenable<SyncActivitySnapshot>? syncActivityListenable;
   final Future<SyncRunResult> Function()? onSyncNow;
   final Future<void> Function(bool enabled)? onAutoSyncChanged;
 
@@ -247,6 +248,7 @@ class AccountSyncPage extends StatefulWidget {
     required this.lastSyncAt,
     required this.pendingSyncCount,
     required this.syncErrorCount,
+    this.syncActivityListenable,
     this.onSyncNow,
     this.onAutoSyncChanged,
   });
@@ -280,8 +282,45 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
     lastSyncAt = widget.lastSyncAt;
     carregarUsuarioLocal();
     carregarPreferenciaAutoSync();
+    widget.syncActivityListenable?.addListener(aplicarSnapshotSyncExterno);
+    aplicarSnapshotSyncExterno();
     authSubscription = AuthService.authStateChanges.listen((_) {
       carregarUsuarioLocal();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant AccountSyncPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.syncActivityListenable == widget.syncActivityListenable) {
+      return;
+    }
+
+    oldWidget.syncActivityListenable?.removeListener(
+      aplicarSnapshotSyncExterno,
+    );
+    widget.syncActivityListenable?.addListener(aplicarSnapshotSyncExterno);
+    aplicarSnapshotSyncExterno();
+  }
+
+  void aplicarSnapshotSyncExterno() {
+    final SyncActivitySnapshot? snapshot = widget.syncActivityListenable?.value;
+    if (snapshot == null || !mounted) return;
+
+    setState(() {
+      syncing = snapshot.syncing;
+      pendingSyncCount = snapshot.pendingSyncCount;
+      syncErrorCount = snapshot.syncErrorCount;
+      lastSyncAt = snapshot.lastSyncAt;
+      if (snapshot.message.trim().isNotEmpty) {
+        if (!snapshot.syncing && snapshot.syncErrorCount > 0) {
+          errorMessage = snapshot.message;
+          successMessage = null;
+        } else {
+          successMessage = snapshot.message;
+          errorMessage = null;
+        }
+      }
     });
   }
 
@@ -313,6 +352,7 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
 
   @override
   void dispose() {
+    widget.syncActivityListenable?.removeListener(aplicarSnapshotSyncExterno);
     authSubscription?.cancel();
     super.dispose();
   }
@@ -636,10 +676,6 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
             Text('Nick: $nick'),
             const SizedBox(height: AppSpacing.sm),
           ],
-          SelectableText('User ID: $userId'),
-          const SizedBox(height: AppSpacing.sm),
-          SelectableText('Device ID: $currentDeviceId'),
-          const SizedBox(height: AppSpacing.sm),
           Text(
             lastSyncAt == null
                 ? 'Ultima sincronizacao: nunca'
@@ -668,6 +704,33 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
                     )
                   : const Icon(Icons.sync_outlined),
               label: Text(syncing ? 'Sincronizando...' : 'Sincronizar agora'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.tune_outlined),
+              title: const Text('Detalhes tecnicos'),
+              subtitle: const Text('Informacoes de suporte e debug'),
+              children: [
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SelectableText(
+                    [
+                      'ID da conta: ${userId.isEmpty ? 'indisponivel' : userId}',
+                      'ID deste dispositivo: ${currentDeviceId.isEmpty ? 'indisponivel' : currentDeviceId}',
+                      'Status interno: $statusLabel',
+                      'Ultimo erro: ${(errorMessage ?? '').trim().isEmpty ? 'nenhum erro recente' : errorMessage!.trim()}',
+                      'Versao: ${ConfiguracoesPage.versaoApp}',
+                    ].join('\n'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),

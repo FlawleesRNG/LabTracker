@@ -22,6 +22,22 @@ class HomePage extends StatefulWidget {
 
 enum _HomePageMenuAction { conta, perfil, configuracoes, resetar }
 
+class SyncActivitySnapshot {
+  final bool syncing;
+  final int pendingSyncCount;
+  final int syncErrorCount;
+  final DateTime? lastSyncAt;
+  final String message;
+
+  const SyncActivitySnapshot({
+    this.syncing = false,
+    this.pendingSyncCount = 0,
+    this.syncErrorCount = 0,
+    this.lastSyncAt,
+    this.message = '',
+  });
+}
+
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   static const Duration _autoSyncDebounceDuration = Duration(seconds: 3);
   static const Duration _minIntervalBetweenAutoSync = Duration(seconds: 30);
@@ -57,6 +73,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   DateTime? lastAutoSyncCompletedAt;
   Timer? autoSyncDebounceTimer;
   Timer? autoSyncPeriodicTimer;
+  final ValueNotifier<SyncActivitySnapshot> syncActivityNotifier =
+      ValueNotifier<SyncActivitySnapshot>(const SyncActivitySnapshot());
   StreamSubscription<AuthState>? authStateSubscription;
   StreamSubscription<List<ConnectivityResult>>? connectivitySubscription;
 
@@ -87,6 +105,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     autoSyncPeriodicTimer?.cancel();
     authStateSubscription?.cancel();
     connectivitySubscription?.cancel();
+    syncActivityNotifier.dispose();
     super.dispose();
   }
 
@@ -115,6 +134,97 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           rank: rankInicialDoJogo(widget.jogoAtual),
           pdl: 0,
         );
+  }
+
+  bool _queueItemRetryable(SyncQueueItem item) {
+    return item.status == SyncQueueStatus.pending ||
+        item.status == SyncQueueStatus.error;
+  }
+
+  bool _syncStatusPendente(SyncStatus status) {
+    return status == SyncStatus.localOnly ||
+        status == SyncStatus.pendingSync ||
+        status == SyncStatus.syncError ||
+        status == SyncStatus.deletedPendingSync;
+  }
+
+  Set<String> _chavesPendentesSync() {
+    final Set<String> chaves = {};
+
+    for (final SyncQueueItem item in syncQueue) {
+      if (_queueItemRetryable(item)) {
+        chaves.add('${item.entityType.id}:${item.entityId}');
+      }
+    }
+
+    for (final LocalSyncRecord record in syncRecords) {
+      if (_syncStatusPendente(record.syncStatus)) {
+        chaves.add('${record.entityType.id}:${record.entityId}');
+      }
+    }
+
+    for (final PartidaRegistrada partida in historico) {
+      if (_syncStatusPendente(partida.syncStatus)) {
+        chaves.add('${SyncEntityType.match.id}:${partida.id}');
+      }
+    }
+
+    for (final PartidaRegistrada partida in partidasExcluidasParaSync) {
+      if (_syncStatusPendente(partida.syncStatus)) {
+        chaves.add('${SyncEntityType.match.id}:${partida.id}');
+      }
+    }
+
+    return chaves;
+  }
+
+  Set<String> _chavesErroSync() {
+    final Set<String> chaves = {};
+
+    for (final SyncQueueItem item in syncQueue) {
+      if (item.status == SyncQueueStatus.error) {
+        chaves.add('${item.entityType.id}:${item.entityId}');
+      }
+    }
+
+    for (final LocalSyncRecord record in syncRecords) {
+      if (record.syncStatus == SyncStatus.syncError) {
+        chaves.add('${record.entityType.id}:${record.entityId}');
+      }
+    }
+
+    for (final PartidaRegistrada partida in historico) {
+      if (partida.syncStatus == SyncStatus.syncError) {
+        chaves.add('${SyncEntityType.match.id}:${partida.id}');
+      }
+    }
+
+    for (final PartidaRegistrada partida in partidasExcluidasParaSync) {
+      if (partida.syncStatus == SyncStatus.syncError) {
+        chaves.add('${SyncEntityType.match.id}:${partida.id}');
+      }
+    }
+
+    return chaves;
+  }
+
+  int get quantidadePendenciasSync => _chavesPendentesSync().length;
+
+  int get quantidadeErrosSync => _chavesErroSync().length;
+
+  void atualizarSnapshotSync({String message = ''}) {
+    if (!mounted) return;
+    syncActivityNotifier.value = SyncActivitySnapshot(
+      syncing: syncEmAndamento,
+      pendingSyncCount: quantidadePendenciasSync,
+      syncErrorCount: quantidadeErrosSync,
+      lastSyncAt: ultimaSincronizacaoLocal,
+      message: message,
+    );
+  }
+
+  void logAutoSync(String mensagem) {
+    debugPrint('[LabTracker AutoSync] $mensagem');
   }
 
   void iniciarObservadoresSyncAutomatico() {
@@ -181,15 +291,95 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  Future<bool> existeSnapshotExternoPendente() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(prefsKeyPendingExternalSyncSnapshot) ?? false;
+  }
+
+  Future<bool> temPendenciasParaSyncAutomatico() async {
+    if (quantidadePendenciasSync > 0) return true;
+    return existeSnapshotExternoPendente();
+  }
+
+  bool reconstruirFilaParaPendenciasLocais({DateTime? now}) {
+    if (deviceId.trim().isEmpty) return false;
+
+    bool alterou = false;
+    final DateTime resolvedNow = now ?? DateTime.now();
+
+    void enfileirar({
+      required SyncEntityType type,
+      required String entityId,
+      SyncOperation operation = SyncOperation.update,
+    }) {
+      final int tamanhoAntes = syncQueue.length;
+      final List<SyncQueueItem> filaAtualizada =
+          LocalSyncRepository.upsertQueueItem(
+            queue: syncQueue,
+            entityType: type,
+            entityId: entityId,
+            operation: operation,
+            now: resolvedNow,
+          );
+      alterou =
+          alterou ||
+          filaAtualizada.length != tamanhoAntes ||
+          !identical(filaAtualizada, syncQueue);
+      syncQueue = filaAtualizada;
+    }
+
+    for (final PartidaRegistrada partida in historico) {
+      if (_syncStatusPendente(partida.syncStatus)) {
+        enfileirar(
+          type: SyncEntityType.match,
+          entityId: partida.id,
+          operation: partida.createdAt == partida.updatedAt
+              ? SyncOperation.create
+              : SyncOperation.update,
+        );
+      }
+    }
+
+    for (final PartidaRegistrada partida in partidasExcluidasParaSync) {
+      if (_syncStatusPendente(partida.syncStatus)) {
+        enfileirar(
+          type: SyncEntityType.match,
+          entityId: partida.id,
+          operation: SyncOperation.delete,
+        );
+      }
+    }
+
+    for (final LocalSyncRecord record in syncRecords) {
+      if (_syncStatusPendente(record.syncStatus)) {
+        enfileirar(
+          type: record.entityType,
+          entityId: record.entityId,
+          operation: record.deletedAt == null
+              ? SyncOperation.update
+              : SyncOperation.delete,
+        );
+      }
+    }
+
+    return alterou;
+  }
+
   void agendarSyncAutomatico({
     required String motivo,
     bool force = false,
     Duration delay = _autoSyncDebounceDuration,
   }) {
-    if (!mounted || !autoSyncEnabled) return;
+    if (!mounted) return;
+
+    if (!autoSyncEnabled) {
+      logAutoSync('ignorado ($motivo): automatico desligado');
+      return;
+    }
 
     if (carregando || syncEmAndamento) {
       autoSyncPendenteAposAtual = true;
+      logAutoSync('adiado ($motivo): carregando ou ja sincronizando');
       return;
     }
 
@@ -211,25 +401,49 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     autoSyncDebounceTimer = Timer(atrasoFinal, () {
       unawaited(executarSyncAutomatico(motivo: motivo, force: force));
     });
+    logAutoSync('agendado ($motivo) em ${atrasoFinal.inSeconds}s');
   }
 
   Future<void> executarSyncAutomatico({
     required String motivo,
     bool force = false,
   }) async {
-    if (!mounted || !autoSyncEnabled || carregando) return;
+    if (!mounted || carregando) return;
 
-    if (syncEmAndamento) {
-      autoSyncPendenteAposAtual = true;
+    await carregarPreferenciaSyncAutomatico();
+    if (!autoSyncEnabled) {
+      logAutoSync('ignorado ($motivo): automatico desligado');
       return;
     }
 
-    if (!AuthService.isAvailable) return;
+    if (syncEmAndamento) {
+      autoSyncPendenteAposAtual = true;
+      logAutoSync('ignorado ($motivo): ja sincronizando');
+      return;
+    }
 
-    if (!AuthService.isLoggedIn) return;
+    if (!AuthService.isAvailable) {
+      logAutoSync('ignorado ($motivo): Supabase indisponivel');
+      return;
+    }
+
+    if (!AuthService.isLoggedIn) {
+      logAutoSync('ignorado ($motivo): sem usuario logado');
+      return;
+    }
 
     final bool online = await temInternetProvavel();
-    if (!online) return;
+    if (!online) {
+      logAutoSync('ignorado ($motivo): sem internet');
+      return;
+    }
+
+    final bool temPendencias = await temPendenciasParaSyncAutomatico();
+    if (!temPendencias) {
+      logAutoSync('ignorado ($motivo): sem pendencias');
+      atualizarSnapshotSync();
+      return;
+    }
 
     final DateTime now = DateTime.now();
     if (!force && lastAutoSyncAttemptAt != null) {
@@ -243,9 +457,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     try {
-      await executarSincronizacao(automatico: true);
-    } catch (_) {
+      logAutoSync('iniciado ($motivo)');
+      final SyncRunResult result = await executarSincronizacao(
+        automatico: true,
+      );
+      logAutoSync(
+        'finalizado ($motivo): enviados=${result.uploadedCount}, baixados=${result.downloadedCount}, falhas=${result.failedCount}',
+      );
+    } catch (error) {
+      logAutoSync('erro ($motivo): ${AuthService.friendlyError(error)}');
       // Sync automatico e silencioso: a fila local guarda pendencias/erros.
+      atualizarSnapshotSync(message: AuthService.friendlyError(error));
     }
   }
 
@@ -646,6 +868,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     setState(() {
       carregando = false;
     });
+    atualizarSnapshotSync();
 
     if (normalizouOfflineFirst ||
         recebeuTimeInicial ||
@@ -704,6 +927,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (marcarSyncPendente) {
       agendarSyncAutomatico(motivo: 'local_save');
     }
+    atualizarSnapshotSync();
   }
 
   bool prepararBaseOfflineFirstLocal() {
@@ -1647,6 +1871,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     syncEmAndamento = true;
+    atualizarSnapshotSync(
+      message: automatico
+          ? 'Sincronizacao automatica em andamento.'
+          : 'Sincronizacao manual em andamento.',
+    );
     if (automatico) {
       lastAutoSyncAttemptAt = DateTime.now();
     }
@@ -1657,6 +1886,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
 
       await incorporarSnapshotsExternosPendentes();
+      final bool reconstruiuFila = reconstruirFilaParaPendenciasLocais();
+      if (reconstruiuFila) {
+        await _salvarDadosArquivo(gerarDadosPersistidos());
+      }
+      atualizarSnapshotSync();
 
       final SyncRunResult result = await SyncService.syncNow(
         deviceId: deviceId,
@@ -1701,10 +1935,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (automatico) {
         lastAutoSyncCompletedAt = result.syncedAt;
       }
+      atualizarSnapshotSync(message: result.message);
 
       return result;
     } finally {
       syncEmAndamento = false;
+      atualizarSnapshotSync();
       if (autoSyncPendenteAposAtual && autoSyncEnabled && mounted) {
         autoSyncPendenteAposAtual = false;
         agendarSyncAutomatico(motivo: 'queued_after_sync');
@@ -1724,12 +1960,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           deviceId: deviceId,
           currentUserId: currentUserId,
           lastSyncAt: ultimaSincronizacaoLocal,
-          pendingSyncCount: syncQueue
-              .where((item) => item.status == SyncQueueStatus.pending)
-              .length,
-          syncErrorCount: syncQueue
-              .where((item) => item.status == SyncQueueStatus.error)
-              .length,
+          pendingSyncCount: quantidadePendenciasSync,
+          syncErrorCount: quantidadeErrosSync,
+          syncActivityListenable: syncActivityNotifier,
           onSyncNow: sincronizarAgora,
           onAutoSyncChanged: (enabled) async {
             if (!mounted) return;
