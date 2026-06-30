@@ -13,6 +13,7 @@ class SyncRunResult {
   final List<PartidaRegistrada> partidasExcluidasParaSync;
   final List<SyncQueueItem> syncQueue;
   final List<LocalSyncRecord> syncRecords;
+  final PlayerProfile perfil;
   final Map<String, String> smashCoverPreferences;
   final String personagemAtualNome;
   final TimePrincipalInvincible timePrincipalInvincible;
@@ -32,6 +33,7 @@ class SyncRunResult {
     required this.partidasExcluidasParaSync,
     required this.syncQueue,
     required this.syncRecords,
+    required this.perfil,
     required this.smashCoverPreferences,
     required this.personagemAtualNome,
     required this.timePrincipalInvincible,
@@ -63,6 +65,7 @@ class SyncMutableState {
   List<PartidaRegistrada> partidasExcluidasParaSync;
   List<SyncQueueItem> syncQueue;
   List<LocalSyncRecord> syncRecords;
+  PlayerProfile perfil;
   Map<String, String> smashCoverPreferences;
   String personagemAtualNome;
   TimePrincipalInvincible timePrincipalInvincible;
@@ -74,6 +77,7 @@ class SyncMutableState {
     required this.partidasExcluidasParaSync,
     required this.syncQueue,
     required this.syncRecords,
+    required this.perfil,
     required this.smashCoverPreferences,
     required this.personagemAtualNome,
     required this.timePrincipalInvincible,
@@ -111,7 +115,7 @@ abstract final class SyncService {
 
     final String? resolvedUserId = AuthService.currentUserId;
     if ((resolvedUserId ?? '').trim().isEmpty) {
-      throw Exception('Entre na sua conta antes de sincronizar.');
+      throw Exception('Entre em uma conta para sincronizar seus dados.');
     }
     await AuthService.persistCurrentUser();
 
@@ -135,6 +139,7 @@ abstract final class SyncService {
       ),
       syncQueue: List<SyncQueueItem>.from(syncQueue),
       syncRecords: List<LocalSyncRecord>.from(syncRecords),
+      perfil: perfil,
       smashCoverPreferences: Map<String, String>.from(smashCoverPreferences),
       personagemAtualNome: personagemAtualNome,
       timePrincipalInvincible: timePrincipalInvincible,
@@ -143,6 +148,7 @@ abstract final class SyncService {
     );
 
     _normalizarIdsLocaisParaSupabase(state);
+    _normalizarIdsInternosParaSupabase(state);
     _garantirMetadadosDaFila(
       state,
       deviceId: resolvedDeviceId,
@@ -153,6 +159,12 @@ abstract final class SyncService {
       client: client,
       userId: resolvedUserId,
       deviceId: resolvedDeviceId,
+      now: syncStartedAt,
+    );
+    await _upsertProfile(
+      client: client,
+      userId: resolvedUserId,
+      perfil: perfil,
       now: syncStartedAt,
     );
 
@@ -198,6 +210,7 @@ abstract final class SyncService {
       partidasExcluidasParaSync: state.partidasExcluidasParaSync,
       syncQueue: state.syncQueue,
       syncRecords: state.syncRecords,
+      perfil: state.perfil,
       smashCoverPreferences: state.smashCoverPreferences,
       personagemAtualNome: state.personagemAtualNome,
       timePrincipalInvincible: state.timePrincipalInvincible,
@@ -347,6 +360,11 @@ abstract final class SyncService {
       deviceId: deviceId,
       now: now,
     );
+    counters.downloaded += await _downloadProfile(
+      client: client,
+      state: state,
+      userId: userId,
+    );
     counters.downloaded += await _downloadPreferences(
       client: client,
       state: state,
@@ -355,6 +373,14 @@ abstract final class SyncService {
       now: now,
     );
     counters.downloaded += await _downloadGameProfiles(
+      client: client,
+      state: state,
+      userId: userId,
+      deviceId: deviceId,
+      jogoAtual: jogoAtual,
+      now: now,
+    );
+    counters.downloaded += await _downloadCharacterProgress(
       client: client,
       state: state,
       userId: userId,
@@ -482,6 +508,32 @@ abstract final class SyncService {
       if (novoId == null) return item;
       return item.copyWith(entityId: novoId, status: SyncQueueStatus.pending);
     }).toList();
+  }
+
+  static void _normalizarIdsInternosParaSupabase(SyncMutableState state) {
+    state.syncRecords = state.syncRecords.map((record) {
+      if (_looksLikeUuid(record.id)) return record;
+      return record.copyWith(id: gerarIdLocal('sync_record'));
+    }).toList();
+
+    state.syncQueue = state.syncQueue.map((item) {
+      if (_looksLikeUuid(item.id)) return item;
+      return item.copyWith(id: gerarIdLocal('sync_queue'));
+    }).toList();
+  }
+
+  static Future<void> _upsertProfile({
+    required SupabaseClient client,
+    required String userId,
+    required PlayerProfile perfil,
+    required DateTime now,
+  }) async {
+    await client.from('profiles').upsert({
+      'user_id': userId,
+      'nickname': _resolvedNickname(perfil),
+      'created_at': now.toIso8601String(),
+      'updated_at': now.toIso8601String(),
+    }, onConflict: 'user_id');
   }
 
   static Future<void> _upsertDevice({
@@ -904,6 +956,31 @@ abstract final class SyncService {
     return changed;
   }
 
+  static Future<int> _downloadProfile({
+    required SupabaseClient client,
+    required SyncMutableState state,
+    required String userId,
+  }) async {
+    final dynamic response = await client
+        .from('profiles')
+        .select()
+        .eq('user_id', userId);
+    final List<Map<String, dynamic>> rows = _rows(response);
+    if (rows.isEmpty) return 0;
+
+    rows.sort((a, b) {
+      final DateTime aUpdated = _dateFromRemote(a['updated_at']) ?? DateTime(0);
+      final DateTime bUpdated = _dateFromRemote(b['updated_at']) ?? DateTime(0);
+      return bUpdated.compareTo(aUpdated);
+    });
+
+    final String nickname = rows.first['nickname']?.toString().trim() ?? '';
+    if (nickname.isEmpty || nickname == state.perfil.nick) return 0;
+
+    state.perfil = state.perfil.copyWith(nick: nickname);
+    return 1;
+  }
+
   static Future<int> _downloadPreferences({
     required SupabaseClient client,
     required SyncMutableState state,
@@ -1029,6 +1106,14 @@ abstract final class SyncService {
     final Map<String, dynamic> preferences = _jsonMap(
       latest['preferences_json'],
     );
+    final Map<String, dynamic> profile = _jsonMap(preferences['profile']);
+    if (profile.isNotEmpty) {
+      state.perfil = PlayerProfile.fromJson(profile).copyWith(
+        nick: state.perfil.nick.trim().isNotEmpty
+            ? state.perfil.nick
+            : profile['nick']?.toString(),
+      );
+    }
     final Map<String, dynamic> teams = _jsonMap(preferences['teams']);
     if (teams[jogoInvincibleVs] is Map) {
       state.timePrincipalInvincible = TimePrincipalInvincible.fromJson(
@@ -1058,6 +1143,59 @@ abstract final class SyncService {
     );
 
     return 1;
+  }
+
+  static Future<int> _downloadCharacterProgress({
+    required SupabaseClient client,
+    required SyncMutableState state,
+    required String userId,
+    required String deviceId,
+    required String jogoAtual,
+    required DateTime now,
+  }) async {
+    final dynamic response = await client
+        .from('character_progress')
+        .select()
+        .eq('user_id', userId)
+        .eq('game_name', jogoAtual);
+    int changed = 0;
+
+    for (final Map<String, dynamic> row in _rows(response)) {
+      final String key = row['character_or_team_key']?.toString() ?? '';
+      if (key.trim().isEmpty) continue;
+
+      final String entityId = 'character:$jogoAtual:$key';
+      final DateTime remoteUpdatedAt =
+          _dateFromRemote(row['updated_at']) ?? now;
+      final DateTime? remoteDeletedAt = _dateFromRemote(row['deleted_at']);
+      final LocalSyncRecord? localRecord = _findRecord(
+        state.syncRecords,
+        SyncEntityType.characterProgress,
+        entityId,
+      );
+
+      if (!resolveConflict(
+        localUpdatedAt: localRecord?.updatedAt,
+        remoteUpdatedAt: remoteUpdatedAt,
+      )) {
+        continue;
+      }
+
+      _upsertRemoteRecordAsSynced(
+        state,
+        entityType: SyncEntityType.characterProgress,
+        entityId: entityId,
+        remoteId: row['id']?.toString() ?? gerarIdLocal('sync_record'),
+        userId: userId,
+        deviceId: deviceId,
+        remoteUpdatedAt: remoteUpdatedAt,
+        deletedAt: remoteDeletedAt,
+        now: now,
+      );
+      changed++;
+    }
+
+    return changed;
   }
 
   static Future<int> _downloadFavorites({
@@ -1283,6 +1421,7 @@ abstract final class SyncService {
     required String userId,
     required String deviceId,
     required DateTime remoteUpdatedAt,
+    DateTime? deletedAt,
     required DateTime now,
   }) {
     final LocalSyncRecord? existing = _findRecord(
@@ -1307,6 +1446,8 @@ abstract final class SyncService {
       userId: userId,
       deviceId: deviceId,
       updatedAt: remoteUpdatedAt,
+      deletedAt: deletedAt,
+      clearDeletedAt: deletedAt == null,
       syncStatus: SyncStatus.synced,
       lastSyncAt: now,
       syncErrorMessage: '',
@@ -1369,6 +1510,17 @@ abstract final class SyncService {
     }
     if (jogoAtual == jogo2Xko && twoXko.completo) return twoXko.key;
     if (jogoAtual == jogoKofXV && kof.completo) return kof.key;
+    return '';
+  }
+
+  static String _resolvedNickname(PlayerProfile perfil) {
+    if (perfil.nick.trim().isNotEmpty) return perfil.nick.trim();
+    final String? authNick = AuthService.currentUserNick;
+    if ((authNick ?? '').trim().isNotEmpty) return authNick!.trim();
+    final String? email = AuthService.currentUserEmail;
+    if ((email ?? '').trim().isNotEmpty) {
+      return email!.split('@').first.trim();
+    }
     return '';
   }
 

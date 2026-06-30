@@ -1684,6 +1684,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         partidasExcluidasParaSync = result.partidasExcluidasParaSync;
         syncQueue = result.syncQueue;
         syncRecords = result.syncRecords;
+        perfil = result.perfil;
         smashCoverPreferences = result.smashCoverPreferences;
         personagemAtualNome = result.personagemAtualNome;
         timePrincipalInvincible = result.timePrincipalInvincible;
