@@ -152,6 +152,9 @@ const String prefsKeyFavoriteGames = 'favoriteGames';
 const String prefsKeyRecentGames = 'recentGames';
 const String prefsKeyFavoriteCharactersByGame = 'favoriteCharactersByGame';
 const String prefsKeyRecentCharactersByGame = 'recentCharactersByGame';
+const String prefsKeyAutoSyncEnabled = 'autoSyncEnabled';
+const String prefsKeyPendingExternalSyncSnapshot =
+    'pendingExternalSyncSnapshot';
 const String smashCoverMale = 'male';
 const String smashCoverFemale = 'female';
 

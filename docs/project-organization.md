@@ -29,6 +29,7 @@ lib/src/core/responsive/responsive.dart
 lib/src/core/supabase/supabase_config.dart
 lib/src/core/supabase/auth_service.dart
 lib/src/data/services/device_service.dart
+lib/src/data/services/sync_service.dart
 lib/src/data/repositories/local_sync_repository.dart
 lib/src/features/auth/auth_screens.dart
 lib/src/shared/widgets/layout_widgets.dart
@@ -66,8 +67,14 @@ Gera e guarda o `deviceId` local usado pelos metadados offline-first.
 
 `local_sync_repository.dart`
 
-Prepara entidades locais para sincronizacao futura: gera ids locais, marca
+Prepara entidades locais para sincronizacao: gera ids locais, marca
 `pendingSync`, cria tombstones de delete e atualiza a `syncQueue`.
+
+`sync_service.dart`
+
+Centraliza o sync manual/automatico com Supabase: envia fila local, baixa dados
+remotos, resolve conflitos por `updatedAt`, aplica soft delete e atualiza
+`lastSyncAt`.
 
 `core/supabase/`
 
@@ -76,8 +83,8 @@ sem espalhar `Supabase.instance.client.auth` pelas telas.
 
 `features/auth/auth_screens.dart`
 
-Tela opcional de Conta e Sync: login/cadastro, logout, status local e placeholder
-para sync manual futuro.
+Tela opcional de Conta e Sync: login/cadastro, logout, status local, botao
+"Sincronizar agora" e preferencia de sincronizacao automatica.
 
 ## Estrutura Alvo
 

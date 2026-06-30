@@ -1,86 +1,10 @@
 part of '../../main.dart';
 
-class RootPage extends StatefulWidget {
+class RootPage extends StatelessWidget {
   const RootPage({super.key});
 
   @override
-  State<RootPage> createState() => _RootPageState();
-}
-
-class _RootPageState extends State<RootPage> {
-  bool carregando = true;
-  bool perfilExiste = false;
-
-  @override
-  void initState() {
-    super.initState();
-    verificarPerfil();
-  }
-
-  Future<void> verificarPerfil() async {
-    bool existe = false;
-
-    final Map<String, dynamic>? dadosArquivo = await _lerDadosArquivo();
-    if (dadosArquivo != null) {
-      final dynamic perfilRaw = dadosArquivo['perfilJogador'];
-      if (perfilRaw is Map<String, dynamic>) {
-        try {
-          final perfil = PlayerProfile.fromJson(perfilRaw);
-          existe = perfil.nick.trim().isNotEmpty;
-        } catch (_) {
-          existe = false;
-        }
-      }
-    }
-
-    if (!existe) {
-      final prefs = await SharedPreferences.getInstance();
-      final String? perfilSalvo = prefs.getString('perfilJogador');
-
-      if (perfilSalvo != null) {
-        try {
-          final dynamic decoded = jsonDecode(perfilSalvo);
-          if (decoded is Map<String, dynamic>) {
-            final perfil = PlayerProfile.fromJson(decoded);
-            existe = perfil.nick.trim().isNotEmpty;
-          }
-        } catch (_) {
-          existe = false;
-        }
-      }
-    }
-
-    setState(() {
-      perfilExiste = existe;
-      carregando = false;
-    });
-  }
-
-  Future<void> concluirPerfil(PlayerProfile perfil) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('perfilJogador', jsonEncode(perfil.toJson()));
-    await _salvarDadosArquivo({
-      'perfilJogador': perfil.toJson(),
-      'personagemAtualNome': 'Hero',
-      'personagens': [],
-      'historico': [],
-    });
-
-    setState(() {
-      perfilExiste = true;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (carregando) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (!perfilExiste) {
-      return LoginPage(onPerfilCriado: concluirPerfil);
-    }
-
     return const SelecionarJogoInicialPage();
   }
 }

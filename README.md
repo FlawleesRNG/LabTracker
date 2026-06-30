@@ -17,7 +17,7 @@ Versao atual: `1.0.0-alpha+1`.
 - Estatisticas, graficos e leitura de padroes.
 - Backup local em JSON.
 - Login Google em mobile, com fallback por nick em desktop.
-- Conta Supabase opcional para preparar backup/sync futuro.
+- Conta Supabase opcional com sync manual e automatico offline-first.
 
 ## Jogos Suportados
 

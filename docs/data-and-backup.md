@@ -1,7 +1,8 @@
 # Dados, Persistencia E Backup
 
-O LabTracker salva os dados localmente. Nao ha sincronizacao em nuvem no fluxo
-atual.
+O LabTracker salva os dados localmente primeiro. Quando Supabase esta
+configurado e o usuario esta logado, o app sincroniza em segundo plano sem
+bloquear o uso offline.
 
 ## Arquivo Principal
 
@@ -28,7 +29,7 @@ O pacote principal de persistencia contem:
 - `deviceId` local do aparelho.
 - `syncRecords` com metadados offline-first de perfil, progresso,
   preferencias, favoritos e selecoes.
-- `syncQueue` com operacoes pendentes para sincronizacao futura.
+- `syncQueue` com operacoes pendentes para sync manual/automatico.
 - `partidasExcluidasParaSync` com tombstones de partidas apagadas localmente.
 - `currentUserId` quando houver sessao Supabase ativa.
 
@@ -72,7 +73,9 @@ Edicoes viram operacao `update` na fila. Exclusoes viram operacao `delete` e a
 partida apagada fica preservada em `partidasExcluidasParaSync`, fora do
 historico ativo, para nao quebrar estatisticas nem rank.
 
-Por enquanto, nada e enviado para Supabase. A fila e apenas local.
+Quando ha sessao Supabase ativa, a fila pode ser enviada pelo botao
+"Sincronizar agora" ou pelo sync automatico. Se a rede falhar, os itens ficam
+pendentes/erro localmente e sao tentados novamente depois.
 
 ## Supabase Auth
 
@@ -100,6 +103,23 @@ Dados antigos sem `userId` continuam funcionando. Nao ha migracao automatica
 agressiva nesta etapa.
 
 Sem as variaveis do Supabase, o app abre normalmente em modo local.
+
+## Supabase Sync
+
+O sync usa as tabelas em `supabase/schema.sql` e as policies em
+`supabase/rls_policies.sql`. Cada operacao respeita `auth.uid() = user_id`.
+
+Fluxo atual:
+
+- registrar/editar/excluir sempre salva local primeiro;
+- a fila `syncQueue` registra `create`, `update` ou `delete`;
+- deletes usam `deletedAt` como soft delete;
+- conflitos usam `updatedAt`: o registro mais recente vence;
+- o sync automatico pode rodar ao abrir o app, apos login, apos salvar dados,
+  quando a conexao volta, ao retornar ao primeiro plano e em intervalo leve;
+- a opcao `autoSyncEnabled` fica em `SharedPreferences` e tambem no snapshot de
+  preferencias remoto;
+- o botao manual continua disponivel mesmo com sync automatico desligado.
 
 ## Backup Local
 

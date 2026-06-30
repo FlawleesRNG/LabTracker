@@ -90,7 +90,7 @@ create table if not exists public.sync_events (
   user_id uuid not null references auth.users(id) on delete cascade,
   device_id text not null,
   entity_type text not null,
-  entity_id uuid not null,
+  entity_id text not null,
   operation text not null,
   status text not null default 'pending',
   error_message text not null default '',

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,6 +19,7 @@ part 'src/app/app.dart';
 part 'src/models/models.dart';
 part 'src/data/game_data.dart';
 part 'src/data/services/device_service.dart';
+part 'src/data/services/sync_service.dart';
 part 'src/data/repositories/local_sync_repository.dart';
 part 'src/core/game_logic.dart';
 part 'src/screens/onboarding.dart';

@@ -22,7 +22,12 @@ class HomePage extends StatefulWidget {
 
 enum _HomePageMenuAction { conta, perfil, configuracoes, resetar }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  static const Duration _autoSyncDebounceDuration = Duration(seconds: 3);
+  static const Duration _minIntervalBetweenAutoSync = Duration(seconds: 30);
+  static const Duration _foregroundAutoSyncInterval = Duration(minutes: 2);
+  static const Duration _periodicAutoSyncInterval = Duration(minutes: 5);
+
   PlayerProfile perfil = perfilPadrao;
 
   late Map<String, Character> personagens;
@@ -44,6 +49,16 @@ class _HomePageState extends State<HomePage> {
   String? currentUserId;
 
   bool carregando = true;
+  bool autoSyncEnabled = true;
+  bool syncEmAndamento = false;
+  bool autoSyncPendenteAposAtual = false;
+  bool? ultimaConectividadeOnline;
+  DateTime? lastAutoSyncAttemptAt;
+  DateTime? lastAutoSyncCompletedAt;
+  Timer? autoSyncDebounceTimer;
+  Timer? autoSyncPeriodicTimer;
+  StreamSubscription<AuthState>? authStateSubscription;
+  StreamSubscription<List<ConnectivityResult>>? connectivitySubscription;
 
   /// Nome do personagem padrão (primeiro do roster do jogo atual).
   String get personagemPadraoDoJogo {
@@ -54,13 +69,39 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     personagens = {
       for (final personagem in rosterDoJogo(widget.jogoAtual))
         personagem.name: personagem,
     };
     personagemAtualNome =
         widget.personagemInicialNome ?? personagemPadraoDoJogo;
+    iniciarObservadoresSyncAutomatico();
     carregarDados();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    autoSyncDebounceTimer?.cancel();
+    autoSyncPeriodicTimer?.cancel();
+    authStateSubscription?.cancel();
+    connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+
+    final DateTime now = DateTime.now();
+    final bool intervaloOk =
+        lastAutoSyncCompletedAt == null ||
+        now.difference(lastAutoSyncCompletedAt!) >= _foregroundAutoSyncInterval;
+
+    if (intervaloOk) {
+      agendarSyncAutomatico(motivo: 'foreground');
+    }
   }
 
   Character get personagemAtual {
@@ -74,6 +115,154 @@ class _HomePageState extends State<HomePage> {
           rank: rankInicialDoJogo(widget.jogoAtual),
           pdl: 0,
         );
+  }
+
+  void iniciarObservadoresSyncAutomatico() {
+    authStateSubscription = AuthService.authStateChanges.listen((_) async {
+      await AuthService.persistCurrentUser();
+      final String? resolvedUserId = await AuthService.resolveCurrentUserId();
+      if (!mounted) return;
+
+      setState(() {
+        currentUserId = resolvedUserId;
+      });
+
+      if ((resolvedUserId ?? '').trim().isNotEmpty) {
+        agendarSyncAutomatico(
+          motivo: 'login',
+          force: true,
+          delay: const Duration(seconds: 2),
+        );
+      }
+    });
+
+    connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      results,
+    ) {
+      final bool online = conectividadeTemRede(results);
+      final bool voltouOnline = online && ultimaConectividadeOnline == false;
+      ultimaConectividadeOnline = online;
+
+      if (voltouOnline) {
+        agendarSyncAutomatico(motivo: 'connection_restored', force: true);
+      }
+    });
+
+    autoSyncPeriodicTimer = Timer.periodic(_periodicAutoSyncInterval, (_) {
+      agendarSyncAutomatico(motivo: 'interval');
+    });
+
+    unawaited(carregarPreferenciaSyncAutomatico());
+  }
+
+  Future<void> carregarPreferenciaSyncAutomatico() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final bool enabled = prefs.getBool(prefsKeyAutoSyncEnabled) ?? true;
+
+    if (!mounted) return;
+    setState(() {
+      autoSyncEnabled = enabled;
+    });
+  }
+
+  bool conectividadeTemRede(List<ConnectivityResult> results) {
+    return results.any((result) => result != ConnectivityResult.none);
+  }
+
+  Future<bool> temInternetProvavel() async {
+    try {
+      final List<ConnectivityResult> results = await Connectivity()
+          .checkConnectivity();
+      final bool online = conectividadeTemRede(results);
+      ultimaConectividadeOnline = online;
+      return online;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  void agendarSyncAutomatico({
+    required String motivo,
+    bool force = false,
+    Duration delay = _autoSyncDebounceDuration,
+  }) {
+    if (!mounted || !autoSyncEnabled) return;
+
+    if (carregando || syncEmAndamento) {
+      autoSyncPendenteAposAtual = true;
+      return;
+    }
+
+    final DateTime now = DateTime.now();
+    Duration atrasoFinal = delay;
+
+    if (!force && lastAutoSyncAttemptAt != null) {
+      final Duration desdeUltimaTentativa = now.difference(
+        lastAutoSyncAttemptAt!,
+      );
+      if (desdeUltimaTentativa < _minIntervalBetweenAutoSync) {
+        final Duration restante =
+            _minIntervalBetweenAutoSync - desdeUltimaTentativa;
+        if (restante > atrasoFinal) atrasoFinal = restante;
+      }
+    }
+
+    autoSyncDebounceTimer?.cancel();
+    autoSyncDebounceTimer = Timer(atrasoFinal, () {
+      unawaited(executarSyncAutomatico(motivo: motivo, force: force));
+    });
+  }
+
+  Future<void> executarSyncAutomatico({
+    required String motivo,
+    bool force = false,
+  }) async {
+    if (!mounted || !autoSyncEnabled || carregando) return;
+
+    if (syncEmAndamento) {
+      autoSyncPendenteAposAtual = true;
+      return;
+    }
+
+    if (!AuthService.isAvailable) return;
+
+    if (!AuthService.isLoggedIn) return;
+
+    final bool online = await temInternetProvavel();
+    if (!online) return;
+
+    final DateTime now = DateTime.now();
+    if (!force && lastAutoSyncAttemptAt != null) {
+      final Duration desdeUltimaTentativa = now.difference(
+        lastAutoSyncAttemptAt!,
+      );
+      if (desdeUltimaTentativa < _minIntervalBetweenAutoSync) {
+        agendarSyncAutomatico(motivo: motivo);
+        return;
+      }
+    }
+
+    try {
+      await executarSincronizacao(automatico: true);
+    } catch (_) {
+      // Sync automatico e silencioso: a fila local guarda pendencias/erros.
+    }
+  }
+
+  Future<bool> incorporarSnapshotsExternosPendentes() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final bool pendente =
+        prefs.getBool(prefsKeyPendingExternalSyncSnapshot) ?? false;
+    if (!pendente) return false;
+
+    if (deviceId.trim().isEmpty) {
+      deviceId = await DeviceService.obterOuCriarDeviceId();
+    }
+
+    marcarSnapshotsLocaisPendentes();
+    await _salvarDadosArquivo(gerarDadosPersistidos());
+    await prefs.remove(prefsKeyPendingExternalSyncSnapshot);
+    return true;
   }
 
   List<PartidaRegistrada> get historicoDoContextoAtual {
@@ -464,14 +653,23 @@ class _HomePageState extends State<HomePage> {
         recebeuTimeKofInicial) {
       await salvarDados();
     }
+
+    await carregarPreferenciaSyncAutomatico();
+    agendarSyncAutomatico(
+      motivo: 'app_open',
+      force: true,
+      delay: const Duration(seconds: 2),
+    );
   }
 
-  Future<void> salvarDados() async {
+  Future<void> salvarDados({bool marcarSyncPendente = true}) async {
     if (deviceId.trim().isEmpty) {
       deviceId = await DeviceService.obterOuCriarDeviceId();
     }
 
-    marcarSnapshotsLocaisPendentes();
+    if (marcarSyncPendente) {
+      marcarSnapshotsLocaisPendentes();
+    }
     final prefs = await SharedPreferences.getInstance();
 
     await _salvarDadosArquivo(gerarDadosPersistidos());
@@ -502,6 +700,10 @@ class _HomePageState extends State<HomePage> {
     );
     await prefs.remove('personagens');
     await prefs.remove('historico');
+
+    if (marcarSyncPendente) {
+      agendarSyncAutomatico(motivo: 'local_save');
+    }
   }
 
   bool prepararBaseOfflineFirstLocal() {
@@ -1422,6 +1624,97 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  DateTime? get ultimaSincronizacaoLocal {
+    final List<DateTime> datas = [
+      ...historico.map((partida) => partida.lastSyncAt).whereType<DateTime>(),
+      ...partidasExcluidasParaSync
+          .map((partida) => partida.lastSyncAt)
+          .whereType<DateTime>(),
+      ...syncRecords.map((record) => record.lastSyncAt).whereType<DateTime>(),
+    ];
+
+    if (datas.isEmpty) return null;
+    datas.sort((a, b) => b.compareTo(a));
+    return datas.first;
+  }
+
+  Future<SyncRunResult> executarSincronizacao({
+    required bool automatico,
+  }) async {
+    if (syncEmAndamento) {
+      autoSyncPendenteAposAtual = autoSyncPendenteAposAtual || automatico;
+      throw Exception('Ja existe uma sincronizacao em andamento.');
+    }
+
+    syncEmAndamento = true;
+    if (automatico) {
+      lastAutoSyncAttemptAt = DateTime.now();
+    }
+
+    try {
+      if (deviceId.trim().isEmpty) {
+        deviceId = await DeviceService.obterOuCriarDeviceId();
+      }
+
+      await incorporarSnapshotsExternosPendentes();
+
+      final SyncRunResult result = await SyncService.syncNow(
+        deviceId: deviceId,
+        currentUserId: currentUserId,
+        jogoAtual: widget.jogoAtual,
+        perfil: perfil,
+        personagemAtualNome: personagemAtualNome,
+        timePrincipalInvincible: timePrincipalInvincible,
+        timePrincipal2XKO: timePrincipal2XKO,
+        timePrincipalKofXV: timePrincipalKofXV,
+        personagens: personagens,
+        historico: historico,
+        partidasExcluidasParaSync: partidasExcluidasParaSync,
+        syncQueue: syncQueue,
+        syncRecords: syncRecords,
+        smashCoverPreferences: smashCoverPreferences,
+      );
+
+      if (!mounted) return result;
+
+      setState(() {
+        currentUserId = result.userId;
+        deviceId = result.deviceId;
+        historico = result.historico;
+        partidasExcluidasParaSync = result.partidasExcluidasParaSync;
+        syncQueue = result.syncQueue;
+        syncRecords = result.syncRecords;
+        smashCoverPreferences = result.smashCoverPreferences;
+        personagemAtualNome = result.personagemAtualNome;
+        timePrincipalInvincible = result.timePrincipalInvincible;
+        timePrincipal2XKO = result.timePrincipal2XKO;
+        timePrincipalKofXV = result.timePrincipalKofXV;
+        recalcularPersonagensPeloHistorico();
+      });
+
+      await salvarDados(marcarSyncPendente: false);
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove(prefsKeyPendingExternalSyncSnapshot);
+      await carregarPreferenciaSyncAutomatico();
+
+      if (automatico) {
+        lastAutoSyncCompletedAt = result.syncedAt;
+      }
+
+      return result;
+    } finally {
+      syncEmAndamento = false;
+      if (autoSyncPendenteAposAtual && autoSyncEnabled && mounted) {
+        autoSyncPendenteAposAtual = false;
+        agendarSyncAutomatico(motivo: 'queued_after_sync');
+      }
+    }
+  }
+
+  Future<SyncRunResult> sincronizarAgora() async {
+    return executarSincronizacao(automatico: false);
+  }
+
   Future<void> abrirContaSync() async {
     await Navigator.push(
       context,
@@ -1429,12 +1722,27 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => AccountSyncPage(
           deviceId: deviceId,
           currentUserId: currentUserId,
+          lastSyncAt: ultimaSincronizacaoLocal,
           pendingSyncCount: syncQueue
               .where((item) => item.status == SyncQueueStatus.pending)
               .length,
           syncErrorCount: syncQueue
               .where((item) => item.status == SyncQueueStatus.error)
               .length,
+          onSyncNow: sincronizarAgora,
+          onAutoSyncChanged: (enabled) async {
+            if (!mounted) return;
+            setState(() {
+              autoSyncEnabled = enabled;
+            });
+
+            if (!enabled) {
+              autoSyncDebounceTimer?.cancel();
+              return;
+            }
+
+            agendarSyncAutomatico(motivo: 'auto_sync_enabled', force: true);
+          },
         ),
       ),
     );
@@ -1446,7 +1754,12 @@ class _HomePageState extends State<HomePage> {
       currentUserId = resolvedUserId;
     });
 
-    await salvarDados();
+    await carregarPreferenciaSyncAutomatico();
+    await salvarDados(marcarSyncPendente: false);
+
+    if (autoSyncEnabled) {
+      agendarSyncAutomatico(motivo: 'account_return', force: true);
+    }
   }
 
   void abrirResumoTreino() {

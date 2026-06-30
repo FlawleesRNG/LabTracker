@@ -13,7 +13,7 @@ simples; detalhes de arquitetura, fluxo, build e manutencao ficam aqui.
 - [Desenvolvimento](development.md): comandos, padroes e cuidados ao alterar o app.
 - [Build e executavel](build-and-release.md): como gerar builds, incluindo Windows.
 - [Google Login](google-login.md): configuracao externa necessaria para Android/iOS.
-- [Supabase](../supabase/README.md): Auth, schema e RLS para sync futuro.
+- [Supabase](../supabase/README.md): Auth, schema, RLS e sync offline-first.
 
 ## Estado Atual
 
@@ -32,7 +32,8 @@ Fluxos especificos importantes:
 - `Fatal Fury`: SNK Fighter.
 - `Rivals of Aether II`: Platform Fighter sem funcoes exclusivas do Smash.
 - `Smash`: capa male/female visual, sem separar historico/rank/PDL.
-- `Supabase Auth`: login opcional; dados locais continuam sendo a fonte diaria.
+- `Supabase`: login opcional, sync manual/automatico e dados locais como fonte
+  primaria.
 
 ## Convencoes
 

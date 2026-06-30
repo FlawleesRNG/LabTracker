@@ -69,8 +69,8 @@ Para mudar um fluxo:
 - Toda criacao/edicao/exclusao de partida deve atualizar `syncQueue`.
 - Exclusoes devem preservar tombstone em `partidasExcluidasParaSync` quando
   houver sync pendente.
-- Supabase Auth esta preparado, mas envio/download de dados ainda fica para uma
-  etapa propria.
+- Sync manual e automatico reaproveitam `SyncService.syncNow()` e nao devem
+  duplicar logica de upload/download nas telas.
 
 ## Supabase
 
@@ -78,8 +78,14 @@ Para mudar um fluxo:
 - Configure por `--dart-define=SUPABASE_ANON_KEY=...`.
 - Nunca colocar `service_role` no codigo, no app ou no repositorio.
 - SQL e policies ficam em `supabase/`.
+- A abertura passa por `AuthGate`: sessao ativa entra direto, sem sessao mostra
+  Entrar/Criar conta/Continuar offline.
 - Auth atual usa apenas e-mail e senha.
 - Cadastro atual coleta nick, e-mail, senha e confirmacao de senha.
+- Sync atual cobre fila local, snapshots de perfil/progresso/preferencias,
+  favoritos e soft delete.
+- O sync automatico pode ser desligado em Conta e Sync; o botao manual continua
+  funcionando.
 - OTP, magic link e login social ficam para uma etapa futura.
 
 ## Padroes De UI

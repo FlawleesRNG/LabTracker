@@ -1,17 +1,254 @@
 part of '../../../main.dart';
 
+const String _authContinueOfflineResult = '__labtracker_continue_offline__';
+
+class AuthGate extends StatefulWidget {
+  final Widget child;
+
+  const AuthGate({super.key, required this.child});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool loading = true;
+  bool accessGranted = false;
+  String? message;
+
+  @override
+  void initState() {
+    super.initState();
+    checkInitialAccess();
+  }
+
+  Future<void> checkInitialAccess() async {
+    if (AuthService.isAvailable && AuthService.isLoggedIn) {
+      await AuthService.persistCurrentUser();
+      if (!mounted) return;
+      setState(() {
+        accessGranted = true;
+        loading = false;
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      accessGranted = false;
+      loading = false;
+    });
+  }
+
+  Future<void> openLogin() async {
+    final String? result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SupabaseLoginPage(
+          continueOfflineResult: _authContinueOfflineResult,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == _authContinueOfflineResult) {
+      continueOffline();
+      return;
+    }
+
+    if (AuthService.isLoggedIn) {
+      await AuthService.persistCurrentUser();
+      if (!mounted) return;
+      setState(() {
+        accessGranted = true;
+      });
+      return;
+    }
+
+    if ((result ?? '').trim().isNotEmpty) {
+      setState(() {
+        message = result;
+      });
+    }
+  }
+
+  Future<void> openSignUp() async {
+    final String? result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SupabaseSignUpPage(
+          continueOfflineResult: _authContinueOfflineResult,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == _authContinueOfflineResult) {
+      continueOffline();
+      return;
+    }
+
+    if (AuthService.isLoggedIn) {
+      await AuthService.persistCurrentUser();
+      if (!mounted) return;
+      setState(() {
+        accessGranted = true;
+      });
+      return;
+    }
+
+    if ((result ?? '').trim().isNotEmpty) {
+      setState(() {
+        message = result;
+      });
+    }
+  }
+
+  void continueOffline() {
+    setState(() {
+      accessGranted = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (accessGranted) {
+      return widget.child;
+    }
+
+    return StartupAccessPage(
+      message: message,
+      supabaseAvailable: AuthService.isAvailable,
+      supabaseConfigured: SupabaseConfig.hasCredentials,
+      onLogin: AuthService.isAvailable ? openLogin : null,
+      onSignUp: AuthService.isAvailable ? openSignUp : null,
+      onContinueOffline: continueOffline,
+    );
+  }
+}
+
+class StartupAccessPage extends StatelessWidget {
+  final String? message;
+  final bool supabaseAvailable;
+  final bool supabaseConfigured;
+  final VoidCallback? onLogin;
+  final VoidCallback? onSignUp;
+  final VoidCallback onContinueOffline;
+
+  const StartupAccessPage({
+    super.key,
+    this.message,
+    required this.supabaseAvailable,
+    required this.supabaseConfigured,
+    required this.onLogin,
+    required this.onSignUp,
+    required this.onContinueOffline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final String subtitle = supabaseAvailable
+        ? 'Registre suas partidas, acompanhe seu progresso e sincronize PC e celular.'
+        : 'Registre suas partidas e acompanhe seu progresso offline.';
+    final String secondaryText = supabaseAvailable
+        ? 'Voce pode usar o LabTracker offline. O login serve para backup e sincronizacao.'
+        : supabaseConfigured
+        ? 'Nao foi possivel iniciar a conta online agora. Voce pode continuar offline normalmente.'
+        : 'Supabase nao esta configurado neste build. Voce pode continuar offline normalmente.';
+
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: context.responsivePagePadding,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: AppSurfaceCard(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: LtMark(size: 86, bordered: true)),
+                    const SizedBox(height: AppSpacing.xl),
+                    const Center(child: LtLogo(scale: 1.25)),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      subtitle,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: BrandColors.brancoSuave.withValues(alpha: 0.78),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    if ((message ?? '').trim().isNotEmpty) ...[
+                      AuthMessageBox(
+                        text: message!,
+                        color: BrandColors.ambarDourado,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                    if (supabaseAvailable) ...[
+                      FilledButton.icon(
+                        onPressed: onLogin,
+                        icon: const Icon(Icons.login_outlined),
+                        label: const Text('Entrar'),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      OutlinedButton.icon(
+                        onPressed: onSignUp,
+                        icon: const Icon(Icons.person_add_alt_outlined),
+                        label: const Text('Criar conta'),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
+                    OutlinedButton.icon(
+                      onPressed: onContinueOffline,
+                      icon: const Icon(Icons.offline_bolt_outlined),
+                      label: const Text('Continuar offline'),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      secondaryText,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: BrandColors.brancoSuave.withValues(alpha: 0.62),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AccountSyncPage extends StatefulWidget {
   final String deviceId;
   final String? currentUserId;
+  final DateTime? lastSyncAt;
   final int pendingSyncCount;
   final int syncErrorCount;
+  final Future<SyncRunResult> Function()? onSyncNow;
+  final Future<void> Function(bool enabled)? onAutoSyncChanged;
 
   const AccountSyncPage({
     super.key,
     required this.deviceId,
     required this.currentUserId,
+    required this.lastSyncAt,
     required this.pendingSyncCount,
     required this.syncErrorCount,
+    this.onSyncNow,
+    this.onAutoSyncChanged,
   });
 
   @override
@@ -21,19 +258,56 @@ class AccountSyncPage extends StatefulWidget {
 class _AccountSyncPageState extends State<AccountSyncPage> {
   StreamSubscription<AuthState>? authSubscription;
   bool loading = false;
+  bool syncing = false;
   String? successMessage;
   String? errorMessage;
   String? storedUserId;
   String? storedUserEmail;
   String? storedUserNick;
+  late String currentDeviceId;
+  late int pendingSyncCount;
+  late int syncErrorCount;
+  DateTime? lastSyncAt;
+  bool autoSyncEnabled = true;
 
   @override
   void initState() {
     super.initState();
     storedUserId = widget.currentUserId;
+    currentDeviceId = widget.deviceId;
+    pendingSyncCount = widget.pendingSyncCount;
+    syncErrorCount = widget.syncErrorCount;
+    lastSyncAt = widget.lastSyncAt;
     carregarUsuarioLocal();
+    carregarPreferenciaAutoSync();
     authSubscription = AuthService.authStateChanges.listen((_) {
       carregarUsuarioLocal();
+    });
+  }
+
+  Future<void> carregarPreferenciaAutoSync() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final bool enabled = prefs.getBool(prefsKeyAutoSyncEnabled) ?? true;
+
+    if (!mounted) return;
+    setState(() {
+      autoSyncEnabled = enabled;
+    });
+  }
+
+  Future<void> alterarAutoSync(bool enabled) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(prefsKeyAutoSyncEnabled, enabled);
+    await marcarSnapshotExternoPendenteParaSync();
+    await widget.onAutoSyncChanged?.call(enabled);
+
+    if (!mounted) return;
+    setState(() {
+      autoSyncEnabled = enabled;
+      successMessage = enabled
+          ? 'Sincronizacao automatica ativada.'
+          : 'Sincronizacao automatica desativada. O botao manual continua disponivel.';
+      errorMessage = null;
     });
   }
 
@@ -44,11 +318,17 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
   }
 
   Future<void> carregarUsuarioLocal() async {
-    final String? userId = await AuthService.resolveCurrentUserId();
-    final String? email =
-        AuthService.currentUserEmail ?? await AuthService.loadStoredUserEmail();
-    final String? nick =
-        AuthService.currentUserNick ?? await AuthService.loadStoredUserNick();
+    final String? userId = AuthService.currentUserId;
+    if (userId != null) {
+      await AuthService.persistCurrentUser();
+    }
+    final String? email = userId == null
+        ? null
+        : AuthService.currentUserEmail ??
+              await AuthService.loadStoredUserEmail();
+    final String? nick = userId == null
+        ? null
+        : AuthService.currentUserNick ?? await AuthService.loadStoredUserNick();
 
     if (!mounted) return;
 
@@ -121,6 +401,64 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
     }
   }
 
+  Future<void> sincronizarAgora() async {
+    if (syncing) return;
+
+    if (!AuthService.isLoggedIn) {
+      setState(() {
+        errorMessage = 'Entre na sua conta antes de sincronizar.';
+        successMessage = null;
+      });
+      return;
+    }
+
+    final Future<SyncRunResult> Function()? syncAction = widget.onSyncNow;
+    if (syncAction == null) {
+      setState(() {
+        errorMessage = 'Sincronizacao manual indisponivel nesta tela.';
+        successMessage = null;
+      });
+      return;
+    }
+
+    setState(() {
+      syncing = true;
+      successMessage = 'Sincronizando...';
+      errorMessage = null;
+    });
+
+    try {
+      final SyncRunResult result = await syncAction();
+      await carregarUsuarioLocal();
+      if (!mounted) return;
+
+      setState(() {
+        pendingSyncCount = result.pendingCount;
+        syncErrorCount = result.errorCount;
+        lastSyncAt = result.syncedAt;
+        currentDeviceId = result.deviceId;
+        successMessage = result.success
+            ? '${result.message} Enviados: ${result.uploadedCount}. Baixados: ${result.downloadedCount}.'
+            : result.message;
+        errorMessage = result.success
+            ? null
+            : '${result.failedCount} item(ns) ficaram com erro e continuam salvos localmente.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        successMessage = null;
+        errorMessage = AuthService.friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          syncing = false;
+        });
+      }
+    }
+  }
+
   Widget statusChip({
     required IconData icon,
     required String label,
@@ -161,7 +499,7 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
           ),
           const SizedBox(height: AppSpacing.lg),
           const Text(
-            'Voce pode usar o LabTracker normalmente offline. Configure SUPABASE_URL e SUPABASE_ANON_KEY para ativar login e sincronizacao futura.',
+            'Voce pode usar o LabTracker normalmente offline. Configure SUPABASE_URL e SUPABASE_ANON_KEY para ativar login e sincronizacao.',
           ),
           if (erro.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
@@ -198,24 +536,36 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
             'Voce pode usar o LabTracker offline. Entre em uma conta para sincronizar PC e celular.',
           ),
           const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: abrirLogin,
-                  icon: const Icon(Icons.login_outlined),
-                  label: const Text('Entrar'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: abrirCadastro,
-                  icon: const Icon(Icons.person_add_alt_outlined),
-                  label: const Text('Criar conta'),
-                ),
-              ),
-            ],
+          ResponsiveActionPair(
+            primary: FilledButton.icon(
+              onPressed: abrirLogin,
+              icon: const Icon(Icons.login_outlined),
+              label: const Text('Entrar'),
+            ),
+            secondary: OutlinedButton.icon(
+              onPressed: abrirCadastro,
+              icon: const Icon(Icons.person_add_alt_outlined),
+              label: const Text('Criar conta'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            value: autoSyncEnabled,
+            onChanged: alterarAutoSync,
+            title: const Text('Sincronizacao automatica'),
+            subtitle: const Text(
+              'Fica preparada para rodar quando voce entrar na conta.',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: syncing ? null : sincronizarAgora,
+              icon: const Icon(Icons.sync_outlined),
+              label: const Text('Sincronizar agora'),
+            ),
           ),
         ],
       ),
@@ -226,6 +576,22 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
     final String email = storedUserEmail ?? AuthService.currentUserEmail ?? '';
     final String nick = storedUserNick ?? AuthService.currentUserNick ?? '';
     final String userId = storedUserId ?? AuthService.currentUserId ?? '';
+    final String statusLabel = syncing
+        ? 'Sincronizando...'
+        : syncErrorCount > 0
+        ? 'Erro de sincronizacao'
+        : pendingSyncCount > 0
+        ? 'Sincronizacao pendente'
+        : lastSyncAt == null
+        ? 'Sincronizacao pendente'
+        : 'Sincronizado';
+    final Color statusColor = syncing
+        ? BrandColors.laranjaVivo
+        : syncErrorCount > 0
+        ? BrandColors.alerta
+        : pendingSyncCount > 0
+        ? BrandColors.ambarDourado
+        : BrandColors.sucesso;
 
     return AppSurfaceCard(
       child: Column(
@@ -242,19 +608,25 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
             runSpacing: AppSpacing.sm,
             children: [
               statusChip(
-                icon: Icons.cloud_done_outlined,
-                label: 'Logado',
-                color: BrandColors.sucesso,
+                icon: syncing
+                    ? Icons.sync_outlined
+                    : syncErrorCount > 0
+                    ? Icons.error_outline
+                    : pendingSyncCount > 0
+                    ? Icons.pending_actions_outlined
+                    : Icons.cloud_done_outlined,
+                label: statusLabel,
+                color: statusColor,
               ),
               statusChip(
                 icon: Icons.pending_actions_outlined,
-                label: '${widget.pendingSyncCount} pendentes',
+                label: '$pendingSyncCount pendentes',
                 color: BrandColors.ambarDourado,
               ),
-              if (widget.syncErrorCount > 0)
+              if (syncErrorCount > 0)
                 statusChip(
                   icon: Icons.error_outline,
-                  label: '${widget.syncErrorCount} erros',
+                  label: '$syncErrorCount erros',
                   color: BrandColors.alerta,
                 ),
             ],
@@ -266,14 +638,36 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
           ],
           SelectableText('User ID: $userId'),
           const SizedBox(height: AppSpacing.sm),
-          SelectableText('Device ID: ${widget.deviceId}'),
+          SelectableText('Device ID: $currentDeviceId'),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            lastSyncAt == null
+                ? 'Ultima sincronizacao: nunca'
+                : 'Ultima sincronizacao: ${formatarData(lastSyncAt!)}',
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            value: autoSyncEnabled,
+            onChanged: loading || syncing ? null : alterarAutoSync,
+            title: const Text('Sincronizacao automatica'),
+            subtitle: const Text(
+              'Salva local primeiro e tenta sincronizar em segundo plano.',
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: null,
-              icon: const Icon(Icons.sync_outlined),
-              label: const Text('Sincronizar agora em breve'),
+            child: FilledButton.icon(
+              onPressed: loading || syncing ? null : sincronizarAgora,
+              icon: syncing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync_outlined),
+              label: Text(syncing ? 'Sincronizando...' : 'Sincronizar agora'),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -292,7 +686,7 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool logado = AuthService.isLoggedIn || storedUserId != null;
+    final bool logado = AuthService.isLoggedIn;
 
     return Scaffold(
       appBar: AppBar(
@@ -311,7 +705,7 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
                 children: [
                   const AppPageHeader(
                     title: 'Conta e Sync',
-                    subtitle: 'Login opcional para sync futuro',
+                    subtitle: 'Login opcional e sincronizacao',
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   if (errorMessage != null) ...[
@@ -358,8 +752,49 @@ class _AccountSyncPageState extends State<AccountSyncPage> {
   }
 }
 
+class ResponsiveActionPair extends StatelessWidget {
+  final Widget primary;
+  final Widget secondary;
+
+  const ResponsiveActionPair({
+    super.key,
+    required this.primary,
+    required this.secondary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool compact = constraints.maxWidth < 420;
+
+        if (compact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              primary,
+              const SizedBox(height: AppSpacing.sm),
+              secondary,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: primary),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: secondary),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class SupabaseLoginPage extends StatefulWidget {
-  const SupabaseLoginPage({super.key});
+  final String? continueOfflineResult;
+
+  const SupabaseLoginPage({super.key, this.continueOfflineResult});
 
   @override
   State<SupabaseLoginPage> createState() => _SupabaseLoginPageState();
@@ -420,10 +855,18 @@ class _SupabaseLoginPageState extends State<SupabaseLoginPage> {
   Future<void> abrirCadastro() async {
     final String? mensagem = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (context) => const SupabaseSignUpPage()),
+      MaterialPageRoute(
+        builder: (context) => SupabaseSignUpPage(
+          continueOfflineResult: widget.continueOfflineResult,
+        ),
+      ),
     );
 
     if (!mounted) return;
+    if (mensagem == _authContinueOfflineResult) {
+      Navigator.pop(context, mensagem);
+      return;
+    }
     if ((mensagem ?? '').trim().isNotEmpty) {
       Navigator.pop(context, mensagem);
     }
@@ -501,28 +944,39 @@ class _SupabaseLoginPageState extends State<SupabaseLoginPage> {
             AuthMessageBox(text: errorMessage!, color: BrandColors.alerta),
             const SizedBox(height: AppSpacing.md),
           ],
-          FilledButton.icon(
-            onPressed: loading ? null : entrar,
-            icon: loading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.login_outlined),
-            label: Text(loading ? 'Entrando...' : 'Entrar'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: loading ? null : entrar,
+              icon: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.login_outlined),
+              label: Text(loading ? 'Entrando...' : 'Entrar'),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: loading ? null : abrirCadastro,
-            icon: const Icon(Icons.person_add_alt_outlined),
-            label: const Text('Criar conta'),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: loading ? null : abrirCadastro,
+              icon: const Icon(Icons.person_add_alt_outlined),
+              label: const Text('Criar conta'),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          TextButton.icon(
-            onPressed: loading ? null : () => Navigator.pop(context),
-            icon: const Icon(Icons.offline_bolt_outlined),
-            label: const Text('Continuar offline'),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: loading
+                  ? null
+                  : () => Navigator.pop(context, widget.continueOfflineResult),
+              icon: const Icon(Icons.offline_bolt_outlined),
+              label: const Text('Continuar offline'),
+            ),
           ),
           TextButton(
             onPressed: loading ? null : esqueciSenha,
@@ -535,7 +989,9 @@ class _SupabaseLoginPageState extends State<SupabaseLoginPage> {
 }
 
 class SupabaseSignUpPage extends StatefulWidget {
-  const SupabaseSignUpPage({super.key});
+  final String? continueOfflineResult;
+
+  const SupabaseSignUpPage({super.key, this.continueOfflineResult});
 
   @override
   State<SupabaseSignUpPage> createState() => _SupabaseSignUpPageState();
@@ -723,28 +1179,39 @@ class _SupabaseSignUpPageState extends State<SupabaseSignUpPage> {
             AuthMessageBox(text: successMessage!, color: BrandColors.sucesso),
             const SizedBox(height: AppSpacing.md),
           ],
-          FilledButton.icon(
-            onPressed: loading ? null : criarConta,
-            icon: loading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.person_add_alt_outlined),
-            label: Text(loading ? 'Criando...' : 'Criar conta'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: loading ? null : criarConta,
+              icon: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.person_add_alt_outlined),
+              label: Text(loading ? 'Criando...' : 'Criar conta'),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: loading ? null : () => Navigator.pop(context),
-            icon: const Icon(Icons.login_outlined),
-            label: const Text('Ja tenho conta'),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: loading ? null : () => Navigator.pop(context),
+              icon: const Icon(Icons.login_outlined),
+              label: const Text('Ja tenho conta'),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          TextButton.icon(
-            onPressed: loading ? null : () => Navigator.pop(context),
-            icon: const Icon(Icons.offline_bolt_outlined),
-            label: const Text('Continuar offline'),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: loading
+                  ? null
+                  : () => Navigator.pop(context, widget.continueOfflineResult),
+              icon: const Icon(Icons.offline_bolt_outlined),
+              label: const Text('Continuar offline'),
+            ),
           ),
         ],
       ),

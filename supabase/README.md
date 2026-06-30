@@ -1,7 +1,7 @@
 # Supabase
 
-Esta pasta prepara a base remota futura do LabTracker. Nesta etapa o app usa
-Supabase apenas para Auth; sync de partidas ainda nao foi implementado.
+Esta pasta prepara a base remota do LabTracker para Auth e sincronizacao
+offline-first com Supabase.
 
 ## Criar projeto
 
@@ -46,12 +46,38 @@ ler, inserir, atualizar ou apagar linhas onde:
 auth.uid() = user_id
 ```
 
-## Proxima etapa
+## Sync
 
-Implementar o botao manual "Sincronizar agora":
+O app sempre salva local primeiro. Depois ele tenta sincronizar em segundo
+plano quando for seguro:
 
-1. Ler `syncQueue` local.
-2. Enviar criacoes/edicoes/deletes para Supabase.
-3. Marcar itens como `done` ou `error`.
-4. Baixar dados remotos.
-5. Resolver conflitos com regra offline-first.
+- ao abrir o app;
+- apos login;
+- apos salvar/editar/excluir dados locais;
+- quando a conexao volta;
+- quando o app volta ao primeiro plano;
+- em intervalo leve enquanto aberto.
+
+O botao "Sincronizar agora" continua disponivel na tela Conta e Sync. A opcao
+"Sincronizacao automatica" vem ativada por padrao e pode ser desligada pelo
+usuario sem afetar o uso offline nem o botao manual.
+
+Fluxo atual:
+
+1. Confirmar sessao Supabase ativa.
+2. Registrar/atualizar o `device_id`.
+3. Confirmar conectividade provavel via `connectivity_plus`.
+4. Enviar itens pendentes de `syncQueue`.
+5. Enviar snapshots locais com dados reais.
+6. Baixar dados remotos.
+7. Resolver conflitos por `updated_at`: o mais recente vence.
+8. Manter deletes como soft delete por `deleted_at`.
+9. Atualizar `lastSyncAt`, pendencias e erros locais.
+
+Se o projeto Supabase ja existia antes desta etapa, confira se
+`sync_events.entity_id` esta como `text`. Se ainda estiver como `uuid`, rode:
+
+```sql
+alter table public.sync_events
+  alter column entity_id type text using entity_id::text;
+```

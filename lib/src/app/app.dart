@@ -195,7 +195,7 @@ class LabTrackerApp extends StatelessWidget {
           foregroundColor: BrandColors.pretoCarvao,
         ),
       ),
-      home: const RootPage(),
+      home: const AuthGate(child: RootPage()),
     );
   }
 }

@@ -833,9 +833,15 @@ Future<Set<String>> carregarJogosFavoritos() async {
   return (prefs.getStringList(prefsKeyFavoriteGames) ?? const []).toSet();
 }
 
+Future<void> marcarSnapshotExternoPendenteParaSync() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(prefsKeyPendingExternalSyncSnapshot, true);
+}
+
 Future<void> salvarJogosFavoritos(Set<String> favoritos) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setStringList(prefsKeyFavoriteGames, favoritos.toList()..sort());
+  await prefs.setBool(prefsKeyPendingExternalSyncSnapshot, true);
 }
 
 Future<List<String>> carregarJogosRecentes() async {
@@ -851,6 +857,7 @@ Future<List<String>> marcarJogoRecente(String jogo) async {
     8,
   );
   await prefs.setStringList(prefsKeyRecentGames, recentes);
+  await prefs.setBool(prefsKeyPendingExternalSyncSnapshot, true);
   return recentes;
 }
 
@@ -874,6 +881,7 @@ Future<void> salvarPersonagensFavoritosPorJogo(
     prefsKeyFavoriteCharactersByGame,
     jsonEncode(favoritos),
   );
+  await prefs.setBool(prefsKeyPendingExternalSyncSnapshot, true);
 }
 
 Future<Map<String, List<String>>> carregarPersonagensRecentesPorJogo() async {
@@ -898,6 +906,7 @@ Future<Map<String, List<String>>> marcarPersonagemRecente(
 
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString(prefsKeyRecentCharactersByGame, jsonEncode(recentes));
+  await prefs.setBool(prefsKeyPendingExternalSyncSnapshot, true);
   return recentes;
 }
 
