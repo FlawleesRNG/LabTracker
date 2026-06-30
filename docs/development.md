@@ -3,10 +3,10 @@
 ## Requisitos
 
 - Flutter instalado.
-- Dart SDK compatível com o projeto.
-- Dependências do `pubspec.yaml` instaladas.
+- Dart SDK compativel com o projeto.
+- Dependencias do `pubspec.yaml` instaladas.
 
-## Instalação
+## Instalacao
 
 ```bash
 flutter pub get
@@ -18,7 +18,7 @@ flutter pub get
 flutter run
 ```
 
-Para uma plataforma específica:
+Para uma plataforma especifica:
 
 ```bash
 flutter run -d windows
@@ -36,6 +36,7 @@ dart format lib
 
 ```bash
 dart analyze lib/main.dart
+flutter analyze
 ```
 
 ## Testes
@@ -44,40 +45,94 @@ dart analyze lib/main.dart
 flutter test
 ```
 
-## Estrutura De Alteração Recomendada
+## Estrutura De Alteracao Recomendada
 
 Para mudar um fluxo:
 
 1. Leia o fluxo atual em `lib/src/screens/`.
 2. Veja os dados envolvidos em `lib/src/models/models.dart`.
-3. Veja regras em `lib/src/core/`.
-4. Faça alteração pequena e condicional por jogo.
-5. Rode `dart format`.
-6. Rode `dart analyze lib/main.dart`.
+3. Veja rosters, imagens e opcoes em `lib/src/data/game_data.dart`.
+4. Veja regras em `lib/src/core/`.
+5. Faca alteracao pequena e condicional por jogo.
+6. Rode `dart format`.
+7. Rode `dart analyze lib/main.dart`.
+8. Rode `flutter analyze` quando a mudanca tocar fluxo grande.
 
-## Padrões De UI
+## Offline-first
+
+- Sempre salvar local antes de qualquer tentativa de sync.
+- Nunca exigir internet para registrar partida, editar perfil, atualizar rank ou
+  salvar preferencias.
+- Login Supabase e opcional; o app precisa continuar local se as variaveis nao
+  estiverem configuradas.
+- Partidas devem manter `id`, `deviceId`, timestamps e `syncStatus`.
+- Toda criacao/edicao/exclusao de partida deve atualizar `syncQueue`.
+- Exclusoes devem preservar tombstone em `partidasExcluidasParaSync` quando
+  houver sync pendente.
+- Supabase Auth esta preparado, mas envio/download de dados ainda fica para uma
+  etapa propria.
+
+## Supabase
+
+- Configure por `--dart-define=SUPABASE_URL=...`.
+- Configure por `--dart-define=SUPABASE_ANON_KEY=...`.
+- Nunca colocar `service_role` no codigo, no app ou no repositorio.
+- SQL e policies ficam em `supabase/`.
+- Auth atual usa apenas e-mail e senha.
+- Cadastro atual coleta nick, e-mail, senha e confirmacao de senha.
+- OTP, magic link e login social ficam para uma etapa futura.
+
+## Padroes De UI
 
 - Textos em PT-BR.
-- Tema escuro com destaque âmbar/laranja.
+- Tema escuro com destaque ambar/laranja.
 - Cards e listas consistentes.
-- Botão de voltar quando a tela não tiver navegação óbvia.
-- Seletor de data padrão para registros/edições de partida.
-- Cards de personagem devem usar `CharacterAvatar` sempre que possível.
+- Botao de voltar quando a tela nao tiver navegacao obvia.
+- Botao Home como acao separada para voltar para a selecao de jogos.
+- Seletor de data padrao para registros/edicoes de partida.
+- Cards de personagem devem usar `CharacterAvatar` sempre que possivel.
+- Telas novas devem usar tokens de `core/theme/design_tokens.dart`.
+- Telas novas ou migradas devem usar helpers de `core/responsive/`.
+- Componentes reaproveitaveis novos devem ir para `shared/widgets/` quando forem
+  genericos para varias features.
 
-## Padrões Por Jogo
+## Responsividade
+
+- Mobile: menor que `600`.
+- Tablet: `600` ate menor que `1024`.
+- Desktop: `1024` ou mais.
+- Botoes de icone precisam manter alvo minimo de `48x48`.
+- Use `SafeArea` em telas internas e bottom sheets.
+- Use scroll quando houver formulario, historico longo ou filtros.
+- No mobile, prefira icones compactos na AppBar para evitar overflow.
+- Em desktop, use largura maxima para o conteudo nao ficar esticado.
+
+## Padroes Por Jogo
 
 - Jogos individuais usam personagem principal.
 - Street Fighter 6 usa rounds.
 - Invincible VS usa time 3v3.
-- Não misture campos de time em jogos individuais.
-- Não force rounds em jogos que ainda usam o fluxo genérico.
+- 2XKO usa dupla Point + Assist.
+- KOF XV usa ordem Point, Mid e Anchor.
+- Rivals II usa modelo Platform Fighter sem funcoes exclusivas do Smash.
+- Tekken 8 usa modelo 3D Fighter.
+- Mortal Kombat 1 usa Kameo.
+- Nao misture campos de time em jogos individuais.
+- Nao force rounds em jogos que ainda usam outro modelo.
 
-## Checklist Antes De Fechar Uma Mudança
+## Checklist Antes De Fechar Uma Mudanca
 
 - O app compila no analyzer.
 - Os textos aparecem em PT-BR.
-- A data da partida pode ser escolhida quando houver registro/edição.
-- O histórico ainda abre partidas antigas.
+- A data da partida pode ser escolhida quando houver registro/edicao.
+- O historico ainda abre partidas antigas.
 - O fluxo de Invincible VS continua por time.
+- O fluxo de 2XKO continua por dupla.
+- O fluxo de KOF XV continua por ordem.
 - O fluxo de Street Fighter 6 continua por rounds.
-- Os outros jogos continuam no fluxo individual padrão.
+- A capa visual male/female do Smash nao cria personagem duplicado.
+- Imagens continuam usando fallback remoto, offline e visual.
+- Novas partidas entram como `pendingSync`.
+- Edicoes e exclusoes criam item em `syncQueue`.
+- Login/logout Supabase nao bloqueia uso local.
+- Os outros jogos continuam no fluxo esperado.

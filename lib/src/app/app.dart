@@ -1,6 +1,8 @@
 part of '../../main.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SupabaseBootstrap.initialize();
   runApp(const LabTrackerApp());
 }
 
@@ -17,7 +19,7 @@ class GoogleAuthService {
   // Web client ID do Google Cloud (tipo "Aplicativo da Web"). A API nova do
   // google_sign_in usa isso no Android (Credential Manager).
   // OBS: a CHAVE SECRETA do client NAO entra no app — só o ID abaixo.
-  static const String? serverClientId =
+  static const String serverClientId =
       '518268419553-r8gl48j54hul587tl4nuh1mvbaaa70qf.apps.googleusercontent.com';
 
   static bool _inicializado = false;
@@ -163,7 +165,7 @@ class LabTrackerApp extends StatelessWidget {
           color: BrandColors.grafite,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             side: const BorderSide(color: Color(0xFF2C2F33)),
           ),
         ),
@@ -274,11 +276,12 @@ class LtMark extends StatelessWidget {
       ),
     );
 
-    if (!bordered)
+    if (!bordered) {
       return SizedBox(
         height: size,
         child: Center(child: lt),
       );
+    }
 
     return Container(
       width: size,

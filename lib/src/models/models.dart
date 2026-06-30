@@ -138,11 +138,14 @@ class AppImageSource {
 
 const String jogoSmashUltimate = 'Super Smash Bros. Ultimate';
 const String jogoStreetFighter6 = 'Street Fighter 6';
+const String jogoMortalKombat1 = 'Mortal Kombat 1';
 const String jogoGuiltyGearStrive = 'Guilty Gear -Strive-';
+const String jogoKofXV = 'The King of Fighters XV';
 const String jogoInvincibleVs = 'Invincible VS';
 const String jogoTekken8 = 'Tekken 8';
 const String jogo2Xko = '2XKO';
 const String jogoRivalsOfAether2 = 'Rivals of Aether II';
+const String jogoFatalFury = 'Fatal Fury';
 
 const String prefsKeySmashCoverPreferences = 'smashCoverPreferences';
 const String prefsKeyFavoriteGames = 'favoriteGames';
@@ -212,24 +215,333 @@ class GameUsageStats {
 enum GameRegisterType {
   platformFighter,
   twoDFighter,
+  twoDAssistFighter,
   animeFighter,
+  snkFighter,
   threeDFighter,
   tagFighter,
+  tagFighter2v2,
   teamFighter,
+  teamOrderFighter,
+}
+
+enum SyncStatus {
+  localOnly,
+  pendingSync,
+  syncing,
+  synced,
+  syncError,
+  deletedPendingSync,
+}
+
+enum SyncQueueStatus { pending, syncing, done, error }
+
+enum SyncOperation { create, update, delete }
+
+enum SyncEntityType {
+  match,
+  gameProfile,
+  characterProgress,
+  preference,
+  favorite,
+  selectedCharacter,
+  selectedTeam,
+}
+
+extension SyncStatusData on SyncStatus {
+  String get id {
+    return switch (this) {
+      SyncStatus.localOnly => 'localOnly',
+      SyncStatus.pendingSync => 'pendingSync',
+      SyncStatus.syncing => 'syncing',
+      SyncStatus.synced => 'synced',
+      SyncStatus.syncError => 'syncError',
+      SyncStatus.deletedPendingSync => 'deletedPendingSync',
+    };
+  }
+
+  String get label {
+    return switch (this) {
+      SyncStatus.localOnly => 'Somente local',
+      SyncStatus.pendingSync => 'Sincronizacao pendente',
+      SyncStatus.syncing => 'Sincronizando',
+      SyncStatus.synced => 'Sincronizado',
+      SyncStatus.syncError => 'Erro de sync',
+      SyncStatus.deletedPendingSync => 'Exclusao pendente',
+    };
+  }
+
+  static SyncStatus fromJson(dynamic value) {
+    final String id = value?.toString() ?? '';
+    for (final SyncStatus status in SyncStatus.values) {
+      if (status.id == id || status.name == id) return status;
+    }
+    return SyncStatus.localOnly;
+  }
+}
+
+extension SyncQueueStatusData on SyncQueueStatus {
+  String get id {
+    return switch (this) {
+      SyncQueueStatus.pending => 'pending',
+      SyncQueueStatus.syncing => 'syncing',
+      SyncQueueStatus.done => 'done',
+      SyncQueueStatus.error => 'error',
+    };
+  }
+
+  static SyncQueueStatus fromJson(dynamic value) {
+    final String id = value?.toString() ?? '';
+    for (final SyncQueueStatus status in SyncQueueStatus.values) {
+      if (status.id == id || status.name == id) return status;
+    }
+    return SyncQueueStatus.pending;
+  }
+}
+
+extension SyncOperationData on SyncOperation {
+  String get id {
+    return switch (this) {
+      SyncOperation.create => 'create',
+      SyncOperation.update => 'update',
+      SyncOperation.delete => 'delete',
+    };
+  }
+
+  static SyncOperation fromJson(dynamic value) {
+    final String id = value?.toString() ?? '';
+    for (final SyncOperation operation in SyncOperation.values) {
+      if (operation.id == id || operation.name == id) return operation;
+    }
+    return SyncOperation.update;
+  }
+}
+
+extension SyncEntityTypeData on SyncEntityType {
+  String get id {
+    return switch (this) {
+      SyncEntityType.match => 'match',
+      SyncEntityType.gameProfile => 'gameProfile',
+      SyncEntityType.characterProgress => 'characterProgress',
+      SyncEntityType.preference => 'preference',
+      SyncEntityType.favorite => 'favorite',
+      SyncEntityType.selectedCharacter => 'selectedCharacter',
+      SyncEntityType.selectedTeam => 'selectedTeam',
+    };
+  }
+
+  static SyncEntityType fromJson(dynamic value) {
+    final String id = value?.toString() ?? '';
+    for (final SyncEntityType type in SyncEntityType.values) {
+      if (type.id == id || type.name == id) return type;
+    }
+    return SyncEntityType.match;
+  }
+}
+
+class LocalSyncRecord {
+  final String id;
+  final SyncEntityType entityType;
+  final String entityId;
+  final String? userId;
+  final String deviceId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final SyncStatus syncStatus;
+  final DateTime? lastSyncAt;
+  final String syncErrorMessage;
+
+  const LocalSyncRecord({
+    required this.id,
+    required this.entityType,
+    required this.entityId,
+    this.userId,
+    required this.deviceId,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.syncStatus = SyncStatus.localOnly,
+    this.lastSyncAt,
+    this.syncErrorMessage = '',
+  });
+
+  LocalSyncRecord copyWith({
+    String? id,
+    SyncEntityType? entityType,
+    String? entityId,
+    String? userId,
+    String? deviceId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    bool clearDeletedAt = false,
+    SyncStatus? syncStatus,
+    DateTime? lastSyncAt,
+    bool clearLastSyncAt = false,
+    String? syncErrorMessage,
+  }) {
+    return LocalSyncRecord(
+      id: id ?? this.id,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      userId: userId ?? this.userId,
+      deviceId: deviceId ?? this.deviceId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: clearDeletedAt ? null : deletedAt ?? this.deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      lastSyncAt: clearLastSyncAt ? null : lastSyncAt ?? this.lastSyncAt,
+      syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'entityType': entityType.id,
+      'entityId': entityId,
+      'userId': userId,
+      'deviceId': deviceId,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'deletedAt': deletedAt?.toIso8601String(),
+      'syncStatus': syncStatus.id,
+      'lastSyncAt': lastSyncAt?.toIso8601String(),
+      'syncErrorMessage': syncErrorMessage,
+    };
+  }
+
+  factory LocalSyncRecord.fromJson(Map<String, dynamic> json) {
+    final DateTime now = DateTime.now();
+    return LocalSyncRecord(
+      id: json['id']?.toString() ?? gerarIdLocal('sync_record'),
+      entityType: SyncEntityTypeData.fromJson(json['entityType']),
+      entityId: json['entityId']?.toString() ?? '',
+      userId: json['userId']?.toString(),
+      deviceId: json['deviceId']?.toString() ?? '',
+      createdAt: LocalSyncRepository.dateTimeFromJson(json['createdAt']) ?? now,
+      updatedAt: LocalSyncRepository.dateTimeFromJson(json['updatedAt']) ?? now,
+      deletedAt: LocalSyncRepository.dateTimeFromJson(json['deletedAt']),
+      syncStatus: SyncStatusData.fromJson(json['syncStatus']),
+      lastSyncAt: LocalSyncRepository.dateTimeFromJson(json['lastSyncAt']),
+      syncErrorMessage: json['syncErrorMessage']?.toString() ?? '',
+    );
+  }
+}
+
+class SyncQueueItem {
+  final String id;
+  final SyncEntityType entityType;
+  final String entityId;
+  final SyncOperation operation;
+  final SyncQueueStatus status;
+  final int attempts;
+  final DateTime? lastAttemptAt;
+  final String errorMessage;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const SyncQueueItem({
+    required this.id,
+    required this.entityType,
+    required this.entityId,
+    required this.operation,
+    this.status = SyncQueueStatus.pending,
+    this.attempts = 0,
+    this.lastAttemptAt,
+    this.errorMessage = '',
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  SyncQueueItem copyWith({
+    String? id,
+    SyncEntityType? entityType,
+    String? entityId,
+    SyncOperation? operation,
+    SyncQueueStatus? status,
+    int? attempts,
+    DateTime? lastAttemptAt,
+    bool clearLastAttemptAt = false,
+    String? errorMessage,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return SyncQueueItem(
+      id: id ?? this.id,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      operation: operation ?? this.operation,
+      status: status ?? this.status,
+      attempts: attempts ?? this.attempts,
+      lastAttemptAt: clearLastAttemptAt
+          ? null
+          : lastAttemptAt ?? this.lastAttemptAt,
+      errorMessage: errorMessage ?? this.errorMessage,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'entityType': entityType.id,
+      'entityId': entityId,
+      'operation': operation.id,
+      'status': status.id,
+      'attempts': attempts,
+      'lastAttemptAt': lastAttemptAt?.toIso8601String(),
+      'errorMessage': errorMessage,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  factory SyncQueueItem.fromJson(Map<String, dynamic> json) {
+    final DateTime now = DateTime.now();
+    return SyncQueueItem(
+      id: json['id']?.toString() ?? gerarIdLocal('sync_queue'),
+      entityType: SyncEntityTypeData.fromJson(json['entityType']),
+      entityId: json['entityId']?.toString() ?? '',
+      operation: SyncOperationData.fromJson(json['operation']),
+      status: SyncQueueStatusData.fromJson(json['status']),
+      attempts: json['attempts'] is int ? json['attempts'] as int : 0,
+      lastAttemptAt: LocalSyncRepository.dateTimeFromJson(
+        json['lastAttemptAt'],
+      ),
+      errorMessage: json['errorMessage']?.toString() ?? '',
+      createdAt: LocalSyncRepository.dateTimeFromJson(json['createdAt']) ?? now,
+      updatedAt: LocalSyncRepository.dateTimeFromJson(json['updatedAt']) ?? now,
+    );
+  }
+}
+
+class HistoricoAlteracaoSync {
+  final SyncOperation operation;
+  final PartidaRegistrada original;
+  final PartidaRegistrada? atualizada;
+
+  const HistoricoAlteracaoSync({
+    required this.operation,
+    required this.original,
+    this.atualizada,
+  });
 }
 
 const List<String> jogosDisponiveis = [
   jogoSmashUltimate,
   jogoStreetFighter6,
-  'Mortal Kombat 1',
+  jogoMortalKombat1,
   'Avatar Legends: The Fighting Game',
   jogoGuiltyGearStrive,
-  'The King of Fighters XV',
+  jogoKofXV,
   jogoInvincibleVs,
   jogoTekken8,
   jogo2Xko,
   jogoRivalsOfAether2,
-  'Fatal Fury',
+  jogoFatalFury,
 ];
 
 const List<String> jogosArquivados = ['Dragon Ball FighterZ'];
@@ -239,6 +551,15 @@ const List<String> jogosDesativados = [];
 bool jogoEstaAtivo(String jogo) => !jogosDesativados.contains(jogo);
 
 class PartidaRegistrada {
+  final String id;
+  final String? userId;
+  final String deviceId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final SyncStatus syncStatus;
+  final DateTime? lastSyncAt;
+  final String syncErrorMessage;
   final String jogo;
   final String personagemJogador;
   final String nickAdversario;
@@ -269,6 +590,15 @@ class PartidaRegistrada {
   final String placarRounds;
 
   const PartidaRegistrada({
+    this.id = '',
+    this.userId,
+    this.deviceId = '',
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    this.deletedAt,
+    this.syncStatus = SyncStatus.localOnly,
+    this.lastSyncAt,
+    this.syncErrorMessage = '',
     this.jogo = '',
     required this.personagemJogador,
     required this.nickAdversario,
@@ -297,7 +627,16 @@ class PartidaRegistrada {
     this.round2Resultado = '',
     this.round3Resultado = '',
     this.placarRounds = '',
-  });
+  }) : createdAt = createdAt ?? data,
+       updatedAt = updatedAt ?? data;
+
+  String get syncId {
+    return id.trim().isNotEmpty ? id : '';
+  }
+
+  bool get deletadaLocalmente {
+    return deletedAt != null || syncStatus == SyncStatus.deletedPendingSync;
+  }
 
   List<String> get meuTime {
     return [
@@ -315,10 +654,13 @@ class PartidaRegistrada {
     ].map((nome) => nome.trim()).where((nome) => nome.isNotEmpty).toList();
   }
 
+  bool get isKofXV {
+    return jogo == jogoKofXV;
+  }
+
   bool get isInvincible {
     return jogo == jogoInvincibleVs ||
-        meuTime.length == 3 ||
-        timeAdversario.length == 3;
+        (jogo.isEmpty && (meuTime.length == 3 || timeAdversario.length == 3));
   }
 
   bool get isStreetFighter {
@@ -328,12 +670,28 @@ class PartidaRegistrada {
         round3Resultado.trim().isNotEmpty;
   }
 
+  bool get isMortalKombat1 {
+    return jogo == jogoMortalKombat1;
+  }
+
   bool get isGuiltyGear {
     return jogo == jogoGuiltyGearStrive;
   }
 
   bool get isRivalsOfAether2 {
     return jogo == jogoRivalsOfAether2;
+  }
+
+  bool get isTekken8 {
+    return jogo == jogoTekken8;
+  }
+
+  bool get isFatalFury {
+    return jogo == jogoFatalFury;
+  }
+
+  bool get is2XKO {
+    return jogo == jogo2Xko;
   }
 
   List<String> get roundsStreetFighter {
@@ -388,6 +746,15 @@ class PartidaRegistrada {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      'userId': userId,
+      'deviceId': deviceId,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'deletedAt': deletedAt?.toIso8601String(),
+      'syncStatus': syncStatus.id,
+      'lastSyncAt': lastSyncAt?.toIso8601String(),
+      'syncErrorMessage': syncErrorMessage,
       'jogo': jogo,
       'personagemJogador': personagemJogador,
       'nickAdversario': nickAdversario,
@@ -419,8 +786,92 @@ class PartidaRegistrada {
     };
   }
 
-  factory PartidaRegistrada.fromJson(Map<String, dynamic> json) {
+  PartidaRegistrada copyWithSync({
+    String? id,
+    String? userId,
+    bool clearUserId = false,
+    String? deviceId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    bool clearDeletedAt = false,
+    SyncStatus? syncStatus,
+    DateTime? lastSyncAt,
+    bool clearLastSyncAt = false,
+    String? syncErrorMessage,
+  }) {
     return PartidaRegistrada(
+      id: id ?? this.id,
+      userId: clearUserId ? null : userId ?? this.userId,
+      deviceId: deviceId ?? this.deviceId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: clearDeletedAt ? null : deletedAt ?? this.deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      lastSyncAt: clearLastSyncAt ? null : lastSyncAt ?? this.lastSyncAt,
+      syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
+      jogo: jogo,
+      personagemJogador: personagemJogador,
+      nickAdversario: nickAdversario,
+      personagemAdversario: personagemAdversario,
+      stage: stage,
+      resultado: resultado,
+      stocks: stocks,
+      porcentagem: porcentagem,
+      formaDeKill: formaDeKill,
+      formaDeMorte: formaDeMorte,
+      observacoes: observacoes,
+      pdlGerado: pdlGerado,
+      data: data,
+      meuTimeSlot1: meuTimeSlot1,
+      meuTimeSlot2: meuTimeSlot2,
+      meuTimeSlot3: meuTimeSlot3,
+      timeAdversarioSlot1: timeAdversarioSlot1,
+      timeAdversarioSlot2: timeAdversarioSlot2,
+      timeAdversarioSlot3: timeAdversarioSlot3,
+      personagemDestaque: personagemDestaque,
+      primeiroDerrotado: primeiroDerrotado,
+      personagemInimigoProblema: personagemInimigoProblema,
+      condicaoVitoria: condicaoVitoria,
+      motivoDerrota: motivoDerrota,
+      round1Resultado: round1Resultado,
+      round2Resultado: round2Resultado,
+      round3Resultado: round3Resultado,
+      placarRounds: placarRounds,
+    );
+  }
+
+  PartidaRegistrada copyWithSyncFrom(PartidaRegistrada original) {
+    return copyWithSync(
+      id: original.id,
+      userId: original.userId,
+      deviceId: original.deviceId,
+      createdAt: original.createdAt,
+      updatedAt: original.updatedAt,
+      deletedAt: original.deletedAt,
+      syncStatus: original.syncStatus,
+      lastSyncAt: original.lastSyncAt,
+      syncErrorMessage: original.syncErrorMessage,
+    );
+  }
+
+  factory PartidaRegistrada.fromJson(Map<String, dynamic> json) {
+    final DateTime dataPartida =
+        DateTime.tryParse(json['data']?.toString() ?? '') ?? DateTime.now();
+    return PartidaRegistrada(
+      id: json['id']?.toString() ?? '',
+      userId: json['userId']?.toString(),
+      deviceId: json['deviceId']?.toString() ?? '',
+      createdAt:
+          LocalSyncRepository.dateTimeFromJson(json['createdAt']) ??
+          dataPartida,
+      updatedAt:
+          LocalSyncRepository.dateTimeFromJson(json['updatedAt']) ??
+          dataPartida,
+      deletedAt: LocalSyncRepository.dateTimeFromJson(json['deletedAt']),
+      syncStatus: SyncStatusData.fromJson(json['syncStatus']),
+      lastSyncAt: LocalSyncRepository.dateTimeFromJson(json['lastSyncAt']),
+      syncErrorMessage: json['syncErrorMessage']?.toString() ?? '',
       jogo: json['jogo'] ?? json['game'] ?? '',
       personagemJogador: normalizarNomePersonagem(
         json['personagemJogador'] ?? '',
@@ -437,7 +888,7 @@ class PartidaRegistrada {
       formaDeMorte: corrigirTextoLegado(json['formaDeMorte'] ?? 'Sem dados'),
       observacoes: corrigirTextoLegado(json['observacoes'] ?? ''),
       pdlGerado: json['pdlGerado'] ?? 0,
-      data: DateTime.tryParse(json['data'] ?? '') ?? DateTime.now(),
+      data: dataPartida,
       meuTimeSlot1: normalizarNomePersonagem(
         json['meuTimeSlot1'] ?? json['personagem_slot_1'] ?? '',
       ),
@@ -550,6 +1001,120 @@ class TimePrincipalInvincible {
 
 const TimePrincipalInvincible timePrincipalInvincibleVazio =
     TimePrincipalInvincible(slot1: '', slot2: '', slot3: '');
+
+class TimePrincipal2XKO {
+  final String point;
+  final String assist;
+
+  const TimePrincipal2XKO({required this.point, required this.assist});
+
+  List<String> get personagens {
+    return [
+      point,
+      assist,
+    ].map((nome) => nome.trim()).where((nome) => nome.isNotEmpty).toList();
+  }
+
+  bool get completo {
+    return personagens.length == 2;
+  }
+
+  String get key {
+    return completo ? chaveDupla2XKO(point, assist) : '';
+  }
+
+  String get texto {
+    return completo
+        ? 'Point: $point / Assist: $assist'
+        : 'Nenhuma dupla definida';
+  }
+
+  bool mesmaComposicao(List<String> time) {
+    final List<String> minhaDupla = personagens;
+    if (minhaDupla.length != 2 || time.length < 2) return false;
+
+    return minhaDupla[0] == time[0] && minhaDupla[1] == time[1];
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'point': point, 'assist': assist};
+  }
+
+  factory TimePrincipal2XKO.fromJson(Map<String, dynamic> json) {
+    return TimePrincipal2XKO(
+      point: normalizarNomePersonagem(json['point'] ?? json['slot1'] ?? ''),
+      assist: normalizarNomePersonagem(json['assist'] ?? json['slot2'] ?? ''),
+    );
+  }
+}
+
+const TimePrincipal2XKO timePrincipal2XKOVazio = TimePrincipal2XKO(
+  point: '',
+  assist: '',
+);
+
+class TimePrincipalKofXV {
+  final String point;
+  final String mid;
+  final String anchor;
+
+  const TimePrincipalKofXV({
+    required this.point,
+    required this.mid,
+    required this.anchor,
+  });
+
+  List<String> get personagens {
+    return [
+      point,
+      mid,
+      anchor,
+    ].map((nome) => nome.trim()).where((nome) => nome.isNotEmpty).toList();
+  }
+
+  bool get completo {
+    return personagens.length == 3;
+  }
+
+  String get key {
+    return completo ? chaveTimeKofXV(point, mid, anchor) : '';
+  }
+
+  String get texto {
+    return completo
+        ? 'Point: $point / Mid: $mid / Anchor: $anchor'
+        : 'Nenhum time definido';
+  }
+
+  bool mesmaComposicao(List<String> time) {
+    final List<String> meuTime = personagens;
+    if (meuTime.length != 3 || time.length < 3) return false;
+
+    for (int index = 0; index < meuTime.length; index++) {
+      if (meuTime[index] != time[index]) return false;
+    }
+
+    return true;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'point': point, 'mid': mid, 'anchor': anchor};
+  }
+
+  factory TimePrincipalKofXV.fromJson(Map<String, dynamic> json) {
+    return TimePrincipalKofXV(
+      point: normalizarNomePersonagem(json['point'] ?? json['slot1'] ?? ''),
+      mid: normalizarNomePersonagem(json['mid'] ?? json['slot2'] ?? ''),
+      anchor: normalizarNomePersonagem(json['anchor'] ?? json['slot3'] ?? ''),
+    );
+  }
+}
+
+const TimePrincipalKofXV timePrincipalKofVazio = TimePrincipalKofXV(
+  point: '',
+  mid: '',
+  anchor: '',
+);
 
 class FrequenciaItem {
   final String nome;

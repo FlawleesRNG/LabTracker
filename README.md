@@ -1,22 +1,23 @@
 # LabTracker
 
-LabTracker é um app Flutter para acompanhar treino competitivo em jogos de luta:
-registro de partidas, PDL/LP, ranks, histórico, estatísticas, filtros e leitura
-de padrões por personagem, time ou matchup.
+LabTracker e um app Flutter para acompanhar treino competitivo em jogos de luta:
+registro de partidas, PDL/LP, ranks, historico, estatisticas, filtros e leitura
+de padroes por personagem, time ou matchup.
 
-Versão atual: `1.0.0-alpha+1`.
+Versao atual: `1.0.0-alpha+1`.
 
 ## O Que O App Faz
 
 - Perfil local do jogador.
 - Biblioteca de jogos.
-- Seleção de personagem principal para jogos individuais.
-- Montagem de time principal para `Invincible VS`.
-- Registro de partidas com dados próprios por jogo.
-- Histórico com filtros.
-- Estatísticas, gráficos e leitura de padrões.
+- Selecao de personagem principal para jogos individuais.
+- Montagem de time para jogos com time/dupla.
+- Registro de partidas com dados proprios por jogo.
+- Historico com filtros.
+- Estatisticas, graficos e leitura de padroes.
 - Backup local em JSON.
 - Login Google em mobile, com fallback por nick em desktop.
+- Conta Supabase opcional para preparar backup/sync futuro.
 
 ## Jogos Suportados
 
@@ -27,20 +28,27 @@ Versão atual: `1.0.0-alpha+1`.
 - Guilty Gear -Strive-
 - The King of Fighters XV
 - Invincible VS
-- Dragon Ball FighterZ
+- Tekken 8
+- 2XKO
+- Rivals of Aether II
 - Fatal Fury
 
-## Documentação
+`Dragon Ball FighterZ` esta arquivado no codigo para reaproveitamento futuro,
+mas nao aparece na biblioteca ativa.
 
-A documentação principal fica em [docs/](docs/README.md).
+## Documentacao
 
-- [Visão geral da documentação](docs/README.md)
+A documentacao principal fica em [docs/](docs/README.md).
+
+- [Visao geral da documentacao](docs/README.md)
 - [Arquitetura do projeto](docs/architecture.md)
+- [Organizacao do projeto](docs/project-organization.md)
 - [Fluxos por jogo](docs/game-flows.md)
-- [Dados, backup e persistência](docs/data-and-backup.md)
+- [Dados, backup e persistencia](docs/data-and-backup.md)
 - [Guia de desenvolvimento](docs/development.md)
-- [Build e executável](docs/build-and-release.md)
-- [Configuração do Google Login](docs/google-login.md)
+- [Build e executavel](docs/build-and-release.md)
+- [Configuracao do Google Login](docs/google-login.md)
+- [Supabase](supabase/README.md)
 
 ## Rodar Localmente
 
@@ -49,14 +57,14 @@ flutter pub get
 flutter run
 ```
 
-Para checar o código:
+Para checar o codigo:
 
 ```bash
 dart analyze lib/main.dart
 dart format lib
 ```
 
-## Observação
+## Observacao
 
-Esta é uma versão alpha. Bugs podem acontecer, e alguns fluxos ainda estão sendo
-padronizados por jogo.
+Esta e uma versao alpha. Bugs podem acontecer, e alguns fluxos ainda estao
+sendo padronizados por jogo.

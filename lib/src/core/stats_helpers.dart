@@ -791,9 +791,12 @@ List<String> gerarInsightsAvancados(
   for (final partida in partidas) {
     final String morte = partida.formaDeMorte.trim();
     final String stage = partida.stage.trim();
-    if (morte.isEmpty || morte == 'Não morreu' || morte == 'Sem dados')
+    if (morte.isEmpty || morte == 'Não morreu' || morte == 'Sem dados') {
       continue;
-    if (stage.isEmpty) continue;
+    }
+    if (stage.isEmpty) {
+      continue;
+    }
 
     final String chave = '${normalizarTexto(stage)}|${normalizarTexto(morte)}';
     mortesPorMapa[chave] = (mortesPorMapa[chave] ?? 0) + 1;

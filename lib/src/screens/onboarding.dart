@@ -483,6 +483,51 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
       return;
     }
 
+    if (jogo == jogo2Xko) {
+      final TimePrincipal2XKO? dupla = await Navigator.push<TimePrincipal2XKO>(
+        context,
+        MaterialPageRoute<TimePrincipal2XKO>(
+          builder: (context) => const MontarTime2XKOPage(),
+        ),
+      );
+
+      if (dupla == null || !context.mounted) return;
+
+      await registrarAcessoJogo(jogo);
+      if (!context.mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              HomePage(jogoAtual: jogo, time2XKOInicial: dupla),
+        ),
+      );
+      return;
+    }
+
+    if (jogo == jogoKofXV) {
+      final TimePrincipalKofXV? time = await Navigator.push<TimePrincipalKofXV>(
+        context,
+        MaterialPageRoute<TimePrincipalKofXV>(
+          builder: (context) => const MontarTimeKofXVPage(),
+        ),
+      );
+
+      if (time == null || !context.mounted) return;
+
+      await registrarAcessoJogo(jogo);
+      if (!context.mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(jogoAtual: jogo, timeKofInicial: time),
+        ),
+      );
+      return;
+    }
+
     await registrarAcessoJogo(jogo);
     if (!context.mounted) return;
 
@@ -519,7 +564,7 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
         return 'DBFZ';
       case 'Invincible VS':
         return 'IVS';
-      case 'Fatal Fury':
+      case jogoFatalFury:
         return 'FF';
       default:
         return jogo.isNotEmpty ? jogo[0].toUpperCase() : '?';
@@ -550,7 +595,7 @@ class _SelecionarJogoInicialPageState extends State<SelecionarJogoInicialPage> {
         return const Color(0xFFF97316);
       case 'Invincible VS':
         return const Color(0xFF22C55E);
-      case 'Fatal Fury':
+      case jogoFatalFury:
         return const Color(0xFFEF4444);
       default:
         return BrandColors.ambarDourado;

@@ -208,6 +208,7 @@ class _MontarTimeInvinciblePageState extends State<MontarTimeInvinciblePage> {
 
                                 return _InvincibleTeamCharacterCard(
                                   personagem: personagem,
+                                  jogo: jogoInvincibleVs,
                                   selecionado: selecionado,
                                   onTap: () {
                                     Navigator.pop(context, personagem);
@@ -462,6 +463,7 @@ class _MontarTimeInvinciblePageState extends State<MontarTimeInvinciblePage> {
 
                                 return _InvincibleTeamCharacterCard(
                                   personagem: personagem,
+                                  jogo: jogoInvincibleVs,
                                   selecionado: selecionado,
                                   onTap: () => selecionarPersonagem(personagem),
                                 );
@@ -475,6 +477,917 @@ class _MontarTimeInvinciblePageState extends State<MontarTimeInvinciblePage> {
                         onPressed: salvarTime,
                         icon: const Icon(Icons.save_outlined),
                         label: const Text('Salvar Time'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class MontarTime2XKOPage extends StatefulWidget {
+  final TimePrincipal2XKO timeInicial;
+
+  const MontarTime2XKOPage({
+    super.key,
+    this.timeInicial = timePrincipal2XKOVazio,
+  });
+
+  @override
+  State<MontarTime2XKOPage> createState() => _MontarTime2XKOPageState();
+}
+
+class _MontarTime2XKOPageState extends State<MontarTime2XKOPage> {
+  final TextEditingController buscaController = TextEditingController();
+
+  Character? point;
+  Character? assist;
+  int slotAtivo = 0;
+  String termoBusca = '';
+
+  @override
+  void initState() {
+    super.initState();
+    point = encontrarPersonagem(widget.timeInicial.point);
+    assist = encontrarPersonagem(widget.timeInicial.assist);
+    slotAtivo = point == null
+        ? 0
+        : assist == null
+        ? 1
+        : 0;
+  }
+
+  @override
+  void dispose() {
+    buscaController.dispose();
+    super.dispose();
+  }
+
+  List<Character> get roster {
+    return rosterDoJogo(jogo2Xko);
+  }
+
+  List<Character?> get slots {
+    return [point, assist];
+  }
+
+  TimePrincipal2XKO get duplaAtual {
+    return TimePrincipal2XKO(
+      point: point?.name ?? '',
+      assist: assist?.name ?? '',
+    );
+  }
+
+  Character? encontrarPersonagem(String nome) {
+    if (nome.trim().isEmpty) return null;
+
+    final String nomeNormalizado = normalizarNomePersonagem(nome);
+    for (final personagem in roster) {
+      if (personagem.name == nomeNormalizado) {
+        return personagem;
+      }
+    }
+
+    return null;
+  }
+
+  String labelSlot(int index) {
+    return index == 0 ? 'Point/Main' : 'Assist/Second';
+  }
+
+  void definirSlot(int index, Character? personagem) {
+    if (index == 0) {
+      point = personagem;
+    } else {
+      assist = personagem;
+    }
+  }
+
+  void selecionarPersonagemNoSlot(int index, Character personagem) {
+    setState(() {
+      final int indexExistente = slots.indexWhere(
+        (selecionado) => selecionado?.name == personagem.name,
+      );
+
+      if (indexExistente >= 0 && indexExistente != index) {
+        definirSlot(indexExistente, null);
+      }
+
+      definirSlot(index, personagem);
+      slotAtivo = index == 0 ? 1 : 0;
+    });
+  }
+
+  void selecionarPersonagem(Character personagem) {
+    selecionarPersonagemNoSlot(slotAtivo, personagem);
+  }
+
+  Future<void> abrirSeletorSlotMobile(int index) async {
+    setState(() {
+      slotAtivo = index;
+    });
+
+    final Character? escolhido = await showModalBottomSheet<Character>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        String busca = '';
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final String termo = busca.trim().toLowerCase();
+            final List<Character> personagensFiltrados = roster.where((
+              personagem,
+            ) {
+              if (termo.isEmpty) return true;
+
+              return personagem.name.toLowerCase().contains(termo) ||
+                  personagem.initial.toLowerCase().contains(termo);
+            }).toList();
+
+            return FractionallySizedBox(
+              heightFactor: 0.88,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  0,
+                  20,
+                  MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            labelSlot(index),
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          tooltip: 'Fechar',
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Pesquisar personagem',
+                        hintText: 'Ex: Ekko, Ahri, Yasuo...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (valor) {
+                        setModalState(() {
+                          busca = valor;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Expanded(
+                      child: personagensFiltrados.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum personagem encontrado.'),
+                            )
+                          : GridView.builder(
+                              itemCount: personagensFiltrados.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 360,
+                                    mainAxisSpacing: 12,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: 2.25,
+                                  ),
+                              itemBuilder: (context, itemIndex) {
+                                final Character personagem =
+                                    personagensFiltrados[itemIndex];
+                                final bool selecionado = slots.any(
+                                  (slot) => slot?.name == personagem.name,
+                                );
+
+                                return _InvincibleTeamCharacterCard(
+                                  personagem: personagem,
+                                  jogo: jogo2Xko,
+                                  selecionado: selecionado,
+                                  onTap: () =>
+                                      Navigator.pop(context, personagem),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (escolhido == null) return;
+    selecionarPersonagemNoSlot(index, escolhido);
+  }
+
+  void removerSlot(int index) {
+    setState(() {
+      definirSlot(index, null);
+      slotAtivo = index;
+    });
+  }
+
+  void salvarDupla() {
+    final TimePrincipal2XKO dupla = duplaAtual;
+
+    if (!dupla.completo) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Dupla incompleta'),
+            content: const Text(
+              'Escolha Point/Main e Assist/Second antes de salvar.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Ok'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
+    Navigator.pop(context, dupla);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String termo = termoBusca.trim().toLowerCase();
+    final List<Character> personagensFiltrados = roster.where((personagem) {
+      if (termo.isEmpty) return true;
+
+      return personagem.name.toLowerCase().contains(termo) ||
+          personagem.initial.toLowerCase().contains(termo);
+    }).toList();
+
+    final TimePrincipal2XKO dupla = duplaAtual;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Montar Dupla'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isMobile = constraints.maxWidth < 680;
+          final int colunas = constraints.maxWidth >= 980
+              ? 4
+              : constraints.maxWidth >= 680
+              ? 3
+              : 2;
+          final double horizontalPadding = isMobile ? 18 : 24;
+          final double maxContentWidth = constraints.maxWidth > 1040
+              ? 1040
+              : constraints.maxWidth;
+          final double contentWidth = maxContentWidth - (horizontalPadding * 2);
+          final double slotWidth = isMobile
+              ? contentWidth
+              : (contentWidth - 12) / 2;
+
+          Widget slotsBuilder({required bool compacto}) {
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (int index = 0; index < slots.length; index++)
+                  SizedBox(
+                    width: compacto ? contentWidth : slotWidth,
+                    child: _InvincibleTeamSlotCard(
+                      label: labelSlot(index),
+                      personagem: slots[index],
+                      jogo: jogo2Xko,
+                      ativo: slotAtivo == index,
+                      compacto: compacto,
+                      onTap: compacto
+                          ? () => abrirSeletorSlotMobile(index)
+                          : () {
+                              setState(() {
+                                slotAtivo = index;
+                              });
+                            },
+                      onRemove: slots[index] == null
+                          ? null
+                          : () => removerSlot(index),
+                    ),
+                  ),
+              ],
+            );
+          }
+
+          if (isMobile) {
+            return SafeArea(
+              top: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      18,
+                      horizontalPadding,
+                      12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ListView(
+                            children: [
+                              Text(
+                                'Minha Dupla 2v2',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                dupla.completo ? dupla.texto : 'Monte a dupla',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              const SizedBox(height: 16),
+                              slotsBuilder(compacto: true),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: salvarDupla,
+                            icon: const Icon(Icons.save_outlined),
+                            label: const Text('Salvar Dupla'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1040),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  24,
+                  horizontalPadding,
+                  16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Minha Dupla 2v2',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      dupla.completo ? dupla.texto : 'Monte a dupla',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 18),
+                    slotsBuilder(compacto: false),
+                    const SizedBox(height: 18),
+                    TextField(
+                      controller: buscaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Pesquisar personagem',
+                        hintText: 'Ex: Ekko, Ahri, Yasuo...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (valor) {
+                        setState(() {
+                          termoBusca = valor;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: personagensFiltrados.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum personagem encontrado.'),
+                            )
+                          : GridView.builder(
+                              itemCount: personagensFiltrados.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: colunas,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 1.8,
+                                  ),
+                              itemBuilder: (context, index) {
+                                final Character personagem =
+                                    personagensFiltrados[index];
+                                final bool selecionado = slots.any(
+                                  (slot) => slot?.name == personagem.name,
+                                );
+
+                                return _InvincibleTeamCharacterCard(
+                                  personagem: personagem,
+                                  jogo: jogo2Xko,
+                                  selecionado: selecionado,
+                                  onTap: () => selecionarPersonagem(personagem),
+                                );
+                              },
+                            ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: salvarDupla,
+                        icon: const Icon(Icons.save_outlined),
+                        label: const Text('Salvar Dupla'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class MontarTimeKofXVPage extends StatefulWidget {
+  final TimePrincipalKofXV timeInicial;
+
+  const MontarTimeKofXVPage({
+    super.key,
+    this.timeInicial = timePrincipalKofVazio,
+  });
+
+  @override
+  State<MontarTimeKofXVPage> createState() => _MontarTimeKofXVPageState();
+}
+
+class _MontarTimeKofXVPageState extends State<MontarTimeKofXVPage> {
+  final TextEditingController buscaController = TextEditingController();
+
+  Character? point;
+  Character? mid;
+  Character? anchor;
+  int slotAtivo = 0;
+  String termoBusca = '';
+
+  @override
+  void initState() {
+    super.initState();
+    point = encontrarPersonagem(widget.timeInicial.point);
+    mid = encontrarPersonagem(widget.timeInicial.mid);
+    anchor = encontrarPersonagem(widget.timeInicial.anchor);
+    slotAtivo = point == null
+        ? 0
+        : mid == null
+        ? 1
+        : anchor == null
+        ? 2
+        : 0;
+  }
+
+  @override
+  void dispose() {
+    buscaController.dispose();
+    super.dispose();
+  }
+
+  List<Character> get roster {
+    return rosterDoJogo(jogoKofXV);
+  }
+
+  List<Character?> get slots {
+    return [point, mid, anchor];
+  }
+
+  TimePrincipalKofXV get timeAtual {
+    return TimePrincipalKofXV(
+      point: point?.name ?? '',
+      mid: mid?.name ?? '',
+      anchor: anchor?.name ?? '',
+    );
+  }
+
+  Character? encontrarPersonagem(String nome) {
+    if (nome.trim().isEmpty) return null;
+
+    final String nomeNormalizado = normalizarNomePersonagem(nome);
+    for (final personagem in roster) {
+      if (personagem.name == nomeNormalizado) {
+        return personagem;
+      }
+    }
+
+    return null;
+  }
+
+  String labelSlot(int index) {
+    switch (index) {
+      case 0:
+        return 'Point';
+      case 1:
+        return 'Mid';
+      default:
+        return 'Anchor';
+    }
+  }
+
+  void definirSlot(int index, Character? personagem) {
+    if (index == 0) {
+      point = personagem;
+    } else if (index == 1) {
+      mid = personagem;
+    } else {
+      anchor = personagem;
+    }
+  }
+
+  void selecionarPersonagemNoSlot(int index, Character personagem) {
+    setState(() {
+      final int indexExistente = slots.indexWhere(
+        (selecionado) => selecionado?.name == personagem.name,
+      );
+
+      if (indexExistente >= 0 && indexExistente != index) {
+        definirSlot(indexExistente, null);
+      }
+
+      definirSlot(index, personagem);
+      slotAtivo = index >= 2 ? 0 : index + 1;
+    });
+  }
+
+  void selecionarPersonagem(Character personagem) {
+    selecionarPersonagemNoSlot(slotAtivo, personagem);
+  }
+
+  Future<void> abrirSeletorSlotMobile(int index) async {
+    setState(() {
+      slotAtivo = index;
+    });
+
+    final Character? escolhido = await showModalBottomSheet<Character>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        String busca = '';
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final String termo = busca.trim().toLowerCase();
+            final List<Character> personagensFiltrados = roster.where((
+              personagem,
+            ) {
+              if (termo.isEmpty) return true;
+
+              return personagem.name.toLowerCase().contains(termo) ||
+                  personagem.initial.toLowerCase().contains(termo);
+            }).toList();
+
+            return FractionallySizedBox(
+              heightFactor: 0.88,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  0,
+                  20,
+                  MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            labelSlot(index),
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          tooltip: 'Fechar',
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Pesquisar personagem',
+                        hintText: 'Ex: Terry, Kyo, Iori...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (valor) {
+                        setModalState(() {
+                          busca = valor;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Expanded(
+                      child: personagensFiltrados.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum personagem encontrado.'),
+                            )
+                          : GridView.builder(
+                              itemCount: personagensFiltrados.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 360,
+                                    mainAxisSpacing: 12,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: 2.25,
+                                  ),
+                              itemBuilder: (context, itemIndex) {
+                                final Character personagem =
+                                    personagensFiltrados[itemIndex];
+                                final bool selecionado = slots.any(
+                                  (slot) => slot?.name == personagem.name,
+                                );
+
+                                return _InvincibleTeamCharacterCard(
+                                  personagem: personagem,
+                                  jogo: jogoKofXV,
+                                  selecionado: selecionado,
+                                  onTap: () =>
+                                      Navigator.pop(context, personagem),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (escolhido == null) return;
+    selecionarPersonagemNoSlot(index, escolhido);
+  }
+
+  void removerSlot(int index) {
+    setState(() {
+      definirSlot(index, null);
+      slotAtivo = index;
+    });
+  }
+
+  void salvarTime() {
+    final TimePrincipalKofXV time = timeAtual;
+
+    if (!time.completo) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Time incompleto'),
+            content: const Text('Escolha Point, Mid e Anchor antes de salvar.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Ok'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
+    Navigator.pop(context, time);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String termo = termoBusca.trim().toLowerCase();
+    final List<Character> personagensFiltrados = roster.where((personagem) {
+      if (termo.isEmpty) return true;
+
+      return personagem.name.toLowerCase().contains(termo) ||
+          personagem.initial.toLowerCase().contains(termo);
+    }).toList();
+    final TimePrincipalKofXV time = timeAtual;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const CompactAppBarTitle('Montar time KOF XV'),
+        centerTitle: true,
+        actions: const [HomeNavigationButton()],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isMobile = constraints.maxWidth < 720;
+          final int colunas = constraints.maxWidth > 1050
+              ? 4
+              : constraints.maxWidth > 820
+              ? 3
+              : 2;
+          final double horizontalPadding = isMobile ? 18 : 24;
+          final double maxContentWidth = constraints.maxWidth > 1040
+              ? 1040
+              : constraints.maxWidth;
+          final double contentWidth = maxContentWidth - (horizontalPadding * 2);
+          final double slotWidth = isMobile
+              ? contentWidth
+              : (contentWidth - 24) / 3;
+
+          Widget slotsBuilder({required bool compacto}) {
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (int index = 0; index < slots.length; index++)
+                  SizedBox(
+                    width: compacto ? contentWidth : slotWidth,
+                    child: _InvincibleTeamSlotCard(
+                      label: labelSlot(index),
+                      personagem: slots[index],
+                      jogo: jogoKofXV,
+                      ativo: slotAtivo == index,
+                      compacto: compacto,
+                      onTap: compacto
+                          ? () => abrirSeletorSlotMobile(index)
+                          : () {
+                              setState(() {
+                                slotAtivo = index;
+                              });
+                            },
+                      onRemove: slots[index] == null
+                          ? null
+                          : () => removerSlot(index),
+                    ),
+                  ),
+              ],
+            );
+          }
+
+          if (isMobile) {
+            return SafeArea(
+              top: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      18,
+                      horizontalPadding,
+                      12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ListView(
+                            children: [
+                              Text(
+                                'Meu time em ordem',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                time.completo ? time.texto : 'Monte o time',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                              const SizedBox(height: 16),
+                              slotsBuilder(compacto: true),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: salvarTime,
+                            icon: const Icon(Icons.save_outlined),
+                            label: const Text('Salvar time'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1040),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  24,
+                  horizontalPadding,
+                  16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Meu time em ordem',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      time.completo ? time.texto : 'Monte o time',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 18),
+                    slotsBuilder(compacto: false),
+                    const SizedBox(height: 18),
+                    TextField(
+                      controller: buscaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Pesquisar personagem',
+                        hintText: 'Ex: Terry, Kyo, Iori...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (valor) {
+                        setState(() {
+                          termoBusca = valor;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: personagensFiltrados.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum personagem encontrado.'),
+                            )
+                          : GridView.builder(
+                              itemCount: personagensFiltrados.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: colunas,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 1.8,
+                                  ),
+                              itemBuilder: (context, index) {
+                                final Character personagem =
+                                    personagensFiltrados[index];
+                                final bool selecionado = slots.any(
+                                  (slot) => slot?.name == personagem.name,
+                                );
+
+                                return _InvincibleTeamCharacterCard(
+                                  personagem: personagem,
+                                  jogo: jogoKofXV,
+                                  selecionado: selecionado,
+                                  onTap: () => selecionarPersonagem(personagem),
+                                );
+                              },
+                            ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: salvarTime,
+                        icon: const Icon(Icons.save_outlined),
+                        label: const Text('Salvar time'),
                       ),
                     ),
                   ],
@@ -662,11 +1575,13 @@ class _InvincibleTeamSlotCard extends StatelessWidget {
 
 class _InvincibleTeamCharacterCard extends StatelessWidget {
   final Character personagem;
+  final String jogo;
   final bool selecionado;
   final VoidCallback onTap;
 
   const _InvincibleTeamCharacterCard({
     required this.personagem,
+    required this.jogo,
     required this.selecionado,
     required this.onTap,
   });
@@ -686,7 +1601,7 @@ class _InvincibleTeamCharacterCard extends StatelessWidget {
             children: [
               CharacterAvatar(
                 personagem: personagem.name,
-                jogo: jogoInvincibleVs,
+                jogo: jogo,
                 size: 52,
                 initialOverride: personagem.initial,
               ),

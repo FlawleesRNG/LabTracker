@@ -172,7 +172,7 @@ class _AnalisesSectionState extends State<AnalisesSection> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: escopoSelecionado,
+                  initialValue: escopoSelecionado,
                   decoration: const InputDecoration(
                     labelText: 'Ver dados',
                     border: OutlineInputBorder(),
@@ -284,7 +284,7 @@ class _AnalisesSectionState extends State<AnalisesSection> {
                   const SizedBox(height: 12),
                   if (mesesComparaveis.isNotEmpty)
                     DropdownButtonFormField<DateTime>(
-                      value: mesComparativo,
+                      initialValue: mesComparativo,
                       decoration: const InputDecoration(
                         labelText: 'Comparar com',
                         border: OutlineInputBorder(),
@@ -402,7 +402,7 @@ class PdlLineChart extends StatelessWidget {
       painter: PdlLineChartPainter(
         pontos: pontos,
         lineColor: corLinha,
-        gridColor: Theme.of(context).dividerColor.withOpacity(0.35),
+        gridColor: Theme.of(context).dividerColor.withValues(alpha: 0.35),
         textColor:
             Theme.of(context).textTheme.bodySmall?.color ??
             Theme.of(context).colorScheme.onSurface,
@@ -465,7 +465,7 @@ class PdlLineChartPainter extends CustomPainter {
     final double zeroY = top + (maxSaldo / (maxSaldo - minSaldo)) * chartHeight;
     if (zeroY >= top && zeroY <= top + chartHeight) {
       final Paint zeroPaint = Paint()
-        ..color = textColor.withOpacity(0.45)
+        ..color = textColor.withValues(alpha: 0.45)
         ..strokeWidth = 1.2;
       canvas.drawLine(
         Offset(left, zeroY),
@@ -517,7 +517,10 @@ class PdlLineChartPainter extends CustomPainter {
       final TextPainter painter = TextPainter(
         text: TextSpan(
           text: texto,
-          style: TextStyle(color: textColor.withOpacity(0.75), fontSize: 11),
+          style: TextStyle(
+            color: textColor.withValues(alpha: 0.75),
+            fontSize: 11,
+          ),
         ),
         textDirection: TextDirection.ltr,
         textAlign: align,

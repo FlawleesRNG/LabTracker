@@ -1,15 +1,24 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+part 'src/core/theme/design_tokens.dart';
+part 'src/core/responsive/responsive.dart';
+part 'src/core/supabase/supabase_config.dart';
+part 'src/core/supabase/auth_service.dart';
 part 'src/app/app.dart';
 part 'src/models/models.dart';
 part 'src/data/game_data.dart';
+part 'src/data/services/device_service.dart';
+part 'src/data/repositories/local_sync_repository.dart';
 part 'src/core/game_logic.dart';
 part 'src/screens/onboarding.dart';
 part 'src/screens/character_selection.dart';
@@ -21,5 +30,7 @@ part 'src/screens/history.dart';
 part 'src/screens/stats_pages.dart';
 part 'src/core/stats_helpers.dart';
 part 'src/widgets/analysis_widgets.dart';
+part 'src/shared/widgets/layout_widgets.dart';
+part 'src/features/auth/auth_screens.dart';
 part 'src/screens/profile_settings.dart';
 part 'src/widgets/stat_line.dart';

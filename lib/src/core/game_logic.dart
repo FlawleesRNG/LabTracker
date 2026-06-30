@@ -108,12 +108,32 @@ bool usaRankStreetFighter(String jogo) {
   return jogo == jogoStreetFighter6;
 }
 
+bool usaRankMortalKombat1(String jogo) {
+  return jogo == jogoMortalKombat1;
+}
+
 bool usaRankGuiltyGear(String jogo) {
   return jogo == jogoGuiltyGearStrive;
 }
 
 bool usaRankRivals(String jogo) {
   return jogo == jogoRivalsOfAether2;
+}
+
+bool usaRank2XKO(String jogo) {
+  return jogo == jogo2Xko;
+}
+
+bool usaRankKofXV(String jogo) {
+  return jogo == jogoKofXV;
+}
+
+bool usaRankTekken8(String jogo) {
+  return jogo == jogoTekken8;
+}
+
+bool usaRankFatalFury(String jogo) {
+  return jogo == jogoFatalFury;
 }
 
 String labelPontosRank(String jogo) {
@@ -123,8 +143,13 @@ String labelPontosRank(String jogo) {
 String rankInicialDoJogo(String jogo) {
   if (usaLp(jogo)) return 'New Blood IV';
   if (usaRankStreetFighter(jogo)) return 'Rookie I';
+  if (usaRankMortalKombat1(jogo)) return 'Kombatant V';
   if (usaRankGuiltyGear(jogo)) return 'Backyard V';
   if (usaRankRivals(jogo)) return 'Spark V';
+  if (usaRank2XKO(jogo)) return 'Duo V';
+  if (usaRankKofXV(jogo)) return 'Rookie Team V';
+  if (usaRankTekken8(jogo)) return 'Beginner V';
+  if (usaRankFatalFury(jogo)) return 'South Town V';
   return 'Starter V';
 }
 
@@ -179,6 +204,29 @@ String calcularRankStreetFighter(int pdl) {
   return '$rank $divisao';
 }
 
+String calcularRankMortalKombat1(int pdl) {
+  const List<String> ranks = [
+    'Kombatant',
+    'Lin Kuei',
+    'Outworld',
+    'Fatal Blow',
+    'Elder Kombat',
+  ];
+  const List<String> divisoes = ['V', 'IV', 'III', 'II', 'I'];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length * divisoes.length) {
+    return 'Elder God';
+  }
+
+  final String rank = ranks[indiceDivisao ~/ divisoes.length];
+  final String divisao = divisoes[indiceDivisao % divisoes.length];
+
+  return '$rank $divisao';
+}
+
 String calcularRankGuiltyGear(int pdl) {
   const List<String> ranks = [
     'Backyard',
@@ -225,15 +273,190 @@ String calcularRankRivals(int pdl) {
   return '$rank $divisao';
 }
 
+String calcularRank2XKO(int pdl) {
+  const List<String> ranks = ['Duo', 'Assist', 'Tag', 'Combo', 'Runeterra'];
+  const List<String> divisoes = ['V', 'IV', 'III', 'II', 'I'];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length * divisoes.length) {
+    return 'Champion Duo';
+  }
+
+  final String rank = ranks[indiceDivisao ~/ divisoes.length];
+  final String divisao = divisoes[indiceDivisao % divisoes.length];
+
+  return '$rank $divisao';
+}
+
+String calcularRankKofXV(int pdl) {
+  const List<String> ranks = [
+    'Rookie Team',
+    'Neo Geo',
+    'Team Order',
+    'MAX Mode',
+    'King of Fighters',
+  ];
+  const List<String> divisoes = ['V', 'IV', 'III', 'II', 'I'];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length * divisoes.length) {
+    return 'Champion Team';
+  }
+
+  final String rank = ranks[indiceDivisao ~/ divisoes.length];
+  final String divisao = divisoes[indiceDivisao % divisoes.length];
+
+  return '$rank $divisao';
+}
+
+String calcularRankTekken8(int pdl) {
+  const List<String> ranks = [
+    'Beginner V',
+    'Beginner IV',
+    'Beginner III',
+    'Beginner II',
+    'Beginner I',
+    'Dan V',
+    'Dan IV',
+    'Dan III',
+    'Dan II',
+    'Dan I',
+    'Fighter V',
+    'Fighter IV',
+    'Fighter III',
+    'Fighter II',
+    'Fighter I',
+    'Warrior V',
+    'Warrior IV',
+    'Warrior III',
+    'Warrior II',
+    'Warrior I',
+    'Vanquisher V',
+    'Vanquisher IV',
+    'Vanquisher III',
+    'Vanquisher II',
+    'Vanquisher I',
+  ];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length) {
+    return 'Tekken King';
+  }
+
+  return ranks[indiceDivisao];
+}
+
+String calcularRankFatalFury(int pdl) {
+  const List<String> ranks = [
+    'South Town V',
+    'South Town IV',
+    'South Town III',
+    'South Town II',
+    'South Town I',
+    'Street Brawler V',
+    'Street Brawler IV',
+    'Street Brawler III',
+    'Street Brawler II',
+    'Street Brawler I',
+    'Hungry Wolf V',
+    'Hungry Wolf IV',
+    'Hungry Wolf III',
+    'Hungry Wolf II',
+    'Hungry Wolf I',
+    'REV Fighter V',
+    'REV Fighter IV',
+    'REV Fighter III',
+    'REV Fighter II',
+    'REV Fighter I',
+    'Legendary Wolf V',
+    'Legendary Wolf IV',
+    'Legendary Wolf III',
+    'Legendary Wolf II',
+    'Legendary Wolf I',
+  ];
+
+  final int pdlCorrigido = pdl < 0 ? 0 : pdl;
+  final int indiceDivisao = pdlCorrigido ~/ 100;
+
+  if (indiceDivisao >= ranks.length) {
+    return 'King of South Town';
+  }
+
+  return ranks[indiceDivisao];
+}
+
 String calcularRankDoJogo(String jogo, int pontos) {
   if (usaLp(jogo)) return calcularRankInvincible(pontos);
   if (usaRankStreetFighter(jogo)) return calcularRankStreetFighter(pontos);
+  if (usaRankMortalKombat1(jogo)) return calcularRankMortalKombat1(pontos);
   if (usaRankGuiltyGear(jogo)) return calcularRankGuiltyGear(pontos);
   if (usaRankRivals(jogo)) return calcularRankRivals(pontos);
+  if (usaRank2XKO(jogo)) return calcularRank2XKO(pontos);
+  if (usaRankKofXV(jogo)) return calcularRankKofXV(pontos);
+  if (usaRankTekken8(jogo)) return calcularRankTekken8(pontos);
+  if (usaRankFatalFury(jogo)) return calcularRankFatalFury(pontos);
   return calcularRank(pontos);
 }
 
+String chaveDupla2XKO(String point, String assist) {
+  final String pointLimpo = normalizarNomePersonagem(point);
+  final String assistLimpo = normalizarNomePersonagem(assist);
+
+  if (pointLimpo.isEmpty || assistLimpo.isEmpty) return '';
+  return '$pointLimpo + $assistLimpo';
+}
+
+String chaveTimeKofXV(String point, String mid, String anchor) {
+  final String pointLimpo = normalizarNomePersonagem(point);
+  final String midLimpo = normalizarNomePersonagem(mid);
+  final String anchorLimpo = normalizarNomePersonagem(anchor);
+
+  if (pointLimpo.isEmpty || midLimpo.isEmpty || anchorLimpo.isEmpty) {
+    return '';
+  }
+
+  return '$pointLimpo / $midLimpo / $anchorLimpo';
+}
+
 bool partidaPertenceAoJogo(PartidaRegistrada partida, String jogo) {
+  if (jogo == jogoKofXV) {
+    return partida.isKofXV;
+  }
+
+  if (partida.isKofXV) {
+    return false;
+  }
+
+  if (jogo == jogoMortalKombat1) {
+    return partida.isMortalKombat1;
+  }
+
+  if (partida.isMortalKombat1) {
+    return false;
+  }
+
+  if (jogo == jogoTekken8) {
+    return partida.isTekken8;
+  }
+
+  if (partida.isTekken8) {
+    return false;
+  }
+
+  if (jogo == jogoFatalFury) {
+    return partida.isFatalFury;
+  }
+
+  if (partida.isFatalFury) {
+    return false;
+  }
+
   if (jogo == jogoInvincibleVs) {
     return partida.isInvincible;
   }
@@ -254,6 +477,10 @@ bool partidaPertenceAoJogo(PartidaRegistrada partida, String jogo) {
     return partida.isGuiltyGear;
   }
 
+  if (jogo == jogo2Xko) {
+    return partida.is2XKO;
+  }
+
   if (partida.jogo.isEmpty) {
     return jogo == 'Super Smash Bros. Ultimate';
   }
@@ -267,6 +494,8 @@ bool partidaPertenceAoContextoAtual(
   String personagemAtual = '',
   TimePrincipalInvincible timePrincipalInvincible =
       timePrincipalInvincibleVazio,
+  TimePrincipal2XKO timePrincipal2XKO = timePrincipal2XKOVazio,
+  TimePrincipalKofXV timePrincipalKofXV = timePrincipalKofVazio,
 }) {
   if (!partidaPertenceAoJogo(partida, jogo)) {
     return false;
@@ -276,6 +505,18 @@ bool partidaPertenceAoContextoAtual(
     return partida.isInvincible &&
         timePrincipalInvincible.completo &&
         timePrincipalInvincible.mesmaComposicao(partida.meuTime);
+  }
+
+  if (jogo == jogo2Xko) {
+    return partida.is2XKO &&
+        timePrincipal2XKO.completo &&
+        timePrincipal2XKO.mesmaComposicao(partida.meuTime);
+  }
+
+  if (jogo == jogoKofXV) {
+    return partida.isKofXV &&
+        timePrincipalKofXV.completo &&
+        timePrincipalKofXV.mesmaComposicao(partida.meuTime);
   }
 
   final String personagem = personagemAtual.trim();
@@ -290,15 +531,21 @@ List<PartidaRegistrada> filtrarHistoricoPorContextoAtual(
   String personagemAtual = '',
   TimePrincipalInvincible timePrincipalInvincible =
       timePrincipalInvincibleVazio,
+  TimePrincipal2XKO timePrincipal2XKO = timePrincipal2XKOVazio,
+  TimePrincipalKofXV timePrincipalKofXV = timePrincipalKofVazio,
 }) {
   return historico
       .where(
-        (partida) => partidaPertenceAoContextoAtual(
-          partida,
-          jogo: jogo,
-          personagemAtual: personagemAtual,
-          timePrincipalInvincible: timePrincipalInvincible,
-        ),
+        (partida) =>
+            !partida.deletadaLocalmente &&
+            partidaPertenceAoContextoAtual(
+              partida,
+              jogo: jogo,
+              personagemAtual: personagemAtual,
+              timePrincipalInvincible: timePrincipalInvincible,
+              timePrincipal2XKO: timePrincipal2XKO,
+              timePrincipalKofXV: timePrincipalKofXV,
+            ),
       )
       .toList();
 }
@@ -559,6 +806,7 @@ Future<List<PartidaRegistrada>> carregarHistoricoPersistido() async {
     return historicoArquivo
         .whereType<Map<String, dynamic>>()
         .map((item) => PartidaRegistrada.fromJson(item))
+        .where((partida) => !partida.deletadaLocalmente)
         .toList();
   }
 
@@ -572,6 +820,7 @@ Future<List<PartidaRegistrada>> carregarHistoricoPersistido() async {
       return decoded
           .whereType<Map<String, dynamic>>()
           .map((item) => PartidaRegistrada.fromJson(item))
+          .where((partida) => !partida.deletadaLocalmente)
           .toList();
     }
   } catch (_) {}
@@ -1177,7 +1426,7 @@ List<String> urlsImagemPersonagem(
       return [
         imagensDBFZ[nomeLimpo] ?? '',
       ].where((url) => url.isNotEmpty).toList();
-    case 'Fatal Fury':
+    case jogoFatalFury:
       return [
         imagensFatalFury[nomeLimpo] ?? '',
       ].where((url) => url.isNotEmpty).toList();
@@ -1621,6 +1870,415 @@ int calcularPdlRivals({
     case 'Grab/throw':
     case 'Read':
       pdl -= 2;
+      break;
+  }
+
+  return pdl;
+}
+
+int calcularPdl2XKO({
+  required String resultado,
+  required String placar,
+  required String condicaoVitoria,
+  required String motivoDerrota,
+}) {
+  final String placarLimpo = placar.trim();
+
+  if (resultadoEhVitoria(resultado)) {
+    int pdl = placarLimpo == '2-0' ? 28 : 20;
+
+    switch (corrigirTextoLegado(condicaoVitoria)) {
+      case 'Tag combo':
+      case 'Assist fechou':
+      case 'Comeback':
+        pdl += 4;
+        break;
+      case 'Assist confirm':
+      case 'Whiff punish':
+      case 'Super':
+        pdl += 3;
+        break;
+      case 'Punish':
+      case 'Corner pressure':
+      case 'Point carregou':
+        pdl += 2;
+        break;
+      case 'Throw':
+        pdl += 1;
+        break;
+    }
+
+    return pdl;
+  }
+
+  int pdl = placarLimpo == '0-2' ? -26 : -16;
+
+  switch (corrigirTextoLegado(motivoDerrota)) {
+    case 'Point caiu cedo':
+    case 'Assist punido':
+    case 'Tag punish':
+      pdl -= 4;
+      break;
+    case 'Comeback adversário':
+    case 'Defesa ruim':
+    case 'Panic button':
+      pdl -= 3;
+      break;
+    case 'Corner pressure':
+    case 'Whiff punish':
+    case 'Throw':
+      pdl -= 2;
+      break;
+  }
+
+  return pdl;
+}
+
+int calcularPdlMortalKombat1({
+  required String resultado,
+  required String placar,
+  required String condicaoVitoria,
+  required String motivoDerrota,
+}) {
+  final String placarLimpo = placar.trim();
+
+  if (resultadoEhVitoria(resultado)) {
+    int pdl = placarLimpo == '2-0' ? 28 : 20;
+
+    switch (corrigirTextoLegado(condicaoVitoria)) {
+      case 'Kameo confirm':
+      case 'Whiff punish':
+        pdl += 4;
+        break;
+      case 'Kameo punish':
+      case 'Fatal Blow':
+      case 'Read':
+        pdl += 3;
+        break;
+      case 'Punish':
+      case 'Corner pressure':
+      case 'Mix-up':
+        pdl += 2;
+        break;
+      case 'Throw':
+      case 'Anti-air':
+      case 'Chip damage':
+        pdl += 1;
+        break;
+    }
+
+    return pdl;
+  }
+
+  int pdl = placarLimpo == '0-2' ? -26 : -16;
+
+  switch (corrigirTextoLegado(motivoDerrota)) {
+    case 'Kameo pressure':
+    case 'Panic button':
+      pdl -= 4;
+      break;
+    case 'Kameo punish':
+    case 'Mix-up':
+    case 'Corner pressure':
+    case 'Wake-up punido':
+      pdl -= 3;
+      break;
+    case 'Fatal Blow':
+    case 'Whiff punish':
+    case 'Defesa ruim':
+      pdl -= 2;
+      break;
+    case 'Throw':
+    case 'Anti-air falhado':
+      pdl -= 1;
+      break;
+  }
+
+  return pdl;
+}
+
+int calcularPdlTekken8({
+  required String resultado,
+  required String placar,
+  required String condicaoVitoria,
+  required String motivoDerrota,
+  String situacaoPrincipal = '',
+}) {
+  final String placarLimpo = placar.trim();
+  final String situacao = corrigirTextoLegado(situacaoPrincipal);
+
+  if (resultadoEhVitoria(resultado)) {
+    int pdl = 22;
+
+    switch (placarLimpo) {
+      case '3-0':
+        pdl += 10;
+        break;
+      case '3-1':
+        pdl += 6;
+        break;
+      case '3-2':
+        pdl += 2;
+        break;
+    }
+
+    switch (corrigirTextoLegado(condicaoVitoria)) {
+      case 'Whiff punish':
+      case 'Perfect':
+        pdl += 4;
+        break;
+      case 'Launcher':
+      case 'Wall combo':
+      case 'Heat':
+      case 'Heat Smash':
+      case 'Rage Art':
+        pdl += 3;
+        break;
+      case 'Punish':
+      case 'Wall pressure':
+      case 'Counter hit':
+        pdl += 2;
+        break;
+      case 'Throw':
+      case 'Low':
+      case 'Timeout':
+        pdl += 1;
+        break;
+    }
+
+    if (const [
+      'Parede',
+      'Floor break',
+      'Heat ativo',
+      'Rage',
+      'Pressao no canto/parede',
+    ].contains(situacao)) {
+      pdl += 1;
+    }
+
+    return pdl;
+  }
+
+  int pdl = -18;
+
+  switch (placarLimpo) {
+    case '0-3':
+      pdl -= 10;
+      break;
+    case '1-3':
+      pdl -= 6;
+      break;
+    case '2-3':
+      pdl -= 2;
+      break;
+  }
+
+  switch (corrigirTextoLegado(motivoDerrota)) {
+    case 'Throw break falhado':
+    case 'Low não defendido':
+    case 'Panic button':
+      pdl -= 4;
+      break;
+    case 'Whiff punish':
+    case 'Launcher':
+    case 'Wall pressure':
+    case 'Wall combo':
+    case 'Heat pressure':
+    case 'Heat Smash':
+    case 'Rage Art':
+      pdl -= 3;
+      break;
+    case 'Counter hit':
+    case 'Defesa ruim':
+      pdl -= 2;
+      break;
+    case 'Timeout':
+      pdl -= 1;
+      break;
+  }
+
+  if (const [
+    'Parede',
+    'Floor break',
+    'Pressao no canto/parede',
+    'Round final',
+  ].contains(situacao)) {
+    pdl -= 1;
+  }
+
+  return pdl;
+}
+
+int calcularPdlFatalFury({
+  required String resultado,
+  required String placar,
+  required String condicaoVitoria,
+  required String motivoDerrota,
+  String situacaoPrincipal = '',
+}) {
+  final String placarLimpo = placar.trim();
+  final String situacao = corrigirTextoLegado(situacaoPrincipal);
+
+  if (resultadoEhVitoria(resultado)) {
+    int pdl = placarLimpo == '2-0' ? 28 : 20;
+
+    switch (corrigirTextoLegado(condicaoVitoria)) {
+      case 'Whiff punish':
+      case 'SPG':
+      case 'Clutch':
+        pdl += 4;
+        break;
+      case 'REV Art':
+      case 'REV Accel':
+      case 'REV Blow':
+      case 'Super':
+      case 'Read':
+        pdl += 3;
+        break;
+      case 'Punish':
+      case 'Anti-air':
+      case 'Corner pressure':
+      case 'Mix-up':
+        pdl += 2;
+        break;
+      case 'Throw':
+        pdl += 1;
+        break;
+    }
+
+    if (const [
+      'Canto',
+      'Pressao ofensiva',
+      'SPG ativo',
+      'REV alto',
+    ].contains(situacao)) {
+      pdl += 1;
+    }
+
+    return pdl;
+  }
+
+  int pdl = placarLimpo == '0-2' ? -26 : -16;
+
+  switch (corrigirTextoLegado(motivoDerrota)) {
+    case 'Panic button':
+    case 'Defesa ruim':
+      pdl -= 4;
+      break;
+    case 'Corner pressure':
+    case 'Whiff punish':
+    case 'REV pressure':
+    case 'Mix-up':
+      pdl -= 3;
+      break;
+    case 'Clutch adversario':
+    case 'SPG adversario':
+    case 'REV Art':
+    case 'REV Blow':
+    case 'Super':
+    case 'Anti-air falhado':
+      pdl -= 2;
+      break;
+    case 'Throw':
+      pdl -= 1;
+      break;
+  }
+
+  if (const [
+    'Canto',
+    'Pressao defensiva',
+    'REV alto',
+    'Round final',
+  ].contains(situacao)) {
+    pdl -= 1;
+  }
+
+  return pdl;
+}
+
+int calcularPdlKofXV({
+  required String resultado,
+  required String placar,
+  required int personagensRestantes,
+  required String condicaoVitoria,
+  required String motivoDerrota,
+}) {
+  final String placarLimpo = placar.trim();
+  final int restantes = personagensRestantes.clamp(0, 3).toInt();
+
+  if (resultadoEhVitoria(resultado)) {
+    int pdl = placarLimpo == '2-0' ? 28 : 20;
+
+    switch (restantes) {
+      case 3:
+        pdl += 8;
+        break;
+      case 2:
+        pdl += 5;
+        break;
+      case 1:
+        pdl += 1;
+        break;
+    }
+
+    switch (corrigirTextoLegado(condicaoVitoria)) {
+      case 'Anchor clutch':
+      case 'Comeback':
+        pdl += 4;
+        break;
+      case 'Point dominou':
+      case 'Mid estabilizou':
+      case 'MAX Mode':
+        pdl += 3;
+        break;
+      case 'Super':
+      case 'Punish':
+      case 'Whiff punish':
+        pdl += 2;
+        break;
+      case 'Anti-air':
+      case 'Corner pressure':
+      case 'Throw':
+        pdl += 1;
+        break;
+    }
+
+    return pdl;
+  }
+
+  int pdl = placarLimpo == '0-2' ? -26 : -16;
+
+  switch (restantes) {
+    case 0:
+      pdl -= 6;
+      break;
+    case 1:
+      pdl -= 3;
+      break;
+    case 2:
+      pdl -= 1;
+      break;
+  }
+
+  switch (corrigirTextoLegado(motivoDerrota)) {
+    case 'Point caiu cedo':
+    case 'Anchor nao fechou':
+    case 'Comeback adversario':
+      pdl -= 4;
+      break;
+    case 'MAX Mode adversario':
+    case 'Defesa ruim':
+    case 'Panic button':
+      pdl -= 3;
+      break;
+    case 'Super':
+    case 'Whiff punish':
+    case 'Anti-air falhado':
+      pdl -= 2;
+      break;
+    case 'Corner pressure':
+    case 'Throw':
+      pdl -= 1;
       break;
   }
 

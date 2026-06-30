@@ -246,7 +246,70 @@ class _SelecionarPersonagemInicialPageState
     BuildContext context,
     Character personagem,
   ) async {
-    // TODO(2XKO): expandir este fluxo para salvar Assist/Second junto do Point/Main.
+    if (widget.jogoSelecionado == jogoKofXV) {
+      final TimePrincipalKofXV? time = await Navigator.push<TimePrincipalKofXV>(
+        context,
+        MaterialPageRoute<TimePrincipalKofXV>(
+          builder: (context) => MontarTimeKofXVPage(
+            timeInicial: TimePrincipalKofXV(
+              point: personagem.name,
+              mid: '',
+              anchor: '',
+            ),
+          ),
+        ),
+      );
+
+      if (time == null || !context.mounted) return;
+
+      for (final nome in time.personagens) {
+        await marcarPersonagemRecente(widget.jogoSelecionado, nome);
+      }
+      await marcarJogoRecente(widget.jogoSelecionado);
+
+      if (!context.mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              HomePage(jogoAtual: widget.jogoSelecionado, timeKofInicial: time),
+        ),
+      );
+      return;
+    }
+
+    if (widget.jogoSelecionado == jogo2Xko) {
+      final TimePrincipal2XKO? dupla = await Navigator.push<TimePrincipal2XKO>(
+        context,
+        MaterialPageRoute<TimePrincipal2XKO>(
+          builder: (context) => MontarTime2XKOPage(
+            timeInicial: TimePrincipal2XKO(point: personagem.name, assist: ''),
+          ),
+        ),
+      );
+
+      if (dupla == null || !context.mounted) return;
+
+      for (final nome in dupla.personagens) {
+        await marcarPersonagemRecente(widget.jogoSelecionado, nome);
+      }
+      await marcarJogoRecente(widget.jogoSelecionado);
+
+      if (!context.mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(
+            jogoAtual: widget.jogoSelecionado,
+            time2XKOInicial: dupla,
+          ),
+        ),
+      );
+      return;
+    }
+
     await marcarPersonagemRecente(widget.jogoSelecionado, personagem.name);
     await marcarJogoRecente(widget.jogoSelecionado);
 

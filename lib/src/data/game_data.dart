@@ -157,37 +157,47 @@ const List<Character> personagensDBFZ = [
 ];
 
 const List<Character> personagensFatalFury = [
-  Character(name: 'Terry Bogard', initial: 'TB', rank: 'Starter V', pdl: 0),
-  Character(name: 'Rock Howard', initial: 'RH', rank: 'Starter V', pdl: 0),
-  Character(name: 'B. Jenet', initial: 'BJ', rank: 'Starter V', pdl: 0),
-  Character(name: 'Mai Shiranui', initial: 'MS', rank: 'Starter V', pdl: 0),
-  Character(name: 'Hotaru Futaba', initial: 'HF', rank: 'Starter V', pdl: 0),
-  Character(name: 'Hokutomaru', initial: 'HO', rank: 'Starter V', pdl: 0),
-  Character(name: 'Kim Dong Hwan', initial: 'KD', rank: 'Starter V', pdl: 0),
-  Character(name: 'Gato', initial: 'GA', rank: 'Starter V', pdl: 0),
-  Character(name: 'Tizoc', initial: 'TI', rank: 'Starter V', pdl: 0),
-  Character(name: 'Preecha', initial: 'PR', rank: 'Starter V', pdl: 0),
-  Character(name: 'Kevin Rian', initial: 'KV', rank: 'Starter V', pdl: 0),
-  Character(name: 'Marco Rodriguez', initial: 'MA', rank: 'Starter V', pdl: 0),
-  Character(name: 'Vox Reaper', initial: 'VR', rank: 'Starter V', pdl: 0),
-  Character(name: 'Kain R. Heinlein', initial: 'KA', rank: 'Starter V', pdl: 0),
+  Character(name: 'Terry Bogard', initial: 'TB', rank: 'South Town V', pdl: 0),
+  Character(name: 'Rock Howard', initial: 'RH', rank: 'South Town V', pdl: 0),
+  Character(name: 'B. Jenet', initial: 'BJ', rank: 'South Town V', pdl: 0),
+  Character(name: 'Mai Shiranui', initial: 'MS', rank: 'South Town V', pdl: 0),
+  Character(name: 'Hotaru Futaba', initial: 'HF', rank: 'South Town V', pdl: 0),
+  Character(name: 'Hokutomaru', initial: 'HO', rank: 'South Town V', pdl: 0),
+  Character(name: 'Kim Dong Hwan', initial: 'KD', rank: 'South Town V', pdl: 0),
+  Character(name: 'Gato', initial: 'GA', rank: 'South Town V', pdl: 0),
+  Character(name: 'Tizoc', initial: 'TI', rank: 'South Town V', pdl: 0),
+  Character(name: 'Preecha', initial: 'PR', rank: 'South Town V', pdl: 0),
+  Character(name: 'Kevin Rian', initial: 'KV', rank: 'South Town V', pdl: 0),
+  Character(
+    name: 'Marco Rodriguez',
+    initial: 'MA',
+    rank: 'South Town V',
+    pdl: 0,
+  ),
+  Character(name: 'Vox Reaper', initial: 'VR', rank: 'South Town V', pdl: 0),
+  Character(
+    name: 'Kain R. Heinlein',
+    initial: 'KA',
+    rank: 'South Town V',
+    pdl: 0,
+  ),
   Character(
     name: 'Salvatore Ganacci',
     initial: 'SG',
-    rank: 'Starter V',
+    rank: 'South Town V',
     pdl: 0,
   ),
   Character(
     name: 'Cristiano Ronaldo',
     initial: 'CR',
-    rank: 'Starter V',
+    rank: 'South Town V',
     pdl: 0,
   ),
-  Character(name: 'Andy Bogard', initial: 'AB', rank: 'Starter V', pdl: 0),
-  Character(name: 'Ken Masters', initial: 'KM', rank: 'Starter V', pdl: 0),
-  Character(name: 'Joe Higashi', initial: 'JH', rank: 'Starter V', pdl: 0),
-  Character(name: 'Chun-Li', initial: 'CL', rank: 'Starter V', pdl: 0),
-  Character(name: 'Mr. Big', initial: 'MB', rank: 'Starter V', pdl: 0),
+  Character(name: 'Andy Bogard', initial: 'AB', rank: 'South Town V', pdl: 0),
+  Character(name: 'Ken Masters', initial: 'KM', rank: 'South Town V', pdl: 0),
+  Character(name: 'Joe Higashi', initial: 'JH', rank: 'South Town V', pdl: 0),
+  Character(name: 'Chun-Li', initial: 'CL', rank: 'South Town V', pdl: 0),
+  Character(name: 'Mr. Big', initial: 'MB', rank: 'South Town V', pdl: 0),
 ];
 
 const List<Character> personagensInvincible = [
@@ -1849,50 +1859,59 @@ const Map<String, List<String>> imagensAlternativasKofXV = {
 const Map<String, GameRegisterType> tiposRegistroPorJogo = {
   'Super Smash Bros. Ultimate': GameRegisterType.platformFighter,
   jogoStreetFighter6: GameRegisterType.twoDFighter,
-  'Mortal Kombat 1': GameRegisterType.twoDFighter,
+  jogoMortalKombat1: GameRegisterType.twoDAssistFighter,
   'Avatar Legends: The Fighting Game': GameRegisterType.twoDFighter,
   jogoGuiltyGearStrive: GameRegisterType.animeFighter,
-  'The King of Fighters XV': GameRegisterType.twoDFighter,
+  jogoKofXV: GameRegisterType.teamOrderFighter,
   jogoInvincibleVs: GameRegisterType.teamFighter,
   jogoTekken8: GameRegisterType.threeDFighter,
-  jogo2Xko: GameRegisterType.tagFighter,
+  jogo2Xko: GameRegisterType.tagFighter2v2,
   jogoRivalsOfAether2: GameRegisterType.platformFighter,
-  'Fatal Fury': GameRegisterType.twoDFighter,
+  jogoFatalFury: GameRegisterType.snkFighter,
   'Dragon Ball FighterZ': GameRegisterType.tagFighter,
 };
 
 const Map<GameRegisterType, String> categoriasRegistro = {
   GameRegisterType.platformFighter: 'Platform Fighter',
   GameRegisterType.twoDFighter: '2D Fighter',
+  GameRegisterType.twoDAssistFighter: '2D Fighter / Assist Fighter',
   GameRegisterType.animeFighter: '2D Fighter / Anime Fighter',
+  GameRegisterType.snkFighter: '2D Fighter / SNK Fighter',
   GameRegisterType.threeDFighter: '3D Fighter',
   GameRegisterType.tagFighter: 'Tag Fighter',
+  GameRegisterType.tagFighter2v2: 'Tag Fighter 2v2',
   GameRegisterType.teamFighter: 'Team Fighter',
+  GameRegisterType.teamOrderFighter: 'Team Fighter / Team Order',
 };
 
 const Map<String, String> subtitulosJogos = {
   jogoTekken8: 'Rounds, parede, Heat e whiff punish',
+  jogoMortalKombat1: 'Rounds, Kameo e Fatal Blow',
   jogo2Xko: 'Time 2v2, assist e tag',
   jogoRivalsOfAether2: 'Stocks, edgeguard e recovery',
+  jogoKofXV: 'Point, Mid, Anchor e ordem do time',
+  jogoFatalFury: 'Rounds, SPG, REV e punish',
 };
 
 const List<String> camposRegistroTekken8 = [
   'Resultado',
-  'Personagem adversário',
-  'Nick adversário',
+  'Nick adversario',
+  'Personagem adversario',
   'Stage',
-  'Placar de rounds',
+  'Placar',
   'Como venceu',
   'Como perdeu',
-  'Wall pressure',
-  'Wall combo',
-  'Floor break / stage break',
-  'Heat',
-  'Rage Art',
-  'Whiff punish',
-  'Throw break',
-  'Perfect',
-  'Observações',
+  'Situacao principal',
+  'Observacoes',
+];
+
+const List<String> placaresVitoriaTekken8 = ['3-0', '3-1', '3-2'];
+
+const List<String> placaresDerrotaTekken8 = ['2-3', '1-3', '0-3'];
+
+const List<String> placaresTekken8 = [
+  ...placaresVitoriaTekken8,
+  ...placaresDerrotaTekken8,
 ];
 
 const List<String> opcoesComoVenceuTekken8 = [
@@ -1900,25 +1919,187 @@ const List<String> opcoesComoVenceuTekken8 = [
   'Whiff punish',
   'Launcher',
   'Wall combo',
+  'Wall pressure',
   'Heat',
+  'Heat Smash',
   'Rage Art',
   'Throw',
   'Low',
   'Counter hit',
   'Perfect',
+  'Timeout',
   'Outro',
 ];
 
 const List<String> opcoesComoPerdeuTekken8 = [
   'Whiff punish',
+  'Launcher',
   'Wall pressure',
+  'Wall combo',
   'Throw break falhado',
   'Low não defendido',
   'Heat pressure',
+  'Heat Smash',
   'Rage Art',
   'Counter hit',
   'Panic button',
-  'Round final mal jogado',
+  'Timeout',
+  'Defesa ruim',
+  'Outro',
+];
+
+const List<String> situacoesPrincipaisTekken8 = [
+  'Nao informado',
+  'Neutro',
+  'Parede',
+  'Floor break',
+  'Heat ativo',
+  'Rage',
+  'Pressao no canto/parede',
+  'Round final',
+  'Outro',
+];
+
+const List<String> camposRegistroFatalFury = [
+  'Resultado',
+  'Nick adversario',
+  'Personagem adversario',
+  'Stage',
+  'Placar',
+  'Como venceu',
+  'Como perdeu',
+  'Situacao principal',
+  'Observacoes',
+];
+
+const List<String> placaresVitoriaFatalFury = ['2-0', '2-1'];
+
+const List<String> placaresDerrotaFatalFury = ['1-2', '0-2'];
+
+const List<String> placaresFatalFury = [
+  ...placaresVitoriaFatalFury,
+  ...placaresDerrotaFatalFury,
+];
+
+const List<String> opcoesComoVenceuFatalFury = [
+  'Punish',
+  'Whiff punish',
+  'Anti-air',
+  'Corner pressure',
+  'Throw',
+  'Mix-up',
+  'SPG',
+  'REV Art',
+  'REV Accel',
+  'REV Blow',
+  'Super',
+  'Clutch',
+  'Read',
+  'Outro',
+];
+
+const List<String> opcoesComoPerdeuFatalFury = [
+  'Whiff punish',
+  'Anti-air falhado',
+  'Corner pressure',
+  'Throw',
+  'Mix-up',
+  'SPG adversario',
+  'REV pressure',
+  'REV Art',
+  'REV Blow',
+  'Super',
+  'Defesa ruim',
+  'Panic button',
+  'Clutch adversario',
+  'Outro',
+];
+
+const List<String> situacoesPrincipaisFatalFury = [
+  'Nao informado',
+  'Neutro',
+  'Canto',
+  'Pressao ofensiva',
+  'Pressao defensiva',
+  'SPG ativo',
+  'REV alto',
+  'Round final',
+  'Outro',
+];
+
+const List<String> camposRegistroMortalKombat1 = [
+  'Resultado',
+  'Personagem adversario',
+  'Kameo adversario',
+  'Nick adversario',
+  'Stage',
+  'Placar',
+  'Como venceu',
+  'Como perdeu',
+  'Observacoes',
+];
+
+const List<String> kameosMortalKombat1 = [
+  'Nao registrado',
+  'Cyrax',
+  'Darrius',
+  'Ferra',
+  'Frost',
+  'Goro',
+  'Jax',
+  'Janet Cage',
+  'Kano',
+  'Khameleon',
+  'Kung Lao',
+  'Madam Bo',
+  'Mavado',
+  'Motaro',
+  'Sareena',
+  'Scorpion',
+  'Sektor',
+  'Shujinko',
+  'Sonya',
+  'Stryker',
+  'Sub-Zero',
+  'Tremor',
+];
+
+const List<String> placaresVitoriaMortalKombat1 = ['2-0', '2-1'];
+
+const List<String> placaresDerrotaMortalKombat1 = ['1-2', '0-2'];
+
+const List<String> placaresMortalKombat1 = [
+  ...placaresVitoriaMortalKombat1,
+  ...placaresDerrotaMortalKombat1,
+];
+
+const List<String> opcoesComoVenceuMortalKombat1 = [
+  'Punish',
+  'Whiff punish',
+  'Kameo confirm',
+  'Kameo punish',
+  'Corner pressure',
+  'Mix-up',
+  'Throw',
+  'Anti-air',
+  'Fatal Blow',
+  'Chip damage',
+  'Read',
+  'Outro',
+];
+
+const List<String> opcoesComoPerdeuMortalKombat1 = [
+  'Kameo pressure',
+  'Kameo punish',
+  'Mix-up',
+  'Corner pressure',
+  'Throw',
+  'Whiff punish',
+  'Fatal Blow',
+  'Anti-air falhado',
+  'Wake-up punido',
+  'Defesa ruim',
+  'Panic button',
   'Outro',
 ];
 
@@ -1965,6 +2146,89 @@ const List<String> opcoesComoPerdeu2XKO = [
   'Panic button',
   'Comeback adversário',
   'Defesa ruim',
+  'Outro',
+];
+
+const List<String> placaresVitoria2XKO = ['2-0', '2-1'];
+
+const List<String> placaresDerrota2XKO = ['1-2', '0-2'];
+
+const List<String> placares2XKO = [
+  ...placaresVitoria2XKO,
+  ...placaresDerrota2XKO,
+];
+
+const List<String> participantesAnalise2XKO = [
+  'Point/Main',
+  'Assist/Second',
+  'Adversário',
+  'Não sei / Não registrado',
+];
+
+const List<String> posicoesTimeKofXV = ['Point', 'Mid', 'Anchor'];
+
+const List<String> camposRegistroKofXV = [
+  'Resultado',
+  'Point do usuario',
+  'Mid do usuario',
+  'Anchor do usuario',
+  'Time adversario',
+  'Nick adversario',
+  'Placar',
+  'Personagens restantes',
+  'Quem caiu primeiro',
+  'Quem fechou a luta',
+  'Como venceu',
+  'Como perdeu',
+  'Observacoes',
+];
+
+const List<String> placaresVitoriaKofXV = ['2-0', '2-1'];
+
+const List<String> placaresDerrotaKofXV = ['1-2', '0-2'];
+
+const List<String> placaresKofXV = [
+  ...placaresVitoriaKofXV,
+  ...placaresDerrotaKofXV,
+];
+
+const List<String> personagensRestantesKofXV = ['0', '1', '2', '3'];
+
+const List<String> participantesAnaliseKofXV = [
+  'Point',
+  'Mid',
+  'Anchor',
+  'Adversario',
+  'Nao sei / Nao registrado',
+];
+
+const List<String> opcoesComoVenceuKofXV = [
+  'Anchor clutch',
+  'Point dominou',
+  'Mid estabilizou',
+  'MAX Mode',
+  'Super',
+  'Punish',
+  'Whiff punish',
+  'Anti-air',
+  'Corner pressure',
+  'Throw',
+  'Comeback',
+  'Outro',
+];
+
+const List<String> opcoesComoPerdeuKofXV = [
+  'Point caiu cedo',
+  'Anchor nao fechou',
+  'Comeback adversario',
+  'MAX Mode adversario',
+  'Super',
+  'Whiff punish',
+  'Anti-air falhado',
+  'Corner pressure',
+  'Throw',
+  'Defesa ruim',
+  'Panic button',
   'Outro',
 ];
 
@@ -2067,23 +2331,32 @@ const List<String> opcoesComoPerdeuGuiltyGearStrive = [
 
 const Map<String, List<String>> camposRegistroFuturosPorJogo = {
   jogoTekken8: camposRegistroTekken8,
+  jogoMortalKombat1: camposRegistroMortalKombat1,
   jogo2Xko: camposRegistro2XKO,
+  jogoKofXV: camposRegistroKofXV,
   jogoRivalsOfAether2: camposRegistroRivalsOfAether2,
   jogoGuiltyGearStrive: camposRegistroGuiltyGearStrive,
+  jogoFatalFury: camposRegistroFatalFury,
 };
 
 const Map<String, List<String>> opcoesComoVenceuPorJogo = {
   jogoTekken8: opcoesComoVenceuTekken8,
+  jogoMortalKombat1: opcoesComoVenceuMortalKombat1,
   jogo2Xko: opcoesComoVenceu2XKO,
+  jogoKofXV: opcoesComoVenceuKofXV,
   jogoRivalsOfAether2: opcoesComoVenceuRivalsOfAether2,
   jogoGuiltyGearStrive: opcoesComoVenceuGuiltyGearStrive,
+  jogoFatalFury: opcoesComoVenceuFatalFury,
 };
 
 const Map<String, List<String>> opcoesComoPerdeuPorJogo = {
   jogoTekken8: opcoesComoPerdeuTekken8,
+  jogoMortalKombat1: opcoesComoPerdeuMortalKombat1,
   jogo2Xko: opcoesComoPerdeu2XKO,
+  jogoKofXV: opcoesComoPerdeuKofXV,
   jogoRivalsOfAether2: opcoesComoPerdeuRivalsOfAether2,
   jogoGuiltyGearStrive: opcoesComoPerdeuGuiltyGearStrive,
+  jogoFatalFury: opcoesComoPerdeuFatalFury,
 };
 
 List<String> camposRegistroFuturoDoJogo(String jogo) {
@@ -2126,12 +2399,26 @@ const Map<GameRegisterType, List<String>> camposRegistroRapidoPorTipo = {
     'Placar',
     'Como venceu/perdeu',
   ],
+  GameRegisterType.twoDAssistFighter: [
+    'Resultado',
+    'Personagem adversario',
+    'Kameo adversario',
+    'Placar',
+    'Salvar',
+  ],
   GameRegisterType.animeFighter: [
     'Resultado',
     'Personagem adversario',
     'Nick adversario',
     'Placar',
     'Corner/Roman/Burst',
+  ],
+  GameRegisterType.snkFighter: [
+    'Resultado',
+    'Personagem adversario',
+    'Nick adversario',
+    'Placar',
+    'SPG/REV',
   ],
   GameRegisterType.threeDFighter: [
     'Resultado',
@@ -2148,6 +2435,12 @@ const Map<GameRegisterType, List<String>> camposRegistroRapidoPorTipo = {
     'Placar',
     'Tag/assist',
   ],
+  GameRegisterType.tagFighter2v2: [
+    'Resultado',
+    'Time adversario',
+    'Placar',
+    'Point/Assist',
+  ],
   GameRegisterType.teamFighter: [
     'Resultado',
     'Time adversario',
@@ -2155,9 +2448,41 @@ const Map<GameRegisterType, List<String>> camposRegistroRapidoPorTipo = {
     'Destaque',
     'Como venceu/perdeu',
   ],
+  GameRegisterType.teamOrderFighter: [
+    'Resultado',
+    'Time adversario',
+    'Placar',
+    'Personagens restantes',
+    'Salvar',
+  ],
 };
 
 const Map<String, List<String>> camposRegistroRapidoPorJogo = {
+  jogoTekken8: ['Resultado', 'Personagem adversario', 'Placar', 'Salvar'],
+  jogoFatalFury: ['Resultado', 'Personagem adversario', 'Placar', 'Salvar'],
+  jogoMortalKombat1: [
+    'Resultado',
+    'Personagem adversario',
+    'Kameo adversario',
+    'Placar',
+    'Salvar',
+  ],
+  jogo2Xko: [
+    'Resultado',
+    'Point adversario',
+    'Assist adversario',
+    'Placar',
+    'Salvar',
+  ],
+  jogoKofXV: [
+    'Resultado',
+    'Point adversario',
+    'Mid adversario',
+    'Anchor adversario',
+    'Placar',
+    'Personagens restantes',
+    'Salvar',
+  ],
   jogoRivalsOfAether2: [
     'Resultado',
     'Personagem adversario',
@@ -2189,7 +2514,7 @@ const Map<String, String> logosJogos = {
       'https://www.snk-corp.co.jp/official/kof-xv/img/main/top_koflogo.png',
   'Dragon Ball FighterZ':
       'https://images.seeklogo.com/logo-png/36/1/dragon-ball-fighterz-logo-png_seeklogo-361235.png',
-  'Fatal Fury':
+  jogoFatalFury:
       'https://www.snk-corp.co.jp/cn/games/fatalfury-cotw/img/main/cotwlogo_nodot.png',
   'Invincible VS':
       'https://assets.games.gg/1749598307666_invincible_vs_logo_6d6b1bf34b.png',
@@ -2208,7 +2533,7 @@ const Map<String, String> logosJogosOffline = {
   'Mortal Kombat 1': 'assets/offline_images/games/mortal_kombat_1.webp',
   'Dragon Ball FighterZ':
       'assets/offline_images/games/dragon_ball_fighterz.webp',
-  'Fatal Fury': 'assets/offline_images/games/fatal_fury.webp',
+  jogoFatalFury: 'assets/offline_images/games/fatal_fury.webp',
   'Invincible VS': 'assets/offline_images/games/invincible_vs.webp',
   'Avatar Legends: The Fighting Game':
       'assets/offline_images/games/avatar_legends_the_fighting_game.webp',
@@ -2225,7 +2550,7 @@ const Map<String, String> pastasPersonagensOfflinePorJogo = {
   jogoStreetFighter6: 'street_fighter_6',
   'Mortal Kombat 1': 'mortal_kombat_1',
   'Dragon Ball FighterZ': 'dragon_ball_fighterz',
-  'Fatal Fury': 'fatal_fury',
+  jogoFatalFury: 'fatal_fury',
   jogoInvincibleVs: 'invincible_vs',
   'Avatar Legends: The Fighting Game': 'avatar_legends',
   jogoGuiltyGearStrive: 'guilty_gear_strive',
@@ -2256,7 +2581,7 @@ List<Character> rosterDoJogo(String jogo) {
       return personagensRivalsOfAether2;
     case 'Dragon Ball FighterZ':
       return personagensDBFZ;
-    case 'Fatal Fury':
+    case jogoFatalFury:
       return personagensFatalFury;
     case 'Invincible VS':
       return personagensInvincible;

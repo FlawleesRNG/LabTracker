@@ -1,23 +1,23 @@
 # Login Com Google
 
-O código do login já está pronto em `GoogleAuthService`, usando
-`google_sign_in` 7.x. Ainda é necessário configurar credenciais OAuth no Google
+O codigo do login ja esta pronto em `GoogleAuthService`, usando
+`google_sign_in` 7.x. Ainda e necessario configurar credenciais OAuth no Google
 Cloud para Android/iOS.
 
 O login identifica o jogador com nome, e-mail e foto. Os dados do app continuam
-salvos localmente no aparelho; não há sincronização em nuvem.
+salvos localmente no aparelho; nao ha sincronizacao em nuvem.
 
-No Windows desktop, o login Google não existe por limitação da plataforma. O app
-mostra automaticamente a opção de entrar com um nick.
+No Windows desktop, o login Google nao existe por limitacao da plataforma. O app
+mostra automaticamente a opcao de entrar com um nick.
 
 ## 1. Google Cloud Console
 
 1. Acesse <https://console.cloud.google.com/>.
 2. Crie ou selecione um projeto.
-3. Vá em `APIs & Services > OAuth consent screen`.
+3. Va em `APIs & Services > OAuth consent screen`.
 4. Configure como `External`.
-5. Adicione seu e-mail como usuário de teste.
-6. Vá em `APIs & Services > Credentials > Create credentials > OAuth client ID`.
+5. Adicione seu e-mail como usuario de teste.
+6. Va em `APIs & Services > Credentials > Create credentials > OAuth client ID`.
 
 ## 2. Android
 
@@ -27,9 +27,9 @@ Client ID como `serverClientId`.
 1. Crie um OAuth Client ID do tipo `Web application`.
 2. Copie o Client ID.
 3. Cole esse valor no `serverClientId` em `GoogleAuthService`.
-4. Crie também um OAuth Client ID do tipo `Android`.
+4. Crie tambem um OAuth Client ID do tipo `Android`.
 
-Configuração Android:
+Configuracao Android:
 
 - Package name: `com.labtracker`
 - SHA-1: SHA-1 da keystore usada no build
@@ -40,7 +40,7 @@ Para a keystore debug:
 keytool -list -v -keystore %USERPROFILE%\.android\debug.keystore -alias androiddebugkey -storepass android -keypass android
 ```
 
-O `applicationId` já está definido como `com.labtracker` em
+O `applicationId` ja esta definido como `com.labtracker` em
 `android/app/build.gradle.kts`.
 
 ## 3. iOS
@@ -80,7 +80,7 @@ Ou:
 flutter run -d ios
 ```
 
-Se aparecer erro de configuração, os motivos mais comuns são:
+Se aparecer erro de configuracao, os motivos mais comuns sao:
 
 - SHA-1 divergente;
 - package name divergente;

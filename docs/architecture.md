@@ -1,9 +1,10 @@
 # Arquitetura
 
-O LabTracker é um app Flutter em Dart. O arquivo [lib/main.dart](../lib/main.dart)
-fica como ponto de entrada e lista os `part` files usados pelo app.
+O LabTracker e um app Flutter em Dart. O arquivo
+[`lib/main.dart`](../lib/main.dart) e o ponto de entrada e lista os `part`
+files usados pelo app.
 
-## Estrutura Principal
+## Estrutura Atual
 
 ```text
 lib/
@@ -11,9 +12,13 @@ lib/
   src/
     app/
     core/
+      responsive/
+      theme/
     data/
     models/
     screens/
+    shared/
+      widgets/
     widgets/
 ```
 
@@ -21,75 +26,120 @@ lib/
 
 `lib/src/app/`
 
-Contém a inicialização do app, tema, marca visual e serviço de login Google.
+Inicializacao do app, tema principal, marca visual, login Google e persistencia
+local compartilhada.
 
 `lib/src/models/`
 
-Modelos principais do domínio:
+Modelos principais do dominio:
 
 - `Character`
 - `PlayerProfile`
 - `PartidaRegistrada`
 - `TimePrincipalInvincible`
-- resumos de estatísticas
+- `TimePrincipal2XKO`
+- resumos de estatisticas
+- tipos de registro de jogo
 
 `lib/src/data/`
 
-Dados estáticos:
+Dados estaticos:
 
 - rosters
 - imagens de personagens
 - logos dos jogos
+- assets offline
 - stages
-- opções de kill/morte
-- opções específicas do Invincible VS
+- opcoes de registro por jogo
+- categorias e subtitulos
+
+Servicos e repositories locais:
+
+- `data/services/device_service.dart`: gera e guarda `deviceId` local.
+- `data/repositories/local_sync_repository.dart`: prepara metadados
+  offline-first e mantem a fila local de sync.
 
 `lib/src/core/`
 
 Regras e helpers:
 
-- cálculo de rank
-- cálculo de PDL/LP
-- normalização de textos legados
-- filtros e rankings de frequência
-- helpers de estatísticas e gráficos
+- calculo de rank
+- calculo de PDL/LP
+- normalizacao de textos legados
+- filtros e rankings de frequencia
+- helpers de estatisticas e graficos
+- tokens de tema em `core/theme/`
+- breakpoints e containers responsivos em `core/responsive/`
+- configuracao/Auth do Supabase em `core/supabase/`
 
 `lib/src/screens/`
 
-Telas do app:
+Telas atuais:
 
 - onboarding e login inicial
-- seleção de jogos/personagens
+- selecao de jogos/personagens
+- montagem de times
 - home
 - registro de partidas
-- histórico e detalhes
-- estatísticas
-- perfil e configurações
+- historico e detalhes
+- estatisticas e coach
+- perfil e configuracoes
+
+`lib/src/features/auth/`
+
+Telas opcionais de conta:
+
+- login/cadastro por e-mail e senha via Supabase Auth;
+- cadastro separado com nick e confirmacao de senha;
+- status local/logado;
+- logout;
+- placeholder para "Sincronizar agora" manual.
 
 `lib/src/widgets/`
 
-Componentes reaproveitáveis:
+Componentes existentes reaproveitaveis:
 
 - avatar de personagem
-- campos pesquisáveis
-- cards de análise
-- gráficos
+- campo pesquisavel
+- imagem com fallback
+- cards de analise
+- graficos
 - seletor de data
-- linhas de estatística
+- linhas de estatistica
 
-## Regra De Organização
+`lib/src/shared/widgets/`
+
+Componentes novos e mais genericos para telas futuras ou migracoes seguras:
+
+- `AppPageScaffold`
+- `AppPageHeader`
+- `AppSectionTitle`
+- `AppSurfaceCard`
+- `AppEmptyState`
+- widgets que usam os helpers responsivos
+
+## Regra De Organizacao
 
 Ao adicionar um recurso novo:
 
-1. Coloque dados fixos em `data/`.
-2. Coloque regra de negócio em `core/`.
-3. Coloque estado/tela em `screens/`.
-4. Coloque UI reaproveitável em `widgets/`.
-5. Só altere `main.dart` para incluir um novo `part`.
+1. Coloque dados fixos em `data/` ou em config extraida.
+2. Coloque regra de negocio em `core/`.
+3. Coloque estado/tela em `screens/` enquanto a migracao para `features/` nao
+   estiver completa.
+4. Coloque UI reaproveitavel antiga em `widgets/`.
+5. Coloque UI nova generica em `shared/widgets/`.
+6. So altere `main.dart` para incluir um novo `part`.
 
 ## Cuidados
 
-- Evite recolocar lógica grande em `main.dart`.
-- Mantenha fluxos específicos por jogo condicionais.
-- Não misture dados de time com jogos de personagem individual.
-- Preserve compatibilidade com backups antigos sempre que mudar `PartidaRegistrada`.
+- Evite recolocar logica grande em `main.dart`.
+- Mantenha fluxos especificos por jogo condicionais.
+- Nao misture dados de time com jogos de personagem individual.
+- Preserve compatibilidade com backups antigos sempre que mudar
+  `PartidaRegistrada`.
+- Salve sempre local primeiro; sync futuro nunca pode bloquear registro,
+  historico, perfil, rank ou preferencias.
+- Nunca usar `service_role` no Flutter. Use somente a chave publica
+  publishable/anon via `--dart-define`.
+- Nao mover telas grandes para `features/` sem antes extrair configs/helpers e
+  rodar `flutter analyze`.

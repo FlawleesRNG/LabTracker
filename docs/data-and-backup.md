@@ -1,30 +1,38 @@
-# Dados, Persistência E Backup
+# Dados, Persistencia E Backup
 
-O LabTracker salva os dados localmente. Não há sincronização em nuvem no fluxo
+O LabTracker salva os dados localmente. Nao ha sincronizacao em nuvem no fluxo
 atual.
 
 ## Arquivo Principal
 
-O arquivo de dados é:
+O arquivo de dados e:
 
 ```text
 labtracker_data.json
 ```
 
-Ele é salvo no diretório de documentos da aplicação usando `path_provider`.
+Ele e salvo no diretorio de documentos da aplicacao usando `path_provider`.
 
 ## Dados Salvos
 
-O pacote principal de persistência contém:
+O pacote principal de persistencia contem:
 
 - perfil do jogador;
 - jogo atual;
-- personagem atual;
+- personagem atual para jogos individuais;
 - time principal do Invincible VS;
+- dupla principal do 2XKO;
 - rosters com PDL/rank recalculado;
-- histórico de partidas.
+- historico de partidas;
+- preferencias visuais do Smash quando aplicavel.
+- `deviceId` local do aparelho.
+- `syncRecords` com metadados offline-first de perfil, progresso,
+  preferencias, favoritos e selecoes.
+- `syncQueue` com operacoes pendentes para sincronizacao futura.
+- `partidasExcluidasParaSync` com tombstones de partidas apagadas localmente.
+- `currentUserId` quando houver sessao Supabase ativa.
 
-O método central fica em `HomePage`:
+Metodos centrais:
 
 - `gerarDadosPersistidos()`
 - `_aplicarDadosMap()`
@@ -33,18 +41,75 @@ O método central fica em `HomePage`:
 
 ## SharedPreferences
 
-`SharedPreferences` ainda é usado como fallback/migração para alguns dados, mas
-o arquivo JSON é a fonte principal.
+`SharedPreferences` ainda e usado como fallback/migracao para alguns dados, como
+preferencias visuais e listas simples. O arquivo JSON continua sendo a fonte
+principal dos dados do app.
+
+Tambem fica em `SharedPreferences` o `labtrackerDeviceId`, que identifica o
+aparelho localmente antes de qualquer login remoto.
+
+## Offline-first
+
+Regra oficial:
+
+```text
+salvar local -> atualizar rank/PDL local -> marcar sync pendente
+```
+
+O app nao depende de internet para salvar partida, perfil, rank, historico ou
+preferencias.
+
+Partidas novas recebem:
+
+- `id` local estavel;
+- `deviceId`;
+- `createdAt`;
+- `updatedAt`;
+- `syncStatus: pendingSync`;
+- item correspondente em `syncQueue`.
+
+Edicoes viram operacao `update` na fila. Exclusoes viram operacao `delete` e a
+partida apagada fica preservada em `partidasExcluidasParaSync`, fora do
+historico ativo, para nao quebrar estatisticas nem rank.
+
+Por enquanto, nada e enviado para Supabase. A fila e apenas local.
+
+## Supabase Auth
+
+Quando `SUPABASE_URL` e `SUPABASE_ANON_KEY` estao configurados por
+`--dart-define`, a tela `Conta e Sync` permite login/cadastro por e-mail e
+senha.
+
+Fluxos ativos nesta etapa:
+
+- login com e-mail e senha;
+- cadastro com nick, e-mail, senha e confirmacao;
+- checkbox visual "Manter conectado neste dispositivo", marcado por padrao;
+- logout manual.
+
+Fluxos nao implementados nesta etapa:
+
+- OTP;
+- magic link;
+- login social;
+- login Google/Discord via Supabase;
+- recuperacao real de senha.
+
+Se o usuario estiver logado, novos registros locais passam a receber `userId`.
+Dados antigos sem `userId` continuam funcionando. Nao ha migracao automatica
+agressiva nesta etapa.
+
+Sem as variaveis do Supabase, o app abre normalmente em modo local.
 
 ## Backup Local
 
-O backup é exportado em JSON para:
+O backup e exportado em JSON para:
 
 ```text
 Documents/LabTracker_Backups
 ```
 
-Na tela de configurações, o usuário pode:
+Na tela de configuracoes, o usuario pode:
 
 - exportar backup;
 - importar o backup mais recente;
@@ -52,7 +117,7 @@ Na tela de configurações, o usuário pode:
 
 ## Compatibilidade
 
-Ao alterar `PartidaRegistrada`, mantenha valores padrão nos campos novos. Isso
+Ao alterar `PartidaRegistrada`, mantenha valores padrao nos campos novos. Isso
 evita quebrar backups antigos.
 
 Exemplo:
@@ -64,16 +129,19 @@ this.round3Resultado = '',
 this.placarRounds = '',
 ```
 
-Também existe normalização para textos antigos que podem ter sido salvos com
+Tambem existe normalizacao para textos antigos que podem ter sido salvos com
 acentos quebrados:
 
 - `corrigirTextoLegado()`
 - `resultadoEhVitoria()`
 - `resultadoEhDerrota()`
 
-## Regras Práticas
+## Regras Praticas
 
-- Nunca remova campos antigos sem migração.
-- Prefira adicionar campos opcionais com valor padrão.
-- Quando criar um fluxo por jogo, salve dados específicos em campos próprios.
-- Depois de mudar persistência, teste carregar histórico antigo.
+- Nunca remova campos antigos sem migracao.
+- Prefira adicionar campos opcionais com valor padrao.
+- Quando criar um fluxo por jogo, salve dados especificos em campos proprios.
+- Historico de time/dupla nao deve se misturar com historico de personagem.
+- Tombstones de exclusao nao devem entrar em estatisticas/rank.
+- A fila de sync nunca deve bloquear o salvamento local.
+- Depois de mudar persistencia, teste carregar historico antigo.

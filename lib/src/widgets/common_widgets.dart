@@ -34,8 +34,11 @@ class HomeNavigationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(
+        minWidth: AppTouchTarget.minimum,
+        minHeight: AppTouchTarget.minimum,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
       visualDensity: VisualDensity.standard,
       onPressed: () {
         irParaSelecaoDeJogos(context);
@@ -180,7 +183,7 @@ class SearchableOptionField extends StatelessWidget {
         : options.first;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       onTap: () => _abrirBusca(context),
       child: InputDecorator(
         decoration: InputDecoration(
@@ -620,7 +623,7 @@ class _SelecionarPersonagemPageState extends State<SelecionarPersonagemPage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool isMobile = constraints.maxWidth < 600;
+          final bool isMobile = AppBreakpoints.isMobile(constraints.maxWidth);
           final double padding = isMobile ? 20 : 24;
           final double avatarSize = isMobile ? 42 : 52;
 

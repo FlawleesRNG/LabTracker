@@ -4,19 +4,23 @@ class HomePage extends StatefulWidget {
   final String jogoAtual;
   final String? personagemInicialNome;
   final TimePrincipalInvincible? timePrincipalInicial;
+  final TimePrincipal2XKO? time2XKOInicial;
+  final TimePrincipalKofXV? timeKofInicial;
 
   const HomePage({
     super.key,
     required this.jogoAtual,
     this.personagemInicialNome,
     this.timePrincipalInicial,
+    this.time2XKOInicial,
+    this.timeKofInicial,
   });
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-enum _HomePageMenuAction { perfil, configuracoes, resetar }
+enum _HomePageMenuAction { conta, perfil, configuracoes, resetar }
 
 class _HomePageState extends State<HomePage> {
   PlayerProfile perfil = perfilPadrao;
@@ -27,10 +31,17 @@ class _HomePageState extends State<HomePage> {
 
   TimePrincipalInvincible timePrincipalInvincible =
       timePrincipalInvincibleVazio;
+  TimePrincipal2XKO timePrincipal2XKO = timePrincipal2XKOVazio;
+  TimePrincipalKofXV timePrincipalKofXV = timePrincipalKofVazio;
 
   Map<String, String> smashCoverPreferences = {};
 
   List<PartidaRegistrada> historico = [];
+  List<PartidaRegistrada> partidasExcluidasParaSync = [];
+  List<SyncQueueItem> syncQueue = [];
+  List<LocalSyncRecord> syncRecords = [];
+  String deviceId = '';
+  String? currentUserId;
 
   bool carregando = true;
 
@@ -71,6 +82,8 @@ class _HomePageState extends State<HomePage> {
       jogo: widget.jogoAtual,
       personagemAtual: personagemAtual.name,
       timePrincipalInvincible: timePrincipalInvincible,
+      timePrincipal2XKO: timePrincipal2XKO,
+      timePrincipalKofXV: timePrincipalKofXV,
     );
   }
 
@@ -81,15 +94,25 @@ class _HomePageState extends State<HomePage> {
 
   Map<String, dynamic> gerarDadosPersistidos() {
     return {
+      'offlineFirstVersion': 1,
+      'deviceId': deviceId,
+      'currentUserId': currentUserId,
       'perfilJogador': perfil.toJson(),
       'jogoAtual': widget.jogoAtual,
       'personagemAtualNome': personagemAtualNome,
       'timePrincipalInvincible': timePrincipalInvincible.toJson(),
+      'timePrincipal2XKO': timePrincipal2XKO.toJson(),
+      'timePrincipalKofXV': timePrincipalKofXV.toJson(),
       prefsKeySmashCoverPreferences: smashCoverPreferences,
       'personagens': personagens.values
           .map((personagem) => personagem.toJson())
           .toList(),
       'historico': historico.map((partida) => partida.toJson()).toList(),
+      'partidasExcluidasParaSync': partidasExcluidasParaSync
+          .map((partida) => partida.toJson())
+          .toList(),
+      'syncRecords': syncRecords.map((record) => record.toJson()).toList(),
+      'syncQueue': syncQueue.map((item) => item.toJson()).toList(),
     };
   }
 
@@ -98,15 +121,23 @@ class _HomePageState extends State<HomePage> {
     final dynamic historicoRaw = dados['historico'];
     final dynamic personagemAtualRaw = dados['personagemAtualNome'];
     final dynamic timePrincipalRaw = dados['timePrincipalInvincible'];
+    final dynamic time2XKORaw = dados['timePrincipal2XKO'];
+    final dynamic timeKofRaw = dados['timePrincipalKofXV'];
     final dynamic perfilRaw = dados['perfilJogador'];
     final dynamic smashCoverPreferencesRaw =
         dados[prefsKeySmashCoverPreferences];
+    final dynamic partidasExcluidasRaw = dados['partidasExcluidasParaSync'];
+    final dynamic syncRecordsRaw = dados['syncRecords'];
+    final dynamic syncQueueRaw = dados['syncQueue'];
+    final dynamic currentUserIdRaw = dados['currentUserId'];
 
     personagens = {
       for (final personagem in rosterDoJogo(widget.jogoAtual))
         personagem.name: personagem,
     };
     timePrincipalInvincible = timePrincipalInvincibleVazio;
+    timePrincipal2XKO = timePrincipal2XKOVazio;
+    timePrincipalKofXV = timePrincipalKofVazio;
 
     if (personagensRaw is List) {
       final Map<String, Character> importados = {};
@@ -127,16 +158,37 @@ class _HomePageState extends State<HomePage> {
     }
 
     historico = [];
+    partidasExcluidasParaSync = [];
     if (historicoRaw is List) {
       final List<PartidaRegistrada> importadas = [];
+      final List<PartidaRegistrada> excluidas = [];
       for (final item in historicoRaw) {
         if (item is Map<String, dynamic>) {
           try {
-            importadas.add(PartidaRegistrada.fromJson(item));
+            final PartidaRegistrada partida = PartidaRegistrada.fromJson(item);
+            if (partida.deletadaLocalmente) {
+              excluidas.add(partida);
+            } else {
+              importadas.add(partida);
+            }
           } catch (_) {}
         }
       }
       historico = importadas;
+      partidasExcluidasParaSync = excluidas;
+    }
+
+    if (partidasExcluidasRaw is List) {
+      final List<PartidaRegistrada> excluidas = [];
+      for (final item in partidasExcluidasRaw) {
+        if (item is Map<String, dynamic>) {
+          try {
+            final PartidaRegistrada partida = PartidaRegistrada.fromJson(item);
+            excluidas.add(partida);
+          } catch (_) {}
+        }
+      }
+      partidasExcluidasParaSync.addAll(excluidas);
     }
 
     if (personagemAtualRaw is String &&
@@ -158,6 +210,30 @@ class _HomePageState extends State<HomePage> {
       } catch (_) {}
     }
 
+    if (time2XKORaw is Map<String, dynamic>) {
+      try {
+        timePrincipal2XKO = TimePrincipal2XKO.fromJson(time2XKORaw);
+      } catch (_) {}
+    } else if (time2XKORaw is Map) {
+      try {
+        timePrincipal2XKO = TimePrincipal2XKO.fromJson(
+          Map<String, dynamic>.from(time2XKORaw),
+        );
+      } catch (_) {}
+    }
+
+    if (timeKofRaw is Map<String, dynamic>) {
+      try {
+        timePrincipalKofXV = TimePrincipalKofXV.fromJson(timeKofRaw);
+      } catch (_) {}
+    } else if (timeKofRaw is Map) {
+      try {
+        timePrincipalKofXV = TimePrincipalKofXV.fromJson(
+          Map<String, dynamic>.from(timeKofRaw),
+        );
+      } catch (_) {}
+    }
+
     if (perfilRaw is Map<String, dynamic>) {
       try {
         perfil = PlayerProfile.fromJson(perfilRaw);
@@ -167,9 +243,46 @@ class _HomePageState extends State<HomePage> {
     smashCoverPreferences = normalizarPreferenciasCapaSmash(
       smashCoverPreferencesRaw,
     );
+    currentUserId = currentUserIdRaw?.toString();
+
+    syncRecords = [];
+    if (syncRecordsRaw is List) {
+      for (final item in syncRecordsRaw) {
+        if (item is Map<String, dynamic>) {
+          try {
+            syncRecords.add(LocalSyncRecord.fromJson(item));
+          } catch (_) {}
+        } else if (item is Map) {
+          try {
+            syncRecords.add(
+              LocalSyncRecord.fromJson(Map<String, dynamic>.from(item)),
+            );
+          } catch (_) {}
+        }
+      }
+    }
+
+    syncQueue = [];
+    if (syncQueueRaw is List) {
+      for (final item in syncQueueRaw) {
+        if (item is Map<String, dynamic>) {
+          try {
+            syncQueue.add(SyncQueueItem.fromJson(item));
+          } catch (_) {}
+        } else if (item is Map) {
+          try {
+            syncQueue.add(
+              SyncQueueItem.fromJson(Map<String, dynamic>.from(item)),
+            );
+          } catch (_) {}
+        }
+      }
+    }
   }
 
   Future<void> carregarDados() async {
+    deviceId = await DeviceService.obterOuCriarDeviceId();
+    currentUserId = await AuthService.resolveCurrentUserId();
     bool carregouArquivo = false;
     final Map<String, dynamic>? dadosArquivo = await _lerDadosArquivo();
     if (dadosArquivo != null) {
@@ -189,6 +302,8 @@ class _HomePageState extends State<HomePage> {
       final String? timePrincipalSalvo = prefs.getString(
         'timePrincipalInvincible',
       );
+      final String? time2XKOSalvo = prefs.getString('timePrincipal2XKO');
+      final String? timeKofSalvo = prefs.getString('timePrincipalKofXV');
       final String? preferenciasCapaSmashSalvas = prefs.getString(
         prefsKeySmashCoverPreferences,
       );
@@ -248,6 +363,32 @@ class _HomePageState extends State<HomePage> {
         } catch (_) {}
       }
 
+      if (time2XKOSalvo != null) {
+        try {
+          final dynamic decoded = jsonDecode(time2XKOSalvo);
+          if (decoded is Map<String, dynamic>) {
+            timePrincipal2XKO = TimePrincipal2XKO.fromJson(decoded);
+          } else if (decoded is Map) {
+            timePrincipal2XKO = TimePrincipal2XKO.fromJson(
+              Map<String, dynamic>.from(decoded),
+            );
+          }
+        } catch (_) {}
+      }
+
+      if (timeKofSalvo != null) {
+        try {
+          final dynamic decoded = jsonDecode(timeKofSalvo);
+          if (decoded is Map<String, dynamic>) {
+            timePrincipalKofXV = TimePrincipalKofXV.fromJson(decoded);
+          } else if (decoded is Map) {
+            timePrincipalKofXV = TimePrincipalKofXV.fromJson(
+              Map<String, dynamic>.from(decoded),
+            );
+          }
+        } catch (_) {}
+      }
+
       if (perfilSalvo != null) {
         try {
           final dynamic decoded = jsonDecode(perfilSalvo);
@@ -270,12 +411,16 @@ class _HomePageState extends State<HomePage> {
       smashCoverPreferences = await carregarPreferenciasCapaSmashPrefs();
     }
 
+    currentUserId = AuthService.currentUserId ?? currentUserId;
+
     if (widget.personagemInicialNome != null &&
         personagens.containsKey(widget.personagemInicialNome)) {
       personagemAtualNome = widget.personagemInicialNome!;
     }
 
     final bool recebeuTimeInicial = widget.timePrincipalInicial != null;
+    final bool recebeuTime2XKOInicial = widget.time2XKOInicial != null;
+    final bool recebeuTimeKofInicial = widget.timeKofInicial != null;
     if (widget.timePrincipalInicial != null) {
       timePrincipalInvincible = widget.timePrincipalInicial!;
       if (timePrincipalInvincible.slot1.isNotEmpty &&
@@ -284,18 +429,49 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
+    if (widget.time2XKOInicial != null) {
+      timePrincipal2XKO = widget.time2XKOInicial!;
+      garantirDupla2XKONosPersonagens();
+      if (timePrincipal2XKO.completo) {
+        personagemAtualNome = timePrincipal2XKO.key;
+      }
+    } else if (widget.jogoAtual == jogo2Xko && timePrincipal2XKO.completo) {
+      garantirDupla2XKONosPersonagens();
+      personagemAtualNome = timePrincipal2XKO.key;
+    }
+
+    if (widget.timeKofInicial != null) {
+      timePrincipalKofXV = widget.timeKofInicial!;
+      garantirTimeKofNosPersonagens();
+      if (timePrincipalKofXV.completo) {
+        personagemAtualNome = timePrincipalKofXV.key;
+      }
+    } else if (widget.jogoAtual == jogoKofXV && timePrincipalKofXV.completo) {
+      garantirTimeKofNosPersonagens();
+      personagemAtualNome = timePrincipalKofXV.key;
+    }
+
     recalcularPersonagensPeloHistorico();
+    final bool normalizouOfflineFirst = prepararBaseOfflineFirstLocal();
 
     setState(() {
       carregando = false;
     });
 
-    if (recebeuTimeInicial) {
+    if (normalizouOfflineFirst ||
+        recebeuTimeInicial ||
+        recebeuTime2XKOInicial ||
+        recebeuTimeKofInicial) {
       await salvarDados();
     }
   }
 
   Future<void> salvarDados() async {
+    if (deviceId.trim().isEmpty) {
+      deviceId = await DeviceService.obterOuCriarDeviceId();
+    }
+
+    marcarSnapshotsLocaisPendentes();
     final prefs = await SharedPreferences.getInstance();
 
     await _salvarDadosArquivo(gerarDadosPersistidos());
@@ -305,13 +481,175 @@ class _HomePageState extends State<HomePage> {
       'timePrincipalInvincible',
       jsonEncode(timePrincipalInvincible.toJson()),
     );
+    await prefs.setString(
+      'timePrincipal2XKO',
+      jsonEncode(timePrincipal2XKO.toJson()),
+    );
+    await prefs.setString(
+      'timePrincipalKofXV',
+      jsonEncode(timePrincipalKofXV.toJson()),
+    );
     await prefs.setString('perfilJogador', jsonEncode(perfil.toJson()));
+    if ((currentUserId ?? '').trim().isNotEmpty) {
+      await prefs.setString(
+        AuthService.prefsKeyCurrentUserId,
+        currentUserId!.trim(),
+      );
+    }
     await prefs.setString(
       prefsKeySmashCoverPreferences,
       jsonEncode(smashCoverPreferences),
     );
     await prefs.remove('personagens');
     await prefs.remove('historico');
+  }
+
+  bool prepararBaseOfflineFirstLocal() {
+    if (deviceId.trim().isEmpty) return false;
+
+    bool alterou = false;
+    final DateTime now = DateTime.now();
+
+    List<PartidaRegistrada> normalizarPartidas(
+      List<PartidaRegistrada> partidas,
+    ) {
+      return partidas.map((partida) {
+        final PartidaRegistrada normalizada =
+            LocalSyncRepository.garantirMetadadosPartida(
+              partida: partida,
+              deviceId: deviceId,
+              now: now,
+            );
+
+        if (normalizada.id != partida.id ||
+            normalizada.deviceId != partida.deviceId ||
+            normalizada.syncStatus != partida.syncStatus) {
+          alterou = true;
+        }
+
+        return normalizada;
+      }).toList();
+    }
+
+    historico = normalizarPartidas(historico);
+    partidasExcluidasParaSync = normalizarPartidas(partidasExcluidasParaSync);
+    marcarSnapshotsLocaisPendentes(now: now);
+
+    for (final PartidaRegistrada partida in historico) {
+      if (partida.syncStatus == SyncStatus.pendingSync ||
+          partida.syncStatus == SyncStatus.localOnly) {
+        final int tamanhoAntes = syncQueue.length;
+        syncQueue = LocalSyncRepository.upsertQueueItem(
+          queue: syncQueue,
+          entityType: SyncEntityType.match,
+          entityId: partida.id,
+          operation: SyncOperation.create,
+          now: now,
+        );
+        alterou = alterou || syncQueue.length != tamanhoAntes;
+      }
+    }
+
+    for (final PartidaRegistrada partida in partidasExcluidasParaSync) {
+      final int tamanhoAntes = syncQueue.length;
+      syncQueue = LocalSyncRepository.upsertQueueItem(
+        queue: syncQueue,
+        entityType: SyncEntityType.match,
+        entityId: partida.id,
+        operation: SyncOperation.delete,
+        now: now,
+      );
+      alterou = alterou || syncQueue.length != tamanhoAntes;
+    }
+
+    return alterou;
+  }
+
+  void marcarSnapshotsLocaisPendentes({DateTime? now}) {
+    if (deviceId.trim().isEmpty) return;
+
+    final DateTime resolvedNow = now ?? DateTime.now();
+
+    void marcar(SyncEntityType type, String entityId) {
+      syncRecords = LocalSyncRepository.upsertRecord(
+        records: syncRecords,
+        entityType: type,
+        entityId: entityId,
+        deviceId: deviceId,
+        userId: currentUserId,
+        now: resolvedNow,
+      );
+      syncQueue = LocalSyncRepository.queueRecordUpdate(
+        queue: syncQueue,
+        entityType: type,
+        entityId: entityId,
+        now: resolvedNow,
+      );
+    }
+
+    marcar(
+      SyncEntityType.gameProfile,
+      'profile:${perfil.email}:${perfil.nick}',
+    );
+    marcar(SyncEntityType.characterProgress, 'characters:${widget.jogoAtual}');
+    marcar(SyncEntityType.preference, prefsKeySmashCoverPreferences);
+    marcar(SyncEntityType.favorite, 'favorites');
+    marcar(SyncEntityType.selectedCharacter, 'selected:${widget.jogoAtual}');
+
+    if (widget.jogoAtual == jogoInvincibleVs) {
+      marcar(SyncEntityType.selectedTeam, 'team:$jogoInvincibleVs');
+    } else if (widget.jogoAtual == jogo2Xko) {
+      marcar(SyncEntityType.selectedTeam, 'team:$jogo2Xko');
+    } else if (widget.jogoAtual == jogoKofXV) {
+      marcar(SyncEntityType.selectedTeam, 'team:$jogoKofXV');
+    }
+  }
+
+  PartidaRegistrada prepararPartidaParaSalvarLocal(
+    PartidaRegistrada partida, {
+    required SyncOperation operation,
+  }) {
+    final SyncOperation operacaoFinal =
+        partida.id.trim().isEmpty && operation == SyncOperation.update
+        ? SyncOperation.create
+        : operation;
+    final PartidaRegistrada preparada =
+        LocalSyncRepository.prepararPartidaParaSalvar(
+          partida: partida,
+          deviceId: deviceId,
+          userId: currentUserId,
+          operation: operacaoFinal,
+        );
+
+    syncQueue = LocalSyncRepository.upsertQueueItem(
+      queue: syncQueue,
+      entityType: SyncEntityType.match,
+      entityId: preparada.id,
+      operation: operacaoFinal,
+    );
+
+    return preparada;
+  }
+
+  void registrarPartidaExcluidaParaSync(PartidaRegistrada partida) {
+    final PartidaRegistrada tombstone =
+        LocalSyncRepository.prepararPartidaExcluida(
+          partida: partida,
+          deviceId: deviceId,
+          userId: currentUserId,
+        );
+
+    partidasExcluidasParaSync.removeWhere(
+      (partida) => partida.id == tombstone.id,
+    );
+    partidasExcluidasParaSync.add(tombstone);
+
+    syncQueue = LocalSyncRepository.upsertQueueItem(
+      queue: syncQueue,
+      entityType: SyncEntityType.match,
+      entityId: tombstone.id,
+      operation: SyncOperation.delete,
+    );
   }
 
   String get pastaBackupPath {
@@ -329,15 +667,25 @@ class _HomePageState extends State<HomePage> {
       'app': 'LabTracker',
       'versaoBackup': 2,
       'criadoEm': DateTime.now().toIso8601String(),
+      'offlineFirstVersion': 1,
+      'deviceId': deviceId,
+      'currentUserId': currentUserId,
       'perfilJogador': perfil.toJson(),
       'jogoAtual': widget.jogoAtual,
       'personagemAtualNome': personagemAtualNome,
       'timePrincipalInvincible': timePrincipalInvincible.toJson(),
+      'timePrincipal2XKO': timePrincipal2XKO.toJson(),
+      'timePrincipalKofXV': timePrincipalKofXV.toJson(),
       prefsKeySmashCoverPreferences: smashCoverPreferences,
       'personagens': personagens.values
           .map((personagem) => personagem.toJson())
           .toList(),
       'historico': historico.map((partida) => partida.toJson()).toList(),
+      'partidasExcluidasParaSync': partidasExcluidasParaSync
+          .map((partida) => partida.toJson())
+          .toList(),
+      'syncRecords': syncRecords.map((record) => record.toJson()).toList(),
+      'syncQueue': syncQueue.map((item) => item.toJson()).toList(),
     };
   }
 
@@ -420,11 +768,61 @@ class _HomePageState extends State<HomePage> {
     return arquivoMaisRecente.path;
   }
 
+  Character characterDaDupla2XKO(TimePrincipal2XKO dupla, {int pdl = 0}) {
+    final String key = dupla.key;
+    return Character(
+      name: key,
+      initial: '2X',
+      rank: calcularRankDoJogo(jogo2Xko, pdl),
+      pdl: pdl,
+    );
+  }
+
+  Character characterDoTimeKof(TimePrincipalKofXV time, {int pdl = 0}) {
+    final String key = time.key;
+    return Character(
+      name: key,
+      initial: 'KOF',
+      rank: calcularRankDoJogo(jogoKofXV, pdl),
+      pdl: pdl,
+    );
+  }
+
+  void garantirDupla2XKONosPersonagens() {
+    if (widget.jogoAtual != jogo2Xko || !timePrincipal2XKO.completo) return;
+
+    personagens.putIfAbsent(
+      timePrincipal2XKO.key,
+      () => characterDaDupla2XKO(timePrincipal2XKO),
+    );
+  }
+
+  void garantirTimeKofNosPersonagens() {
+    if (widget.jogoAtual != jogoKofXV || !timePrincipalKofXV.completo) return;
+
+    personagens.putIfAbsent(
+      timePrincipalKofXV.key,
+      () => characterDoTimeKof(timePrincipalKofXV),
+    );
+  }
+
   void recalcularPersonagensPeloHistorico() {
     final Map<String, Character> novosPersonagens = {
       for (final personagem in rosterDoJogo(widget.jogoAtual))
         personagem.name: personagem,
     };
+
+    if (widget.jogoAtual == jogo2Xko && timePrincipal2XKO.completo) {
+      novosPersonagens[timePrincipal2XKO.key] = characterDaDupla2XKO(
+        timePrincipal2XKO,
+      );
+    }
+
+    if (widget.jogoAtual == jogoKofXV && timePrincipalKofXV.completo) {
+      novosPersonagens[timePrincipalKofXV.key] = characterDoTimeKof(
+        timePrincipalKofXV,
+      );
+    }
 
     final List<PartidaRegistrada> partidasEmOrdemCronologica = historico
         .where((partida) => partidaPertenceAoJogo(partida, widget.jogoAtual))
@@ -460,6 +858,20 @@ class _HomePageState extends State<HomePage> {
         for (final personagem in partida.meuTime) {
           aplicarPontos(personagem, partida.pdlGerado);
         }
+      } else if (widget.jogoAtual == jogo2Xko && partida.is2XKO) {
+        final String teamKey = partida.personagemJogador.trim().isNotEmpty
+            ? partida.personagemJogador
+            : chaveDupla2XKO(partida.meuTimeSlot1, partida.meuTimeSlot2);
+        aplicarPontos(teamKey, partida.pdlGerado);
+      } else if (widget.jogoAtual == jogoKofXV && partida.isKofXV) {
+        final String teamKey = partida.personagemJogador.trim().isNotEmpty
+            ? partida.personagemJogador
+            : chaveTimeKofXV(
+                partida.meuTimeSlot1,
+                partida.meuTimeSlot2,
+                partida.meuTimeSlot3,
+              );
+        aplicarPontos(teamKey, partida.pdlGerado);
       } else {
         aplicarPontos(partida.personagemJogador, partida.pdlGerado);
       }
@@ -468,7 +880,13 @@ class _HomePageState extends State<HomePage> {
     personagens = novosPersonagens;
 
     if (!personagens.containsKey(personagemAtualNome)) {
-      personagemAtualNome = personagemPadraoDoJogo;
+      if (widget.jogoAtual == jogo2Xko && timePrincipal2XKO.completo) {
+        personagemAtualNome = timePrincipal2XKO.key;
+      } else if (widget.jogoAtual == jogoKofXV && timePrincipalKofXV.completo) {
+        personagemAtualNome = timePrincipalKofXV.key;
+      } else {
+        personagemAtualNome = personagemPadraoDoJogo;
+      }
     }
   }
 
@@ -508,6 +926,8 @@ class _HomePageState extends State<HomePage> {
     await prefs.remove('historico');
     await prefs.remove('personagemAtualNome');
     await prefs.remove('timePrincipalInvincible');
+    await prefs.remove('timePrincipal2XKO');
+    await prefs.remove('timePrincipalKofXV');
     await prefs.remove('perfilJogador');
     await prefs.remove(prefsKeySmashCoverPreferences);
 
@@ -519,8 +939,13 @@ class _HomePageState extends State<HomePage> {
       historico = [];
       personagemAtualNome = personagemPadraoDoJogo;
       timePrincipalInvincible = timePrincipalInvincibleVazio;
+      timePrincipal2XKO = timePrincipal2XKOVazio;
+      timePrincipalKofXV = timePrincipalKofVazio;
       smashCoverPreferences = {};
       perfil = perfilPadrao;
+      partidasExcluidasParaSync = [];
+      syncRecords = [];
+      syncQueue = [];
     });
   }
 
@@ -549,6 +974,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> abrirSelecaoDePersonagem() async {
+    if (widget.jogoAtual == jogoKofXV) {
+      await abrirMontarTimeKofXV();
+      return;
+    }
+
+    if (widget.jogoAtual == jogo2Xko) {
+      await abrirMontarTime2XKO();
+      return;
+    }
+
     final Character? personagemEscolhido = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -601,6 +1036,61 @@ class _HomePageState extends State<HomePage> {
     return true;
   }
 
+  Future<bool> abrirMontarTimeKofXV() async {
+    final TimePrincipalKofXV? time = await Navigator.push<TimePrincipalKofXV>(
+      context,
+      MaterialPageRoute<TimePrincipalKofXV>(
+        builder: (context) =>
+            MontarTimeKofXVPage(timeInicial: timePrincipalKofXV),
+      ),
+    );
+
+    if (time == null) return false;
+
+    setState(() {
+      timePrincipalKofXV = time;
+      garantirTimeKofNosPersonagens();
+      if (timePrincipalKofXV.completo) {
+        personagemAtualNome = timePrincipalKofXV.key;
+      }
+    });
+
+    await marcarJogoRecente(widget.jogoAtual);
+    for (final personagem in time.personagens) {
+      await marcarPersonagemRecente(widget.jogoAtual, personagem);
+    }
+
+    await salvarDados();
+    return true;
+  }
+
+  Future<bool> abrirMontarTime2XKO() async {
+    final TimePrincipal2XKO? dupla = await Navigator.push<TimePrincipal2XKO>(
+      context,
+      MaterialPageRoute<TimePrincipal2XKO>(
+        builder: (context) =>
+            MontarTime2XKOPage(timeInicial: timePrincipal2XKO),
+      ),
+    );
+
+    if (dupla == null) return false;
+
+    setState(() {
+      timePrincipal2XKO = dupla;
+      garantirDupla2XKONosPersonagens();
+      personagemAtualNome = dupla.key;
+      recalcularPersonagensPeloHistorico();
+    });
+
+    await marcarJogoRecente(widget.jogoAtual);
+    for (final personagem in dupla.personagens) {
+      await marcarPersonagemRecente(widget.jogoAtual, personagem);
+    }
+
+    await salvarDados();
+    return true;
+  }
+
   List<String> sugestoesFrequentes(Iterable<String> itens) {
     return gerarRankingFrequencia(
       itens.toList(),
@@ -615,6 +1105,16 @@ class _HomePageState extends State<HomePage> {
         !timePrincipalInvincible.completo) {
       final bool montouTime = await abrirMontarTimePrincipal();
       if (!montouTime || !timePrincipalInvincible.completo) return;
+    }
+
+    if (widget.jogoAtual == jogo2Xko && !timePrincipal2XKO.completo) {
+      final bool montouDupla = await abrirMontarTime2XKO();
+      if (!montouDupla || !timePrincipal2XKO.completo) return;
+    }
+
+    if (widget.jogoAtual == jogoKofXV && !timePrincipalKofXV.completo) {
+      final bool montouTime = await abrirMontarTimeKofXV();
+      if (!montouTime || !timePrincipalKofXV.completo) return;
     }
 
     if (!mounted) return;
@@ -635,11 +1135,70 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
+          if (widget.jogoAtual == jogo2Xko) {
+            return RegistrarPartida2XKOPage(
+              jogo: widget.jogoAtual,
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              timePrincipal: timePrincipal2XKO,
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
+            );
+          }
+
+          if (widget.jogoAtual == jogoKofXV) {
+            return RegistrarPartidaKofXVPage(
+              jogo: widget.jogoAtual,
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              timePrincipal: timePrincipalKofXV,
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
+            );
+          }
+
+          if (widget.jogoAtual == jogoTekken8) {
+            return RegistrarPartidaTekken8Page(
+              personagemAtual: personagemAtual,
+              jogo: widget.jogoAtual,
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              sugestoesStages: sugestoesFrequentes(
+                partidasDoContexto.map((partida) => partida.stage),
+              ),
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
+            );
+          }
+
+          if (widget.jogoAtual == jogoFatalFury) {
+            return RegistrarPartidaFatalFuryPage(
+              personagemAtual: personagemAtual,
+              jogo: widget.jogoAtual,
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              sugestoesStages: sugestoesFrequentes(
+                partidasDoContexto.map((partida) => partida.stage),
+              ),
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
+            );
+          }
+
           if (widget.jogoAtual == jogoStreetFighter6) {
             return RegistrarPartidaStreetFighterPage(
               personagemAtual: personagemAtual,
               jogo: widget.jogoAtual,
               sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              partidaInicial: partidaInicial,
+              repetirUltima: repetirUltima,
+            );
+          }
+
+          if (widget.jogoAtual == jogoMortalKombat1) {
+            return RegistrarPartidaMortalKombat1Page(
+              personagemAtual: personagemAtual,
+              jogo: widget.jogoAtual,
+              sugestoesPlayers: gerarSugestoesPlayers(partidasDoContexto),
+              sugestoesStages: sugestoesFrequentes(
+                partidasDoContexto.map((partida) => partida.stage),
+              ),
               partidaInicial: partidaInicial,
               repetirUltima: repetirUltima,
             );
@@ -688,20 +1247,33 @@ class _HomePageState extends State<HomePage> {
     );
 
     if (partida != null) {
+      final PartidaRegistrada partidaLocal = prepararPartidaParaSalvarLocal(
+        partida,
+        operation: SyncOperation.create,
+      );
+
       setState(() {
-        historico.insert(0, partida);
+        historico.insert(0, partidaLocal);
         recalcularPersonagensPeloHistorico();
       });
 
       await marcarJogoRecente(widget.jogoAtual);
       if (widget.jogoAtual == jogoInvincibleVs) {
-        for (final personagem in partida.meuTime) {
+        for (final personagem in partidaLocal.meuTime) {
+          await marcarPersonagemRecente(widget.jogoAtual, personagem);
+        }
+      } else if (widget.jogoAtual == jogo2Xko) {
+        for (final personagem in partidaLocal.meuTime) {
+          await marcarPersonagemRecente(widget.jogoAtual, personagem);
+        }
+      } else if (widget.jogoAtual == jogoKofXV) {
+        for (final personagem in partidaLocal.meuTime) {
           await marcarPersonagemRecente(widget.jogoAtual, personagem);
         }
       } else {
         await marcarPersonagemRecente(
           widget.jogoAtual,
-          partida.personagemJogador,
+          partidaLocal.personagemJogador,
         );
       }
       await salvarDados();
@@ -727,10 +1299,24 @@ class _HomePageState extends State<HomePage> {
           personagemAtual: personagemReferenciaAtual(),
           jogo: widget.jogoAtual,
           timePrincipalInvincible: timePrincipalInvincible,
+          timePrincipal2XKO: timePrincipal2XKO,
+          timePrincipalKofXV: timePrincipalKofXV,
           smashCoverPreferences: smashCoverPreferences,
-          onHistoricoAlterado: () async {
+          onHistoricoAlterado: (alteracao) async {
             if (!mounted) return;
             setState(() {
+              if (alteracao.operation == SyncOperation.delete) {
+                registrarPartidaExcluidaParaSync(alteracao.original);
+              } else if (alteracao.operation == SyncOperation.update &&
+                  alteracao.atualizada != null) {
+                final int index = historico.indexOf(alteracao.atualizada!);
+                if (index != -1) {
+                  historico[index] = prepararPartidaParaSalvarLocal(
+                    alteracao.atualizada!,
+                    operation: SyncOperation.update,
+                  );
+                }
+              }
               recalcularPersonagensPeloHistorico();
             });
             await salvarDados();
@@ -761,8 +1347,48 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
+          if (widget.jogoAtual == jogo2Xko) {
+            return Estatisticas2XKOPage(
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+              timePrincipal2XKO: timePrincipal2XKO,
+            );
+          }
+
+          if (widget.jogoAtual == jogoKofXV) {
+            return EstatisticasKofXVPage(
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+              timePrincipalKofXV: timePrincipalKofXV,
+            );
+          }
+
+          if (widget.jogoAtual == jogoTekken8) {
+            return EstatisticasTekken8Page(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
+          if (widget.jogoAtual == jogoFatalFury) {
+            return EstatisticasFatalFuryPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
           if (widget.jogoAtual == jogoStreetFighter6) {
             return EstatisticasStreetFighterPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
+          if (widget.jogoAtual == jogoMortalKombat1) {
+            return EstatisticasMortalKombat1Page(
               personagemAtual: personagemAtual,
               historico: historico,
               jogoAtual: widget.jogoAtual,
@@ -796,6 +1422,33 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> abrirContaSync() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AccountSyncPage(
+          deviceId: deviceId,
+          currentUserId: currentUserId,
+          pendingSyncCount: syncQueue
+              .where((item) => item.status == SyncQueueStatus.pending)
+              .length,
+          syncErrorCount: syncQueue
+              .where((item) => item.status == SyncQueueStatus.error)
+              .length,
+        ),
+      ),
+    );
+
+    final String? resolvedUserId = await AuthService.resolveCurrentUserId();
+    if (!mounted) return;
+
+    setState(() {
+      currentUserId = resolvedUserId;
+    });
+
+    await salvarDados();
+  }
+
   void abrirResumoTreino() {
     Navigator.push(
       context,
@@ -809,8 +1462,48 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
+          if (widget.jogoAtual == jogo2Xko) {
+            return Estatisticas2XKOPage(
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+              timePrincipal2XKO: timePrincipal2XKO,
+            );
+          }
+
+          if (widget.jogoAtual == jogoKofXV) {
+            return EstatisticasKofXVPage(
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+              timePrincipalKofXV: timePrincipalKofXV,
+            );
+          }
+
+          if (widget.jogoAtual == jogoTekken8) {
+            return EstatisticasTekken8Page(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
+          if (widget.jogoAtual == jogoFatalFury) {
+            return EstatisticasFatalFuryPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
           if (widget.jogoAtual == jogoStreetFighter6) {
             return EstatisticasStreetFighterPage(
+              personagemAtual: personagemAtual,
+              historico: historico,
+              jogoAtual: widget.jogoAtual,
+            );
+          }
+
+          if (widget.jogoAtual == jogoMortalKombat1) {
+            return EstatisticasMortalKombat1Page(
               personagemAtual: personagemAtual,
               historico: historico,
               jogoAtual: widget.jogoAtual,
@@ -894,6 +1587,9 @@ class _HomePageState extends State<HomePage> {
 
   void executarAcaoMenuHome(_HomePageMenuAction acao) {
     switch (acao) {
+      case _HomePageMenuAction.conta:
+        abrirContaSync();
+        break;
       case _HomePageMenuAction.perfil:
         abrirPerfil();
         break;
@@ -916,6 +1612,13 @@ class _HomePageState extends State<HomePage> {
           onSelected: executarAcaoMenuHome,
           itemBuilder: (context) {
             return const [
+              PopupMenuItem(
+                value: _HomePageMenuAction.conta,
+                child: ListTile(
+                  leading: Icon(Icons.cloud_sync_outlined),
+                  title: Text('Conta e Sync'),
+                ),
+              ),
               PopupMenuItem(
                 value: _HomePageMenuAction.perfil,
                 child: ListTile(
@@ -945,6 +1648,11 @@ class _HomePageState extends State<HomePage> {
 
     return [
       const HomeNavigationButton(),
+      IconButton(
+        onPressed: abrirContaSync,
+        tooltip: 'Conta e Sync',
+        icon: const Icon(Icons.cloud_sync_outlined),
+      ),
       IconButton(
         onPressed: abrirPerfil,
         tooltip: 'Meu perfil',
@@ -1000,6 +1708,16 @@ class _HomePageState extends State<HomePage> {
       return personagens[timePrincipalInvincible.slot1]!;
     }
 
+    if (widget.jogoAtual == jogo2Xko && timePrincipal2XKO.completo) {
+      return personagens[timePrincipal2XKO.key] ??
+          characterDaDupla2XKO(timePrincipal2XKO);
+    }
+
+    if (widget.jogoAtual == jogoKofXV && timePrincipalKofXV.completo) {
+      return personagens[timePrincipalKofXV.key] ??
+          characterDoTimeKof(timePrincipalKofXV);
+    }
+
     return personagemAtual;
   }
 
@@ -1010,6 +1728,9 @@ class _HomePageState extends State<HomePage> {
     }
 
     final bool isInvincible = widget.jogoAtual == jogoInvincibleVs;
+    final bool is2XKO = widget.jogoAtual == jogo2Xko;
+    final bool isKof = widget.jogoAtual == jogoKofXV;
+    final bool isTeamContext = isInvincible || is2XKO || isKof;
     final bool isStreetFighter = widget.jogoAtual == jogoStreetFighter6;
     final Character personagem = personagemAtual;
     final String pontosLabel = labelPontosRank(widget.jogoAtual);
@@ -1017,6 +1738,14 @@ class _HomePageState extends State<HomePage> {
         ? (timePrincipalInvincible.completo
               ? timePrincipalInvincible.texto
               : 'Nenhum time principal definido')
+        : is2XKO
+        ? (timePrincipal2XKO.completo
+              ? timePrincipal2XKO.texto
+              : 'Nenhuma dupla definida')
+        : isKof
+        ? (timePrincipalKofXV.completo
+              ? timePrincipalKofXV.texto
+              : 'Nenhum time definido')
         : personagem.name;
     final bool appBarCompacta = MediaQuery.sizeOf(context).width < 480;
 
@@ -1047,14 +1776,14 @@ class _HomePageState extends State<HomePage> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
-            if (isInvincible)
+            if (isTeamContext)
               Text(
                 perfil.regiao.trim().isEmpty
                     ? '${widget.jogoAtual} - $contextoAtual'
                     : '${widget.jogoAtual} - $contextoAtual - ${perfil.regiao}',
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-            if (!isInvincible)
+            if (!isTeamContext)
               Text(
                 perfil.regiao.trim().isEmpty
                     ? '${widget.jogoAtual} • ${personagem.name}'
@@ -1069,24 +1798,76 @@ class _HomePageState extends State<HomePage> {
                   final double avatarSize = isMobileCard ? 56 : 68;
 
                   final bool timeCompleto = timePrincipalInvincible.completo;
+                  final bool duplaCompleta = timePrincipal2XKO.completo;
+                  final bool timeKofCompleto = timePrincipalKofXV.completo;
                   final int lpTime = lpTimePrincipal;
                   final String rankTime = calcularRankDoJogo(
                     widget.jogoAtual,
                     lpTime,
                   );
+                  final int pdlDupla = personagem.pdl;
                   final List<String> nomesTime =
                       timePrincipalInvincible.personagens;
+                  final List<String> nomesDupla = timePrincipal2XKO.personagens;
+                  final List<String> nomesTimeKof =
+                      timePrincipalKofXV.personagens;
 
-                  final Widget avatar = isInvincible
+                  final Widget avatar = isTeamContext
                       ? SizedBox(
-                          width: isMobileCard ? double.infinity : 188,
+                          width: isMobileCard
+                              ? double.infinity
+                              : is2XKO
+                              ? 128
+                              : isKof
+                              ? 188
+                              : 188,
                           child: Wrap(
                             alignment: isMobileCard
                                 ? WrapAlignment.center
                                 : WrapAlignment.start,
                             spacing: 8,
                             runSpacing: 8,
-                            children: timeCompleto
+                            children: is2XKO
+                                ? (duplaCompleta
+                                      ? [
+                                          for (final nome in nomesDupla)
+                                            CharacterAvatar(
+                                              personagem: nome,
+                                              jogo: widget.jogoAtual,
+                                              size: avatarSize,
+                                              initialOverride:
+                                                  personagens[nome]?.initial,
+                                            ),
+                                        ]
+                                      : [
+                                          CircleAvatar(
+                                            radius: avatarSize / 2,
+                                            child: const Icon(
+                                              Icons.people_alt_outlined,
+                                            ),
+                                          ),
+                                        ])
+                                : isKof
+                                ? (timeKofCompleto
+                                      ? [
+                                          for (final nome in nomesTimeKof)
+                                            CharacterAvatar(
+                                              personagem: nome,
+                                              jogo: widget.jogoAtual,
+                                              size: avatarSize,
+                                              initialOverride:
+                                                  personagens[nome]?.initial,
+                                            ),
+                                        ]
+                                      : [
+                                          CircleAvatar(
+                                            radius: avatarSize / 2,
+                                            child: const Icon(
+                                              Icons.groups_outlined,
+                                            ),
+                                          ),
+                                        ])
+                                : timeCompleto
                                 ? [
                                     for (final nome in nomesTime)
                                       CharacterAvatar(
@@ -1122,6 +1903,10 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         isInvincible
                             ? 'Time Atual'
+                            : is2XKO
+                            ? 'Dupla Atual'
+                            : isKof
+                            ? 'Time Atual'
                             : isStreetFighter
                             ? 'Personagem Atual'
                             : 'Perfil atual',
@@ -1144,9 +1929,13 @@ class _HomePageState extends State<HomePage> {
                             ? TextAlign.center
                             : TextAlign.start,
                       ),
-                      if (isInvincible)
+                      if (isTeamContext)
                         Text(
-                          'Time: $contextoAtual',
+                          is2XKO
+                              ? 'Dupla: $contextoAtual'
+                              : isKof
+                              ? 'Ordem: $contextoAtual'
+                              : 'Time: $contextoAtual',
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           textAlign: isMobileCard
@@ -1184,6 +1973,10 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         isInvincible
                             ? '$pontosLabel do time: $lpTime'
+                            : is2XKO
+                            ? '$pontosLabel da dupla: $pdlDupla'
+                            : isKof
+                            ? '$pontosLabel do time: $pdlDupla'
                             : '$pontosLabel: ${personagem.pdl}',
                       ),
                     ],
@@ -1194,10 +1987,18 @@ class _HomePageState extends State<HomePage> {
                     child: OutlinedButton(
                       onPressed: isInvincible
                           ? abrirMontarTimePrincipal
+                          : is2XKO
+                          ? abrirMontarTime2XKO
+                          : isKof
+                          ? abrirMontarTimeKofXV
                           : abrirSelecaoDePersonagem,
                       child: Text(
                         isInvincible
                             ? (timeCompleto ? 'Alterar Time' : 'Montar Time')
+                            : is2XKO
+                            ? (duplaCompleta ? 'Alterar Dupla' : 'Montar Dupla')
+                            : isKof
+                            ? (timeKofCompleto ? 'Alterar Time' : 'Montar Time')
                             : isStreetFighter
                             ? 'Selecionar Personagem'
                             : 'Trocar personagem',
@@ -1308,6 +2109,10 @@ class _HomePageState extends State<HomePage> {
                 label: Text(
                   widget.jogoAtual == jogoInvincibleVs
                       ? 'Leitura de times'
+                      : widget.jogoAtual == jogo2Xko
+                      ? 'Leitura da dupla'
+                      : widget.jogoAtual == jogoKofXV
+                      ? 'Leitura do time'
                       : 'Resumo do treino de hoje',
                 ),
               ),
